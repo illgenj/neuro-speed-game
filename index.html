@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neuro-Speed Elite 2.8 (Patched)</title>
+    <title>Neuro-Speed Elite 2.9</title>
     <style>
         :root { 
             --bg: #020617; --panel: #0f172a; --accent: #0ea5e9; --text: #f8fafc; 
@@ -58,7 +58,6 @@
             position: relative;
             z-index: 1;
         }
-        /* Glossy shine on the bar */
         #zone-fill::after {
             content: ''; position: absolute; top: 0; left: 0; right: 0; height: 50%;
             background: rgba(255,255,255,0.15); border-radius: 12px 12px 0 0;
@@ -73,7 +72,6 @@
             white-space: nowrap;
         }
 
-        /* Flash animations */
         @keyframes bar-pulse-gold {
             0% { box-shadow: 0 0 10px var(--gold); }
             50% { box-shadow: 0 0 25px var(--gold), inset 0 0 10px var(--gold); }
@@ -113,7 +111,6 @@
         .action-btn:active { transform: scale(0.97); }
         .secondary-btn { background: #334155; }
         
-        /* New locked state for buttons */
         .locked-btn { opacity: 0.5; pointer-events: none; filter: grayscale(1); }
 
         .analytics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 15px 0; }
@@ -121,7 +118,7 @@
         .a-card .v { display: block; font-weight: 800; color: var(--accent); font-size: 1rem; }
         .a-card .l { font-size: 0.5rem; opacity: 0.4; text-transform: uppercase; font-weight: 700; }
 
-        /* --- UPDATED LEADERBOARD STYLES --- */
+        /* --- LEADERBOARD STYLES --- */
         .lb-row { 
             display: flex; align-items: center; padding: 12px 0; 
             border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; 
@@ -130,11 +127,9 @@
         .lb-name { flex-grow: 1; text-align: left; font-weight: 600; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding-right: 10px;}
         .lb-tier { font-size: 0.5rem; background: #1e293b; padding: 2px 6px; border-radius: 4px; margin-right: 8px; color: #94a3b8; vertical-align: middle; }
         
-        /* Right side stats container */
         .lb-right { text-align: right; min-width: 100px; }
         .lb-score { color: var(--accent); font-family: monospace; font-weight: 700; font-size: 1rem; display: block; }
         
-        /* Sub-stats (Peak / Acc) */
         .lb-sub { font-size: 0.65rem; color: #94a3b8; margin-top: 2px; font-family: monospace;}
         .lb-stat { margin-left: 6px; }
         .lb-stat.peak { color: var(--hyper); }
@@ -150,6 +145,37 @@
 
         /* Effects */
         .singularity-glow { filter: saturate(1.5) contrast(1.1); }
+
+        /* --- NEW SYSTEM MESSAGE HUD --- */
+        #system-message {
+            position: absolute; top: 120px; left: 50%; transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.95); 
+            border: 1px solid #334155;
+            padding: 20px 30px; 
+            border-radius: 12px; 
+            z-index: 200;
+            text-align: center; 
+            font-weight: 900; 
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+            pointer-events: none; 
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            width: 85%; max-width: 450px;
+        }
+        
+        /* Specific Styles for Upgrade vs Downgrade */
+        .sys-upgrade { 
+            border-color: var(--success) !important; 
+            color: var(--success); 
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.3) !important; 
+        }
+        .sys-alert { 
+            border-color: var(--fail) !important; 
+            color: var(--fail); 
+            box-shadow: 0 0 30px rgba(239, 68, 68, 0.3) !important; 
+        }
+
     </style>
 </head>
 <body>
@@ -184,6 +210,8 @@
     <div id="game-container">
         <canvas id="gameCanvas"></canvas>
         <div id="sync-indicator"></div>
+
+        <div id="system-message" class="hidden">SYSTEM READY</div>
 
         <div id="main-overlay" class="overlay">
             <h2 id="msg-title">NEURAL READY</h2>
@@ -588,6 +616,31 @@
         processHit(hit);
     }
 
+    // --- NEW SYSTEM MESSAGE HELPER ---
+    function triggerSystemMessage(text, type) {
+        const el = document.getElementById('system-message');
+        el.innerText = text;
+        el.className = ''; // Wipe classes
+        
+        // Add specific class based on upgrade/downgrade
+        if(type === 'upgrade') {
+            el.classList.add('sys-upgrade');
+        } else {
+            el.classList.add('sys-alert');
+        }
+        
+        // Ensure standard visibility
+        // Removing 'hidden' triggers the fade in due to CSS opacity transition
+        requestAnimationFrame(() => {
+             el.classList.remove('hidden');
+        });
+
+        // Hide after 3.5 seconds
+        setTimeout(() => {
+            el.classList.add('hidden');
+        }, 3500);
+    }
+
     function finalizeTrial() {
         const u = appData.users[appData.currentUser];
         let correct = (uShape === targetShape && uSat === satShape);
@@ -612,17 +665,16 @@
                 u.speed = Math.max(16, u.speed * 0.88); 
                 u.streak = 0; 
                 
-                // --- TIER PROMOTION LOGIC (INJECTED) ---
+                // --- TIER PROMOTION LOGIC (UPDATED WITH HUD) ---
                 if (!u.level2 && u.speed <= 350) {
                     u.level2 = true;
-                    // Reset to ensure they can handle the new load without instant failure
                     u.speed = 400; 
-                    alert("SYSTEM UPGRADE: TIER 2 UNLOCKED (CHROMATIC SYNC)");
+                    triggerSystemMessage("SYSTEM UPGRADE: TIER 2 UNLOCKED (CHROMATIC SYNC)", 'upgrade');
                 }
                 else if (u.level2 && !u.level3 && u.speed <= 220) {
                     u.level3 = true;
-                    u.speed = 300; // Slight ease-in for T3
-                    alert("SYSTEM UPGRADE: TIER 3 UNLOCKED (VECTOR SYNC)");
+                    u.speed = 300; 
+                    triggerSystemMessage("SYSTEM UPGRADE: TIER 3 UNLOCKED (VECTOR SYNC)", 'upgrade');
                 }
                 // ---------------------------------------
             }
@@ -636,14 +688,14 @@
             document.getElementById('msg-title').innerText = "ZONE SHATTERED";
             document.getElementById('msg-title').style.color = "#ef4444";
             
-            // Demotion Logic
+            // Demotion Logic (UPDATED WITH HUD)
             if (u.streak <= -3 && (u.level2 || u.level3)) {
                 if (u.level3) {
                     u.level3 = false; 
-                    alert("SYSTEM WARNING: TIER 3 REVOKED");
+                    triggerSystemMessage("SYSTEM WARNING: TIER 3 REVOKED", 'alert');
                 } else {
                     u.level2 = false;
-                    alert("SYSTEM WARNING: TIER 2 REVOKED");
+                    triggerSystemMessage("SYSTEM WARNING: TIER 2 REVOKED", 'alert');
                 }
                 u.streak = 0; u.speed += 100;
             }
