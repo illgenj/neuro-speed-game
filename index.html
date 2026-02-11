@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neuro-Speed Elite 3.8</title>
+    <title>Neuro-Speed Elite 3.9</title>
     <style>
         :root { 
             --bg: #020617; --panel: #0f172a; --accent: #0ea5e9; --text: #f8fafc; 
@@ -314,7 +314,7 @@
 
 <script type="module">
     /* ----------------------------------------------------
-       NEURO-SPEED ELITE 3.8 [REALTIME SYNC]
+       NEURO-SPEED ELITE 3.9 [REALTIME SYNC + TIMER]
        ----------------------------------------------------
     */
 
@@ -361,6 +361,11 @@
         const SHAPES = ['circle', 'square', 'triangle', 'diamond', 'cross'];
         const L2_COLORS = ['#22d3ee', '#4ade80', '#f472b6', '#fbbf24'];
         
+        // --- TIMER CONFIGURATION ---
+        const QUESTION_TIMEOUT_MS = 15000; // 15 Seconds
+        let questionTimerStart = 0;
+        let isTimedOut = false;
+
         // Circular Direction Mapping
         const DIR_MAP = [
             { id: 0, key: 6, label: '6', angle: 0 },            
@@ -551,6 +556,7 @@
             // Hide sync bar on new start
             document.getElementById('sync-vis-container').style.opacity = '0'; 
             state = 'FLASHING';
+            isTimedOut = false;
             const u = appData.users[appData.currentUser];
             
             targetShape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
@@ -598,12 +604,55 @@
             animFrameId = requestAnimationFrame(animate);
         }
 
+        function handleTimeout() {
+            if (isTimedOut) return;
+            isTimedOut = true;
+            triggerSystemMessage("NEURAL LINK SEVERED (TIMEOUT)", "alert");
+            
+            // Force wrong answer
+            uShape = null; 
+            finalizeTrial();
+        }
+
         function startQuestionLoop() {
             askTask('CENTER', SHAPES);
+            
             function loop(now) {
                 if (state === 'QUESTIONING') {
+                    // --- TIMER LOGIC ---
+                    if (!questionTimerStart) questionTimerStart = now;
+                    const elapsed = now - questionTimerStart;
+                    const remaining = QUESTION_TIMEOUT_MS - elapsed;
+                    
+                    if (remaining <= 0) {
+                        handleTimeout();
+                        return; // Stop rendering
+                    }
+
+                    // Clear Canvas
                     ctx.fillStyle = '#020617'; ctx.fillRect(0,0,canvas.width,canvas.height);
                     
+                    // --- DRAW TIMER BAR ---
+                    const timePct = Math.max(0, remaining / QUESTION_TIMEOUT_MS);
+                    const barColor = timePct < 0.2 ? '#ef4444' : (timePct < 0.5 ? '#f59e0b' : '#0ea5e9');
+                    
+                    ctx.fillStyle = 'rgba(255,255,255,0.1)';
+                    ctx.fillRect(0, 0, canvas.width, 6); // Track
+                    
+                    ctx.fillStyle = barColor;
+                    ctx.shadowColor = barColor; ctx.shadowBlur = 10;
+                    ctx.fillRect(0, 0, canvas.width * timePct, 6); // Fill
+                    ctx.shadowBlur = 0;
+
+                    // Draw Timer Text (optional, kept subtle)
+                    if (timePct < 0.3) {
+                        ctx.fillStyle = "#ef4444";
+                        ctx.font = `bold ${minDim * 0.03}px monospace`;
+                        ctx.textAlign = "right";
+                        ctx.fillText((remaining/1000).toFixed(1) + "s", canvas.width - 10, 25);
+                    }
+
+                    // --- DRAW UI ---
                     let title = "", sub = "";
                     if(currentTask === 'CENTER') { title = "CORE ID"; sub = "SELECT CENTER SHAPE"; }
                     else if(currentTask === 'SATELLITE') { title = "PERIPHERAL ID"; sub = "SELECT SATELLITE SHAPE"; }
@@ -690,7 +739,11 @@
             animFrameId = requestAnimationFrame(loop);
         }
 
-        function askTask(type, items) { currentTask = type; }
+        function askTask(type, items) { 
+            currentTask = type; 
+            // Reset timer for the specific question phase
+            questionTimerStart = 0; 
+        }
         
         function processHit(hit) {
             lastSelectionIndex = hit.val;
@@ -763,6 +816,9 @@
             let correct = (uShape === targetShape && uSat === satShape);
             if (u.level2 && uColor !== satColorIdx) correct = false;
             if (u.level3 && uDir !== satDirIdx) correct = false;
+            
+            // If timed out, override to false (redundant check but safe)
+            if (isTimedOut) correct = false;
 
             state = 'IDLE'; cancelAnimationFrame(animFrameId);
             
@@ -814,7 +870,7 @@
                 u.streak = Math.min(0, u.streak) - 1;
                 u.speed = Math.min(1000, u.speed + 80); 
 
-                document.getElementById('msg-title').innerText = "SYNC LOST";
+                document.getElementById('msg-title').innerText = isTimedOut ? "SYNC TIMEOUT" : "SYNC LOST";
                 document.getElementById('msg-title').style.color = "#ef4444";
                 document.getElementById('msg-body').innerText = `RATING DROP: -${Math.floor(penalty)}`;
 
