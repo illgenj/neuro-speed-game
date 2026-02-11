@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neuro-Speed Elite 2.4</title>
+    <title>Neuro-Speed Elite 2.6</title>
     <style>
         :root { 
             --bg: #020617; --panel: #0f172a; --accent: #0ea5e9; --text: #f8fafc; 
@@ -38,19 +38,55 @@
         .val { font-size: 0.85rem; font-weight: 800; color: var(--accent); font-family: monospace; }
         .xp-val { color: var(--gold); }
 
-        /* --- Zone Meter --- */
+        /* --- UPDATED ZONE THERMOMETER --- */
         #zone-container {
-            width: 100%; height: 6px; background: #1e293b; position: relative; overflow: hidden;
+            width: 90%; 
+            height: 24px; /* Thicker */
+            background: #0f172a; 
+            margin: 10px auto 5px auto;
+            position: relative; 
+            overflow: hidden;
+            border-radius: 12px; /* Capsule shape */
+            border: 2px solid #1e293b;
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.6); /* Inner depth */
         }
         #zone-fill {
-            height: 100%; width: 0%; background: var(--accent);
-            transition: width 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.5s;
+            height: 100%; width: 0%; 
+            background: linear-gradient(90deg, var(--accent), #38bdf8);
+            transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s; /* Bouncy fill */
             box-shadow: 0 0 15px var(--accent);
+            position: relative;
+            z-index: 1;
         }
+        /* Glossy shine on the bar */
+        #zone-fill::after {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 50%;
+            background: rgba(255,255,255,0.15); border-radius: 12px 12px 0 0;
+        }
+
         #zone-label {
-            position: absolute; top: 10px; right: 20px; font-size: 0.6rem; 
-            font-weight: 900; color: var(--accent); letter-spacing: 2px;
+            position: absolute; top: 50%; left: 50%; 
+            transform: translate(-50%, -50%);
+            font-size: 0.75rem; font-weight: 900; 
+            color: #fff; letter-spacing: 2px;
+            z-index: 2; text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+            white-space: nowrap;
         }
+
+        /* Flash animations */
+        @keyframes bar-pulse-gold {
+            0% { box-shadow: 0 0 10px var(--gold); }
+            50% { box-shadow: 0 0 25px var(--gold), inset 0 0 10px var(--gold); }
+            100% { box-shadow: 0 0 10px var(--gold); }
+        }
+        @keyframes text-pop {
+            0% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.4); color: #fff; }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+        
+        .zone-gold { animation: bar-pulse-gold 1.5s infinite; }
+        .text-pop-anim { animation: text-pop 0.3s ease-out; }
 
         /* --- Game Area --- */
         #game-container { flex-grow: 1; position: relative; width: 100%; overflow: hidden; }
@@ -142,7 +178,7 @@
     
     <div id="zone-container">
         <div id="zone-fill"></div>
-        <div id="zone-label">NEURAL SYNC: 1.0x</div>
+        <div id="zone-label" data-mult="1.0">NEURAL SYNC: 1.0x</div>
     </div>
 
     <div id="game-container">
@@ -211,7 +247,6 @@
     const ctx = canvas.getContext('2d');
     let appData = { users: {}, currentUser: null };
 
-    // Only hide numbers if it's a touch device AND the screen is small (like a phone)
     const isTouch = ('ontouchstart' in window || navigator.maxTouchPoints > 0) && window.innerWidth < 1024;
     
     const SHAPES = ['circle', 'square', 'triangle', 'diamond', 'cross'];
@@ -225,10 +260,11 @@
     let sessionZone = 0;
     
     let activeDistractors = []; 
+    let lastFlashRadius = 0; // NEW: Stores radius for HUD drawing
 
     // --- INPUT THROTTLE & FX ---
     let inputLocked = false; 
-    let lastSelectionIndex = -1; // New: Tracks which item is currently "depressed"
+    let lastSelectionIndex = -1;
     let ripples = [];
 
     function save() { localStorage.setItem('neuroElite_v21_sci', JSON.stringify(appData)); }
@@ -259,26 +295,42 @@
         document.getElementById('daily-streak-badge').innerText = `🔥 ${u.dailyStreak || 0}`;
         document.getElementById('mode-indicator').innerText = u.level3 ? "T3" : (u.level2 ? "T2" : "T1");
         
-        // Zone Meter Update
+        // --- IMPROVED ZONE THERMOMETER LOGIC ---
         const fill = document.getElementById('zone-fill');
         const label = document.getElementById('zone-label');
         const percentage = Math.min(sessionZone * 10, 100);
+        
         fill.style.width = percentage + "%";
         
         let mult = 1.0;
+        let newLabel = "";
+        
         if (sessionZone >= 10) {
-            mult = 5.0; fill.style.background = "var(--gold)"; label.style.color = "var(--gold)";
-            label.innerText = "SINGULARITY: 5.0x";
+            mult = 5.0;
+            fill.style.background = "linear-gradient(90deg, #f59e0b, #ef4444)"; // Gold to Red
+            fill.classList.add('zone-gold');
+            newLabel = "SINGULARITY: 5.0x";
             canvas.classList.add('singularity-glow');
         } else if (sessionZone >= 5) {
-            mult = 2.5; fill.style.background = "var(--quantum)"; label.style.color = "var(--quantum)";
-            label.innerText = "OVERCLOCK: 2.5x";
+            mult = 2.5;
+            fill.style.background = "linear-gradient(90deg, #a855f7, #ec4899)"; // Purple to Pink
+            fill.classList.add('zone-gold');
+            newLabel = "OVERCLOCK: 2.5x";
             canvas.classList.remove('singularity-glow');
         } else {
             mult = 1.0 + (sessionZone * 0.1);
-            fill.style.background = "var(--accent)"; label.style.color = "var(--accent)";
-            label.innerText = `ZONE: ${mult.toFixed(1)}x`;
+            fill.style.background = "linear-gradient(90deg, var(--accent), #38bdf8)"; // Blue to Cyan
+            fill.classList.remove('zone-gold');
+            newLabel = `ZONE: ${mult.toFixed(1)}x`;
             canvas.classList.remove('singularity-glow');
+        }
+
+        // Text Pop Animation check
+        if (label.innerText !== newLabel) {
+            label.innerText = newLabel;
+            label.classList.remove('text-pop-anim');
+            void label.offsetWidth; // Trigger reflow
+            label.classList.add('text-pop-anim');
         }
     }
 
@@ -322,15 +374,15 @@
         satColorIdx = u.level2 ? Math.floor(Math.random() * L2_COLORS.length) : -1;
         satDirIdx = Math.floor(Math.random() * 4);
 
-        const radius = minDim * 0.35;
+        lastFlashRadius = minDim * 0.35; // Capture this for HUD
         const angle = u.level3 
             ? [Math.PI*1.25, Math.PI*1.75, Math.PI*0.75, Math.PI*0.25][satDirIdx] 
             : Math.random() * Math.PI * 2;
         
-        const satX = centerX + Math.cos(angle) * radius; 
-        const satY = centerY + Math.sin(angle) * radius;
+        const satX = centerX + Math.cos(angle) * lastFlashRadius; 
+        const satY = centerY + Math.sin(angle) * lastFlashRadius;
 
-        generateDistractors(centerX, centerY, radius, angle, 12);
+        generateDistractors(centerX, centerY, lastFlashRadius, angle, 12);
 
         let startTime = null;
         
@@ -368,18 +420,18 @@
     function startQuestionLoop() {
         askTask('CENTER', SHAPES);
         let lastTime = 0; 
+        let pulseTime = 0;
 
         function loop(now) {
             if (state === 'QUESTIONING') {
                 if(!lastTime) lastTime = now;
                 const dt = (now - lastTime) / 16.67; 
                 lastTime = now;
+                pulseTime += dt * 0.05;
 
                 ctx.fillStyle = '#020617'; ctx.fillRect(0,0,canvas.width,canvas.height);
                 
-                // Draw Question Header
-                ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.font = `900 ${minDim * 0.05}px sans-serif`;
-                ctx.fillText(`${currentTask} IDENT`, centerX, centerY - minDim * 0.25);
+                // --- SELECTION UI ONLY (HUD RETICLES REMOVED) ---
                 
                 // Draw Selection Items
                 const items = currentTask === 'CENTER' ? SHAPES : 
@@ -390,7 +442,7 @@
                 
                 selectionBoxes = [];
                 items.forEach((item, i) => {
-                    const x = startX + (i * spacing), y = centerY + 40;
+                    const x = startX + (i * spacing), y = centerY + 60;
                     const isSelected = (i === lastSelectionIndex);
 
                     // --- DRAW "DEPRESSED" HIGHLIGHT ---
