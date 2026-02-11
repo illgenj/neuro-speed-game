@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neuro-Speed Elite 3.6 [GRID RECOVERY]</title>
+    <title>Neuro-Speed Elite 3.7</title>
     <style>
         :root { 
             --bg: #020617; --panel: #0f172a; --accent: #0ea5e9; --text: #f8fafc; 
@@ -107,6 +107,31 @@
         .a-card { background: rgba(0,0,0,0.4); padding: 12px; border-radius: 16px; text-align: left; }
         .a-card .v { display: block; font-weight: 800; color: var(--accent); font-size: 1rem; }
         .a-card .l { font-size: 0.5rem; opacity: 0.4; text-transform: uppercase; font-weight: 700; }
+
+        /* --- NEW SYNC BAR UI --- */
+        #sync-vis-container {
+            margin: 15px 0 20px 0;
+            text-align: center;
+            opacity: 0; transition: opacity 0.3s;
+        }
+        #sync-percentage {
+            font-family: monospace; font-size: 1.8rem; font-weight: 900;
+            display: block; margin-bottom: 5px;
+            text-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        .sync-label-mini { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 2px; opacity: 0.6; }
+        
+        #sync-bar-bg {
+            width: 100%; height: 8px; background: rgba(255,255,255,0.1);
+            border-radius: 4px; overflow: hidden; position: relative;
+        }
+        #sync-bar-fill {
+            height: 100%; width: 0%;
+            background: var(--success);
+            box-shadow: 0 0 15px var(--success);
+            transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+            border-radius: 4px;
+        }
 
         /* --- LEADERBOARD --- */
         .lb-row { 
@@ -218,7 +243,16 @@
 
         <div id="main-overlay" class="overlay">
             <h2 id="msg-title">NEURAL READY</h2>
-            <p id="msg-body">Initiate flash sequence to begin calibration.</p>
+            <p id="msg-body" style="margin-bottom: 15px;">Initiate flash sequence to begin calibration.</p>
+            
+            <div id="sync-vis-container">
+                <span id="sync-percentage">0%</span>
+                <span class="sync-label-mini">NEURAL EFFICIENCY</span>
+                <div id="sync-bar-bg" style="margin-top: 8px;">
+                    <div id="sync-bar-fill"></div>
+                </div>
+            </div>
+
             <button id="start-btn" class="action-btn">INITIATE FLASH</button>
             <button id="btn-lb-main" class="action-btn secondary-btn" style="margin-top: 10px; font-size: 0.75rem;">🌐 GLOBAL GRID</button>
         </div>
@@ -279,7 +313,7 @@
 
 <script type="module">
     /* ----------------------------------------------------
-       NEURO-SPEED ELITE 3.6 [GRID RECOVERY ENABLED]
+       NEURO-SPEED ELITE 3.7 [SYNC VISUALIZER]
        ----------------------------------------------------
     */
 
@@ -313,7 +347,7 @@
         const SALT = "NEURO_SECURE_SALT_9283"; 
         let appData = { users: {}, currentUser: null };
         let clickHistory = [];
-        let pinResolver = null; // For handling async PIN requests
+        let pinResolver = null; 
         
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -329,7 +363,7 @@
             { id: 1, key: 3, label: '3', angle: Math.PI*0.25 },
             { id: 2, key: 2, label: '2', angle: Math.PI*0.5 }, 
             { id: 3, key: 1, label: '1', angle: Math.PI*0.75 },
-            { id: 4, key: 4, label: '4', angle: Math.PI },      
+            { id: 4, key: 4, label: '4', angle: Math.PI },       
             { id: 5, key: 7, label: '7', angle: Math.PI*1.25 },
             { id: 6, key: 8, label: '8', angle: Math.PI*1.5 }, 
             { id: 7, key: 9, label: '9', angle: Math.PI*1.75 } 
@@ -365,8 +399,6 @@
         }
 
         // --- CLOUD SYNC & SECURITY ---
-        
-        // New Async PIN requester
         function requestPin(title, reason) {
             return new Promise((resolve) => {
                 hideOverlays();
@@ -380,7 +412,6 @@
                 overlay.classList.remove('hidden');
                 setTimeout(() => input.focus(), 100);
                 
-                // Store resolve function to be called by button handlers
                 pinResolver = resolve;
             });
         }
@@ -392,42 +423,38 @@
             ind.classList.add('syncing');
 
             try {
-                // Fetch the latest data from the grid
                 const docRef = doc(db, "leaderboard", appData.currentUser);
                 const docSnap = await getDoc(docRef);
 
                 if (docSnap.exists()) {
                     const cloudData = docSnap.data();
                     
-                    // --- SECURITY CHECK (UPDATED UI) ---
                     if (cloudData.pin && u.pin !== cloudData.pin) {
                         const enteredPin = await requestPin("IDENTITY CONFLICT", `ACCESS RESTRICTED: ${appData.currentUser}`);
                         
                         if (enteredPin === cloudData.pin) {
-                            u.pin = cloudData.pin; // Auth Success, save locally
-                            save(); // Persist that we know the pin now
+                            u.pin = cloudData.pin; 
+                            save(); 
                             triggerSystemMessage("IDENTITY CONFIRMED", "upgrade");
                         } else {
-                            if (enteredPin !== null) alert("⛔ ACCESS DENIED: INVALID KEY."); // null means cancelled
+                            if (enteredPin !== null) alert("⛔ ACCESS DENIED: INVALID KEY."); 
                             appData.currentUser = null; 
                             ind.classList.remove('syncing');
                             showUserMenu();
-                            return; // Stop sync
+                            return; 
                         }
                     }
 
-                    // --- SYNC RESOLUTION ---
                     const cloudScore = cloudData.score || 0;
                     
                     if (cloudScore > u.score) {
                         u.score = cloudScore;
                         u.speed = cloudData.speed; 
                         
-                        // Recalculate Tiers based on speed
                         u.level2 = (u.speed <= 400);
                         u.level3 = (u.speed <= 300);
                         
-                        save(); // Update local storage
+                        save(); 
                         updateUI();
                         triggerSystemMessage("NEURAL SYNC COMPLETE", "upgrade");
                     }
@@ -437,7 +464,6 @@
             }
             setTimeout(() => ind.classList.remove('syncing'), 800);
             
-            // If we are here, sync is done or failed gracefully, restore main UI if not in game
             if(state === 'IDLE' && document.getElementById('pin-overlay').classList.contains('hidden') === false) {
                  hideOverlays();
                  document.getElementById('main-overlay').classList.remove('hidden');
@@ -455,11 +481,10 @@
             if (appData.currentUser) { 
                 checkDailyStreak(); 
                 updateUI();
-                forceCloudSync(); // Trigger Sync on Load
+                forceCloudSync(); 
             } else showUserMenu();
         }
 
-        // --- LOGIC ---
         function checkDailyStreak() {
             const u = appData.users[appData.currentUser];
             const today = new Date().toISOString().split('T')[0];
@@ -522,6 +547,8 @@
 
         function executeFlash() {
             if (state !== 'IDLE') return;
+            // Hide sync bar on new start
+            document.getElementById('sync-vis-container').style.opacity = '0'; 
             state = 'FLASHING';
             const u = appData.users[appData.currentUser];
             
@@ -736,6 +763,9 @@
 
             state = 'IDLE'; cancelAnimationFrame(animFrameId);
             
+            // --- SYNC BAR VISUALIZATION LOGIC ---
+            const prevSpeed = u.speed;
+            
             if (correct) {
                 sessionZone++;
 
@@ -752,10 +782,9 @@
                 if (sessionZone > 5) zoneMult = 1.2;
                 if (sessionZone > 10) zoneMult = 1.5;
 
-                // The "Target" this round was worth
                 let roundTarget = performanceVal * tierMult * zoneMult * 10;
 
-                // 4. Moving Average (The "Climb")
+                // 4. Moving Average
                 u.score = (u.score || 0) + ((roundTarget - (u.score || 0)) * 0.15);
                 
                 u.streak = Math.max(0, u.streak) + 1;
@@ -773,14 +802,14 @@
                 document.getElementById('msg-body').innerText = `RATING: ${Math.floor(u.score)}`;
 
             } else {
-                // --- THE CRASH (Penalties applied here) ---
+                // --- THE CRASH ---
                 sessionZone = 0;
                 
                 let penalty = u.score * 0.20; 
-                u.score = Math.max(0, u.score - penalty); // Score drop
+                u.score = Math.max(0, u.score - penalty); 
 
                 u.streak = Math.min(0, u.streak) - 1;
-                u.speed = Math.min(1000, u.speed + 80); // Speed drop (slower)
+                u.speed = Math.min(1000, u.speed + 80); 
 
                 document.getElementById('msg-title').innerText = "SYNC LOST";
                 document.getElementById('msg-title').style.color = "#ef4444";
@@ -793,27 +822,54 @@
                 }
             }
 
+            // --- PROGRESS BAR RENDER ---
+            const maxLatency = 1000;
+            // Calculate percentages (0% at 1000ms, 100% at 0ms)
+            const oldPct = Math.max(0, Math.min(100, ((maxLatency - prevSpeed) / maxLatency) * 100));
+            const newPct = Math.max(0, Math.min(100, ((maxLatency - u.speed) / maxLatency) * 100));
+            
+            const barVis = document.getElementById('sync-vis-container');
+            const barFill = document.getElementById('sync-bar-fill');
+            const pctText = document.getElementById('sync-percentage');
+            
+            barVis.style.opacity = '1';
+            
+            // Set Color Theme
+            const themeColor = correct ? 'var(--success)' : 'var(--fail)';
+            barFill.style.background = themeColor;
+            barFill.style.boxShadow = `0 0 15px ${themeColor}`;
+            pctText.style.color = themeColor;
+
+            // Set Initial State (Immediate)
+            barFill.style.transition = 'none';
+            barFill.style.width = `${oldPct}%`;
+            pctText.innerText = `${Math.round(oldPct)}%`;
+            
+            // Trigger Animation (Next Tick)
+            setTimeout(() => {
+                barFill.style.transition = 'width 0.6s cubic-bezier(0.22, 1, 0.36, 1)';
+                barFill.style.width = `${newPct}%`;
+                pctText.innerText = `${Math.round(newPct)}%`;
+            }, 50);
+
             u.history.push(Math.round(u.speed));
             u.resultsHistory.push({ correct, date: new Date().toISOString().split('T')[0] });
             save(); updateUI();
             
-            // --- SYNC LOCK: Prevent checking grid before penalty is saved ---
+            // --- SYNC LOCK ---
             const startBtn = document.getElementById('start-btn');
             const lbBtn = document.getElementById('btn-lb-main');
             
             startBtn.classList.add('locked-btn');
             
-            // Lock Leaderboard button specifically to allow sync to complete
             const oldLbText = lbBtn.innerText;
             lbBtn.innerText = "SAVING DATA...";
             lbBtn.classList.add('locked-btn');
             
             document.getElementById('main-overlay').classList.remove('hidden');
 
-            // Wait for sync to complete (ensures penalty is on server)
             await backgroundSync();
             
-            // Unlock Buttons
             setTimeout(() => startBtn.classList.remove('locked-btn'), 600);
             lbBtn.classList.remove('locked-btn');
             lbBtn.innerText = oldLbText;
@@ -873,12 +929,11 @@
             hideOverlays();
         };
         
-        // Support enter key on pin
         document.getElementById('pin-input-field').addEventListener('keydown', (e) => {
             if (e.key === 'Enter') document.getElementById('btn-pin-confirm').click();
         });
 
-        // --- NEW LINK HANDLERS (UPDATED FOR RELINK) ---
+        // --- NEW LINK HANDLERS ---
         document.getElementById('btn-new-user').onclick = () => {
              hideOverlays(); 
              const overlay = document.getElementById('new-link-overlay');
@@ -889,7 +944,6 @@
              setTimeout(() => input.focus(), 100);
         };
 
-        // This replaces the old createNewUser function with one that checks the grid first
         async function handleNewLinkAttempt() {
             const input = document.getElementById('new-agent-name');
             const btn = document.getElementById('btn-create-link');
@@ -897,24 +951,20 @@
             
             if (!n || n.length === 0) return;
 
-            // 1. Check Local Existence
             if (appData.users[n]) {
                 alert("DESIGNATION ALREADY ACTIVE ON DEVICE.");
                 return;
             }
 
-            // 2. Check Cloud Existence (Relink Flow)
             btn.innerText = "SCANNING GRID...";
             try {
                 const docRef = doc(db, "leaderboard", n);
                 const docSnap = await getDoc(docRef);
 
                 if (docSnap.exists()) {
-                    // USER FOUND IN CLOUD
                     const cloudData = docSnap.data();
                     let authenticated = false;
 
-                    // PIN Verification
                     if (cloudData.pin) {
                         const enteredPin = await requestPin("RECOVERY MODE", `AGENT ${n} DETECTED. ENTER KEY.`);
                         if (enteredPin === cloudData.pin) {
@@ -923,11 +973,10 @@
                             alert("INVALID KEY. RECOVERY ABORTED.");
                         }
                     } else {
-                        authenticated = true; // No PIN protected, allow claim
+                        authenticated = true; 
                     }
 
                     if (authenticated) {
-                        // RESTORE USER
                         appData.users[n] = { 
                             speed: cloudData.speed || 450, 
                             score: cloudData.score || 0, 
@@ -947,20 +996,16 @@
                         save(); updateUI(); hideOverlays();
                         document.getElementById('main-overlay').classList.remove('hidden');
                         triggerSystemMessage("NEURAL LINK RESTORED", "upgrade");
-                        return; // Done
+                        return; 
                     } else {
-                        btn.innerText = "INITIALIZE"; // Reset button text if auth failed/cancelled
+                        btn.innerText = "INITIALIZE"; 
                         return;
                     }
                 }
             } catch (e) {
                 console.error("Grid Scan Error", e);
-                // Fall through to create new if scan fails (offline)
             }
 
-            // 3. Create New User (If not found or offline)
-            
-            // New User PIN Setup
             let pin = await requestPin("SECURE NEW LINK", "SET OPTIONAL 4-DIGIT PIN (OR LEAVE BLANK)");
             if (pin === "") pin = null;
 
@@ -975,7 +1020,6 @@
             appData.currentUser = n; sessionZone = 0; save(); updateUI(); hideOverlays(); 
             document.getElementById('main-overlay').classList.remove('hidden');
             
-            // Immediately sync to cloud to reserve name
             backgroundSync();
         }
 
@@ -1070,7 +1114,7 @@
                  actionContainer.appendChild(lbl);
             }
 
-            // --- UNLINK BUTTON (NEW FEATURE) ---
+            // --- UNLINK BUTTON ---
             const dangerContainer = document.getElementById('analytics-danger-zone');
             dangerContainer.innerHTML = '';
             
@@ -1084,7 +1128,7 @@
                     delete appData.users[nameToRemove];
                     appData.currentUser = null;
                     save();
-                    location.reload(); // Hard reset to clear state
+                    location.reload(); 
                 }
             };
             dangerContainer.appendChild(unlinkBtn);
@@ -1124,7 +1168,6 @@
         window.addEventListener('keydown', (e) => {
             if (state !== 'QUESTIONING' || inputLocked) return;
             
-            // Directional Input (Numpad)
             if (currentTask === 'DIRECTION') {
                  const keyVal = parseInt(e.key);
                  if (!isNaN(keyVal)) {
@@ -1137,7 +1180,6 @@
                  }
             }
             
-            // Standard Linear Input (1-5)
             const index = parseInt(e.key) - 1;
             if (index >= 0 && index < selectionBoxes.length && currentTask !== 'DIRECTION') {
                 const hit = selectionBoxes[index];
