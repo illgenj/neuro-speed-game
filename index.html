@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neuro-Speed Elite 2.1 [Scientific Update]</title>
+    <title>Neuro-Speed Elite 2.2 [Scoreboard Update]</title>
     <style>
         :root { 
             --bg: #020617; --panel: #0f172a; --accent: #0ea5e9; --text: #f8fafc; 
@@ -85,12 +85,24 @@
         .a-card .v { display: block; font-weight: 800; color: var(--accent); font-size: 1rem; }
         .a-card .l { font-size: 0.5rem; opacity: 0.4; text-transform: uppercase; font-weight: 700; }
 
-        /* Leaderboard Specifics */
-        .lb-row { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; }
-        .lb-rank { width: 30px; color: var(--gold); font-weight: 900; }
-        .lb-name { flex-grow: 1; text-align: left; font-weight: 600; }
-        .lb-score { color: var(--accent); font-family: monospace; font-weight: 700; }
-        .lb-tier { font-size: 0.6rem; background: #1e293b; padding: 2px 6px; border-radius: 4px; margin-right: 8px; color: #94a3b8; }
+        /* --- UPDATED LEADERBOARD STYLES --- */
+        .lb-row { 
+            display: flex; align-items: center; padding: 12px 0; 
+            border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; 
+        }
+        .lb-rank { width: 30px; color: var(--gold); font-weight: 900; font-size: 0.8rem; }
+        .lb-name { flex-grow: 1; text-align: left; font-weight: 600; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding-right: 10px;}
+        .lb-tier { font-size: 0.5rem; background: #1e293b; padding: 2px 6px; border-radius: 4px; margin-right: 8px; color: #94a3b8; vertical-align: middle; }
+        
+        /* Right side stats container */
+        .lb-right { text-align: right; min-width: 100px; }
+        .lb-score { color: var(--accent); font-family: monospace; font-weight: 700; font-size: 1rem; display: block; }
+        
+        /* Sub-stats (Peak / Acc) */
+        .lb-sub { font-size: 0.65rem; color: #94a3b8; margin-top: 2px; font-family: monospace;}
+        .lb-stat { margin-left: 6px; }
+        .lb-stat.peak { color: var(--hyper); }
+        .lb-stat.acc { color: var(--success); }
         
         /* Auto-save indicator */
         #sync-indicator {
@@ -524,10 +536,17 @@
             const ind = document.getElementById('sync-indicator');
             ind.classList.add('syncing');
 
+            // Calculate Accuracy
+            const total = u.resultsHistory.length;
+            const correct = u.resultsHistory.filter(r => r.correct).length;
+            const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
+            const peakLatency = Math.min(...u.history);
+
             setDoc(doc(db, "leaderboard", appData.currentUser), {
                 name: appData.currentUser,
                 score: Math.floor(u.score),
-                speed: Math.min(...u.history),
+                speed: peakLatency,
+                accuracy: accuracy, // New field
                 tier: u.level3 ? "T3" : (u.level2 ? "T2" : "T1"),
                 timestamp: new Date()
             }, { merge: true })
@@ -572,6 +591,11 @@
             let rank = 1;
             querySnapshot.forEach((doc) => {
                 const data = doc.data();
+                
+                // Format display data
+                const acc = data.accuracy !== undefined ? data.accuracy + "%" : "--";
+                const peak = data.speed ? data.speed + "ms" : "--";
+
                 const row = document.createElement('div');
                 row.className = 'lb-row';
                 row.innerHTML = `
@@ -580,7 +604,13 @@
                         <span class="lb-tier">${data.tier}</span>
                         ${data.name}
                     </div>
-                    <div class="lb-score">${data.score.toLocaleString()}</div>
+                    <div class="lb-right">
+                        <span class="lb-score">${data.score.toLocaleString()}</span>
+                        <div class="lb-sub">
+                            <span class="lb-stat peak" title="Peak Latency">⚡${peak}</span>
+                            <span class="lb-stat acc" title="Accuracy">🎯${acc}</span>
+                        </div>
+                    </div>
                 `;
                 list.appendChild(row);
             });
