@@ -76,6 +76,9 @@
         }
         .action-btn:active { transform: scale(0.97); }
         .secondary-btn { background: #334155; }
+        
+        /* New locked state for buttons to prevent accidental double-taps */
+        .locked-btn { opacity: 0.5; pointer-events: none; filter: grayscale(1); }
 
         .analytics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 15px 0; }
         .a-card { background: rgba(0,0,0,0.4); padding: 12px; border-radius: 16px; text-align: left; }
@@ -286,8 +289,6 @@
         const angle = u.level3 ? [Math.PI*1.25, Math.PI*1.75, Math.PI*0.75, Math.PI*0.25][satDirIdx] : Math.random() * Math.PI * 2;
         const satX = centerX + Math.cos(angle) * radius, satY = centerY + Math.sin(angle) * radius;
 
-        // FIX: Start time is null initially. We set it ON THE FIRST FRAME.
-        // This prevents the mobile "gap" where performance.now() runs 100ms before the first paint.
         let startTime = null;
         
         function animate(now) {
@@ -299,13 +300,13 @@
                 drawShape(targetShape, centerX, centerY, minDim * 0.06, '#fff');
                 drawShape(satShape, satX, satY, minDim * 0.05, u.level2 ? L2_COLORS[satColorIdx] : '#8b5cf6');
                 requestAnimationFrame(animate);
-            } else if (elapsed < u.speed + 100) { // Bumped mask to 100ms for mobile visibility
+            } else if (elapsed < u.speed + 100) {
                 ctx.fillStyle = "#000"; ctx.fillRect(0,0,canvas.width, canvas.height);
                 for(let i=0; i<100; i++) { ctx.fillStyle = Math.random() > 0.5 ? "#fff" : "#111"; ctx.fillRect(Math.random()*canvas.width, Math.random()*canvas.height, 20, 20); }
                 requestAnimationFrame(animate);
             } else { 
                 state = 'QUESTIONING'; 
-                inputLocked = false; // Ensure input is open
+                inputLocked = false;
                 startQuestionLoop(); 
             }
         }
@@ -400,9 +401,9 @@
         if (!hit) return;
         
         // --- ACTIVATE LOCK ---
-        // Lock input for 250ms after a successful hit to prevent accidental double-taps
+        // Increased from 250ms to 320ms to catch double-taps and ghost clicks more effectively
         inputLocked = true;
-        setTimeout(() => { inputLocked = false; }, 250);
+        setTimeout(() => { inputLocked = false; }, 320);
         
         const u = appData.users[appData.currentUser];
         if (currentTask === 'CENTER') { uShape = hit.key; askTask('SATELLITE', SHAPES); }
@@ -422,7 +423,10 @@
         if (u.level3 && uDir !== satDirIdx) correct = false;
 
         state = 'IDLE';
-        inputLocked = false; // Reset lock for next game loop
+        
+        // FIX: REMOVED "inputLocked = false;" 
+        // We now let the 320ms throttle from handleInput persist to prevent the 
+        // final tap from registering as a click on the next screen.
 
         if (correct) {
             sessionZone++;
@@ -452,7 +456,18 @@
         u.history.push(Math.round(u.speed));
         u.resultsHistory.push({ correct, date: new Date().toISOString().split('T')[0] });
         save(); updateUI();
-        document.getElementById('main-overlay').classList.remove('hidden');
+        
+        // FIX: Add visual lock to Start Button to prevent immediate double-tap
+        const startBtn = document.getElementById('start-btn');
+        const overlay = document.getElementById('main-overlay');
+        
+        startBtn.classList.add('locked-btn');
+        overlay.classList.remove('hidden');
+        
+        // Unfreeze button after 600ms (prevents blowing right past the result screen)
+        setTimeout(() => {
+            startBtn.classList.remove('locked-btn');
+        }, 600);
         
         backgroundSync();
     }
