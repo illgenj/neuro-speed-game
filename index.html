@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neuro-Speed Elite 3.4 [LIVE GRID]</title>
+    <title>Neuro-Speed Elite 3.5</title>
     <style>
         :root { 
             --bg: #020617; --panel: #0f172a; --accent: #0ea5e9; --text: #f8fafc; 
@@ -146,7 +146,7 @@
         .sys-alert { border-color: var(--fail) !important; color: var(--fail); box-shadow: 0 0 30px rgba(239, 68, 68, 0.3) !important; }
 
         /* --- INPUT STYLING --- */
-        #new-agent-name {
+        #new-agent-name, #pin-input-field {
             background: rgba(0,0,0,0.3);
             border: 2px solid #334155;
             color: var(--accent);
@@ -162,11 +162,21 @@
             transition: all 0.2s;
             caret-color: var(--gold);
         }
-        #new-agent-name:focus {
+        #new-agent-name:focus, #pin-input-field:focus {
             border-color: var(--accent);
             box-shadow: 0 0 20px rgba(14, 165, 233, 0.2);
         }
         #new-agent-name::placeholder { color: rgba(255,255,255,0.2); }
+
+        /* --- SECURE PIN UI --- */
+        #pin-input-field {
+            letter-spacing: 10px;
+            font-size: 2rem;
+            -webkit-text-security: disc; /* Makes it look like password dots but styled */
+        }
+        .pin-subtitle {
+            font-size: 0.7rem; color: #94a3b8; margin-bottom: 15px; font-family: monospace;
+        }
 
     </style>
 </head>
@@ -221,7 +231,8 @@
                 <div class="a-card"><span class="l">Grade</span><span class="v" id="stat-grade" style="color:var(--gold)">--</span></div>
                 <div class="a-card"><span class="l">Uptime</span><span class="v" id="stat-uptime">0.0h</span></div>
             </div>
-            <button class="action-btn" id="btn-close-analytics">RETURN</button>
+            <div id="analytics-actions"></div>
+            <button class="action-btn secondary-btn" id="btn-close-analytics" style="margin-top:10px">RETURN</button>
         </div>
 
         <div id="leaderboard-overlay" class="overlay hidden">
@@ -250,11 +261,23 @@
             </div>
         </div>
 
+        <div id="pin-overlay" class="overlay hidden">
+            <h3 id="pin-title" style="color: var(--hyper); letter-spacing: 2px;">SECURITY CHECK</h3>
+            <p id="pin-reason" class="pin-subtitle">AUTHORIZATION REQUIRED</p>
+            
+            <input type="password" inputmode="numeric" pattern="[0-9]*" id="pin-input-field" maxlength="4" placeholder="****" autocomplete="off">
+            
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button id="btn-pin-confirm" class="action-btn">AUTHENTICATE</button>
+                <button id="btn-pin-cancel" class="action-btn secondary-btn">CANCEL</button>
+            </div>
+        </div>
+
     </div>
 
 <script type="module">
     /* ----------------------------------------------------
-       NEURO-SPEED ELITE 3.4 [LIVE SYNC ENABLED]
+       NEURO-SPEED ELITE 3.5 [SECURE SYNC ENABLED]
        ----------------------------------------------------
     */
 
@@ -288,6 +311,7 @@
         const SALT = "NEURO_SECURE_SALT_9283"; 
         let appData = { users: {}, currentUser: null };
         let clickHistory = [];
+        let pinResolver = null; // For handling async PIN requests
         
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -339,6 +363,26 @@
         }
 
         // --- CLOUD SYNC & SECURITY ---
+        
+        // New Async PIN requester
+        function requestPin(title, reason) {
+            return new Promise((resolve) => {
+                hideOverlays();
+                const overlay = document.getElementById('pin-overlay');
+                const input = document.getElementById('pin-input-field');
+                
+                document.getElementById('pin-title').innerText = title || "SECURITY CHECK";
+                document.getElementById('pin-reason').innerText = reason || "ENTER KEY";
+                
+                input.value = "";
+                overlay.classList.remove('hidden');
+                setTimeout(() => input.focus(), 100);
+                
+                // Store resolve function to be called by button handlers
+                pinResolver = resolve;
+            });
+        }
+
         async function forceCloudSync() {
             if (!appData.currentUser || !db) return;
             const u = appData.users[appData.currentUser];
@@ -353,15 +397,16 @@
                 if (docSnap.exists()) {
                     const cloudData = docSnap.data();
                     
-                    // --- SECURITY CHECK ---
+                    // --- SECURITY CHECK (UPDATED UI) ---
                     if (cloudData.pin && u.pin !== cloudData.pin) {
-                        const entry = prompt(`🔒 SECURE ID DETECTED.\nENTER NEURAL KEY FOR AGENT: ${appData.currentUser}`);
+                        const enteredPin = await requestPin("IDENTITY CONFLICT", `ACCESS RESTRICTED: ${appData.currentUser}`);
                         
-                        if (entry === cloudData.pin) {
+                        if (enteredPin === cloudData.pin) {
                             u.pin = cloudData.pin; // Auth Success, save locally
-                            alert("IDENTITY CONFIRMED. SYNCING...");
+                            save(); // Persist that we know the pin now
+                            triggerSystemMessage("IDENTITY CONFIRMED", "upgrade");
                         } else {
-                            alert("⛔ ACCESS DENIED: INVALID KEY.");
+                            if (enteredPin !== null) alert("⛔ ACCESS DENIED: INVALID KEY."); // null means cancelled
                             appData.currentUser = null; 
                             ind.classList.remove('syncing');
                             showUserMenu();
@@ -370,8 +415,6 @@
                     }
 
                     // --- SYNC RESOLUTION ---
-                    // Note: If cloud data exists, we prioritize cloud score/speed on load 
-                    // to ensure cross-device consistency. 
                     const cloudScore = cloudData.score || 0;
                     
                     if (cloudScore !== u.score) {
@@ -391,6 +434,13 @@
                 console.warn("Cloud handshake failed:", e);
             }
             setTimeout(() => ind.classList.remove('syncing'), 800);
+            
+            // If we are here, sync is done or failed gracefully, restore main UI if not in game
+            if(state === 'IDLE' && document.getElementById('pin-overlay').classList.contains('hidden') === false) {
+                 // Close pin overlay if it was open for sync
+                 hideOverlays();
+                 document.getElementById('main-overlay').classList.remove('hidden');
+            }
         }
 
         function load() {
@@ -778,12 +828,10 @@
             const correct = u.resultsHistory.filter(r => r.correct).length;
             const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
 
-            // UPDATED: Return the promise so we can await it
-            // UPDATED: 'speed' now uses Math.round(u.speed), capturing the CURRENT (possibly slower) speed
             return setDoc(doc(db, "leaderboard", appData.currentUser), {
                 name: appData.currentUser, 
                 score: Math.floor(u.score), 
-                speed: Math.round(u.speed), // Capture current mental state, including drops
+                speed: Math.round(u.speed), 
                 accuracy: accuracy, 
                 tier: u.level3 ? "T3" : (u.level2 ? "T2" : "T1"), 
                 timestamp: new Date(),
@@ -806,6 +854,29 @@
         document.getElementById('btn-close-lb').onclick = () => { hideOverlays(); document.getElementById('main-overlay').classList.remove('hidden'); };
         document.getElementById('btn-close-user').onclick = () => { if(appData.currentUser) { hideOverlays(); document.getElementById('main-overlay').classList.remove('hidden'); } };
         
+        // --- PIN HANDLERS ---
+        document.getElementById('btn-pin-confirm').onclick = () => {
+            const input = document.getElementById('pin-input-field');
+            if (pinResolver) {
+                pinResolver(input.value);
+                pinResolver = null;
+            }
+            hideOverlays();
+        };
+
+        document.getElementById('btn-pin-cancel').onclick = () => {
+            if (pinResolver) {
+                pinResolver(null);
+                pinResolver = null;
+            }
+            hideOverlays();
+        };
+        
+        // Support enter key on pin
+        document.getElementById('pin-input-field').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') document.getElementById('btn-pin-confirm').click();
+        });
+
         // --- NEW LINK HANDLERS ---
         document.getElementById('btn-new-user').onclick = () => {
              hideOverlays(); 
@@ -816,7 +887,7 @@
              setTimeout(() => input.focus(), 100);
         };
 
-        function createNewUser() {
+        async function createNewUser() {
             const input = document.getElementById('new-agent-name');
             const n = input.value.trim().toUpperCase();
             
@@ -826,15 +897,18 @@
                     return;
                 }
 
-                // --- OPTIONAL PIN SECURITY ---
-                const pin = prompt("SET OPTIONAL 4-DIGIT PIN (Or leave blank for public access):");
+                // New User PIN Flow
+                let pin = null;
+                // We use the new UI for this too
+                pin = await requestPin("SECURE NEW LINK", "SET OPTIONAL 4-DIGIT PIN (OR LEAVE BLANK)");
+                if (pin === "") pin = null; // Blank is null
 
                 appData.users[n] = { 
                     speed: 450, score: 0, peakScore: 0, streak: 0, 
                     history: [450], resultsHistory: [], 
                     level2: false, level3: false, totalTimeMs: 0, 
                     dailyStreak: 0, lastPlayDate: null,
-                    pin: pin || null
+                    pin: pin
                 };
 
                 appData.currentUser = n; sessionZone = 0; save(); updateUI(); hideOverlays(); 
@@ -865,9 +939,6 @@
             const list = document.getElementById('lb-list'); list.innerHTML = "";
             document.getElementById('lb-loading').style.display = 'block';
             try {
-                // Because we now allow scores to DROP, we fetch the fresh data.
-                // The query remains the same, but the underlying data (score/speed)
-                // has been updated by the locked backgroundSync in finalizeTrial.
                 const q = query(collection(db, "leaderboard"), orderBy("score", "desc"), limit(20));
                 const querySnapshot = await getDocs(q);
                 document.getElementById('lb-loading').style.display = 'none';
@@ -877,7 +948,6 @@
                     const acc = data.accuracy !== undefined ? data.accuracy + "%" : "--";
                     const isSecure = data.pin ? "🔒" : "";
                     const row = document.createElement('div'); row.className = 'lb-row';
-                    // The data.speed here will now be the CURRENT speed (potentially slower), not just the peak.
                     row.innerHTML = `<div class="lb-rank">${rank++}</div><div class="lb-name"><span class="lb-tier">${data.tier}</span>${data.name} <span style="font-size:0.7em">${isSecure}</span></div><div class="lb-right"><span class="lb-score">${data.score.toLocaleString()}</span><div class="lb-sub"><span class="lb-stat peak">⚡${data.speed}ms</span><span class="lb-stat acc">🎯${acc}</span></div></div>`;
                     list.appendChild(row);
                 });
@@ -903,6 +973,42 @@
             document.getElementById('stat-acc-total').innerText = `${acc}%`;
             document.getElementById('stat-uptime').innerText = (u.totalTimeMs / 3600000).toFixed(1) + 'h';
             document.getElementById('stat-grade').innerText = acc > 90 ? "S" : (acc > 75 ? "A" : "B");
+
+            // --- ADD PIN BUTTON FOR EXISTING USERS ---
+            const actionContainer = document.getElementById('analytics-actions');
+            actionContainer.innerHTML = ''; // Clear previous
+
+            if (!u.pin) {
+                const btn = document.createElement('button');
+                btn.className = 'action-btn';
+                btn.style.background = '#0f172a';
+                btn.style.border = '1px solid var(--accent)';
+                btn.style.fontSize = '0.75rem';
+                btn.innerText = "🔒 LOCK PROTOCOL (SET PIN)";
+                btn.onclick = async () => {
+                    const newPin = await requestPin("SECURE AGENT", "SET 4-DIGIT PIN");
+                    if (newPin && newPin.length === 4) {
+                        u.pin = newPin;
+                        save();
+                        backgroundSync();
+                        triggerSystemMessage("PROTOCOL SECURED", "upgrade");
+                        showAnalytics(); // Refresh to remove button
+                    } else if (newPin !== null) {
+                        alert("INVALID LENGTH");
+                        showAnalytics();
+                    } else {
+                        showAnalytics(); // Cancelled
+                    }
+                };
+                actionContainer.appendChild(btn);
+            } else {
+                 const lbl = document.createElement('div');
+                 lbl.innerText = "PROTOCOL SECURED 🔒";
+                 lbl.style.color = "#94a3b8";
+                 lbl.style.fontSize = "0.7rem";
+                 lbl.style.marginTop = "10px";
+                 actionContainer.appendChild(lbl);
+            }
         }
 
         function showUserMenu() {
