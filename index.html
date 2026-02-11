@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neuro-Speed Elite 2.9</title>
+    <title>Neuro-Speed Elite 3.0</title>
     <style>
         :root { 
             --bg: #020617; --panel: #0f172a; --accent: #0ea5e9; --text: #f8fafc; 
@@ -11,7 +11,7 @@
             --hyper: #f43f5e; --glass: rgba(15, 23, 42, 0.96);
         }
         
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; user-select: none; }
         
         body { 
             background: var(--bg); color: var(--text); 
@@ -38,25 +38,18 @@
         .val { font-size: 0.85rem; font-weight: 800; color: var(--accent); font-family: monospace; }
         .xp-val { color: var(--gold); }
 
-        /* --- UPDATED ZONE THERMOMETER --- */
+        /* --- ZONE THERMOMETER --- */
         #zone-container {
-            width: 90%; 
-            height: 24px; /* Thicker */
-            background: #0f172a; 
-            margin: 10px auto 5px auto;
-            position: relative; 
-            overflow: hidden;
-            border-radius: 12px; /* Capsule shape */
-            border: 2px solid #1e293b;
-            box-shadow: inset 0 2px 6px rgba(0,0,0,0.6); /* Inner depth */
+            width: 90%; height: 24px; background: #0f172a; 
+            margin: 10px auto 5px auto; position: relative; 
+            overflow: hidden; border-radius: 12px; border: 2px solid #1e293b;
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.6);
         }
         #zone-fill {
             height: 100%; width: 0%; 
             background: linear-gradient(90deg, var(--accent), #38bdf8);
-            transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s; /* Bouncy fill */
-            box-shadow: 0 0 15px var(--accent);
-            position: relative;
-            z-index: 1;
+            transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s; 
+            box-shadow: 0 0 15px var(--accent); position: relative; z-index: 1;
         }
         #zone-fill::after {
             content: ''; position: absolute; top: 0; left: 0; right: 0; height: 50%;
@@ -64,12 +57,9 @@
         }
 
         #zone-label {
-            position: absolute; top: 50%; left: 50%; 
-            transform: translate(-50%, -50%);
-            font-size: 0.75rem; font-weight: 900; 
-            color: #fff; letter-spacing: 2px;
-            z-index: 2; text-shadow: 0 1px 3px rgba(0,0,0,0.9);
-            white-space: nowrap;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 0.75rem; font-weight: 900; color: #fff; letter-spacing: 2px;
+            z-index: 2; text-shadow: 0 1px 3px rgba(0,0,0,0.9); white-space: nowrap;
         }
 
         @keyframes bar-pulse-gold {
@@ -110,7 +100,6 @@
         }
         .action-btn:active { transform: scale(0.97); }
         .secondary-btn { background: #334155; }
-        
         .locked-btn { opacity: 0.5; pointer-events: none; filter: grayscale(1); }
 
         .analytics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 15px 0; }
@@ -118,7 +107,7 @@
         .a-card .v { display: block; font-weight: 800; color: var(--accent); font-size: 1rem; }
         .a-card .l { font-size: 0.5rem; opacity: 0.4; text-transform: uppercase; font-weight: 700; }
 
-        /* --- LEADERBOARD STYLES --- */
+        /* --- LEADERBOARD --- */
         .lb-row { 
             display: flex; align-items: center; padding: 12px 0; 
             border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; 
@@ -126,10 +115,8 @@
         .lb-rank { width: 30px; color: var(--gold); font-weight: 900; font-size: 0.8rem; }
         .lb-name { flex-grow: 1; text-align: left; font-weight: 600; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding-right: 10px;}
         .lb-tier { font-size: 0.5rem; background: #1e293b; padding: 2px 6px; border-radius: 4px; margin-right: 8px; color: #94a3b8; vertical-align: middle; }
-        
         .lb-right { text-align: right; min-width: 100px; }
         .lb-score { color: var(--accent); font-family: monospace; font-weight: 700; font-size: 1rem; display: block; }
-        
         .lb-sub { font-size: 0.65rem; color: #94a3b8; margin-top: 2px; font-family: monospace;}
         .lb-stat { margin-left: 6px; }
         .lb-stat.peak { color: var(--hyper); }
@@ -143,38 +130,20 @@
         }
         .syncing { opacity: 1 !important; }
 
-        /* Effects */
         .singularity-glow { filter: saturate(1.5) contrast(1.1); }
 
-        /* --- NEW SYSTEM MESSAGE HUD --- */
+        /* --- SYSTEM MESSAGE HUD --- */
         #system-message {
             position: absolute; top: 120px; left: 50%; transform: translateX(-50%);
-            background: rgba(15, 23, 42, 0.95); 
-            border: 1px solid #334155;
-            padding: 20px 30px; 
-            border-radius: 12px; 
-            z-index: 200;
-            text-align: center; 
-            font-weight: 900; 
-            letter-spacing: 1px;
-            font-size: 0.9rem;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
-            pointer-events: none; 
+            background: rgba(15, 23, 42, 0.95); border: 1px solid #334155;
+            padding: 20px 30px; border-radius: 12px; z-index: 200;
+            text-align: center; font-weight: 900; letter-spacing: 1px; font-size: 0.9rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8); pointer-events: none; 
             transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             width: 85%; max-width: 450px;
         }
-        
-        /* Specific Styles for Upgrade vs Downgrade */
-        .sys-upgrade { 
-            border-color: var(--success) !important; 
-            color: var(--success); 
-            box-shadow: 0 0 30px rgba(16, 185, 129, 0.3) !important; 
-        }
-        .sys-alert { 
-            border-color: var(--fail) !important; 
-            color: var(--fail); 
-            box-shadow: 0 0 30px rgba(239, 68, 68, 0.3) !important; 
-        }
+        .sys-upgrade { border-color: var(--success) !important; color: var(--success); box-shadow: 0 0 30px rgba(16, 185, 129, 0.3) !important; }
+        .sys-alert { border-color: var(--fail) !important; color: var(--fail); box-shadow: 0 0 30px rgba(239, 68, 68, 0.3) !important; }
 
     </style>
 </head>
@@ -182,20 +151,20 @@
 
     <div class="header">
         <div class="stat-group">
-            <div class="stat" onclick="showUserMenu()">
+            <div class="stat" id="btn-user">
                 <span class="label">AGENT</span>
                 <span id="user-display" class="val">---</span>
                 <span id="daily-streak-badge" style="font-size: 0.6rem; color: var(--gold);">🔥 0</span>
             </div>
-            <div class="stat" onclick="showAnalytics()">
+            <div class="stat" id="btn-analytics">
                 <span class="label">Q-XP</span>
                 <span id="score-val" class="val xp-val">0</span>
             </div>
-            <div class="stat" onclick="showAnalytics()">
+            <div class="stat" id="btn-analytics-2">
                 <span class="label">LATENCY</span>
                 <span id="speed-val" class="val">---ms</span>
             </div>
-            <div class="stat" onclick="showLeaderboard()">
+            <div class="stat" id="btn-leaderboard">
                 <span class="label">GRID</span>
                 <span id="mode-indicator" class="val">T1</span>
             </div>
@@ -217,7 +186,7 @@
             <h2 id="msg-title">NEURAL READY</h2>
             <p id="msg-body">Initiate flash sequence to begin training.</p>
             <button id="start-btn" class="action-btn">INITIATE FLASH</button>
-            <button onclick="showLeaderboard()" class="action-btn secondary-btn" style="margin-top: 10px; font-size: 0.75rem;">🌐 GLOBAL GRID</button>
+            <button id="btn-lb-main" class="action-btn secondary-btn" style="margin-top: 10px; font-size: 0.75rem;">🌐 GLOBAL GRID</button>
         </div>
 
         <div id="analytics-overlay" class="overlay hidden">
@@ -229,26 +198,31 @@
                 <div class="a-card"><span class="l">Grade</span><span class="v" id="stat-grade" style="color:var(--gold)">--</span></div>
                 <div class="a-card"><span class="l">Uptime</span><span class="v" id="stat-uptime">0.0h</span></div>
             </div>
-            <button class="action-btn" onclick="closeAnalytics()">RETURN</button>
+            <button class="action-btn" id="btn-close-analytics">RETURN</button>
         </div>
 
         <div id="leaderboard-overlay" class="overlay hidden">
             <h2 style="color: var(--gold); letter-spacing: 2px;">GLOBAL GRID</h2>
             <div id="lb-loading" style="font-size: 0.8rem; opacity: 0.6; padding: 20px;">CONNECTING TO CORE...</div>
             <div id="lb-list" style="margin-bottom: 20px;"></div>
-            <button class="action-btn" onclick="closeLeaderboard()">RETURN</button>
+            <button class="action-btn" id="btn-close-lb">RETURN</button>
         </div>
 
         <div id="user-overlay" class="overlay hidden">
             <h3>Select Agent</h3>
             <div id="user-list" style="max-height: 200px; overflow-y: auto;"></div>
-            <button class="action-btn" style="background:transparent; border: 1px dashed #444" onclick="createNewUser()">+ NEW LINK</button>
-            <button class="action-btn" style="background:#334155" onclick="closeUserMenu()">CANCEL</button>
+            <button class="action-btn" style="background:transparent; border: 1px dashed #444" id="btn-new-user">+ NEW LINK</button>
+            <button class="action-btn" style="background:#334155" id="btn-close-user">CANCEL</button>
         </div>
     </div>
 
 <script type="module">
-    // --- FIREBASE SETUP ---
+    /* ----------------------------------------------------
+       NEURAL-SPEED ELITE v3.0 [SECURED CLIENT]
+       Includes: LocalStorage Hashing, Enclosure, Bot Checks
+       ----------------------------------------------------
+    */
+
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getFirestore, collection, doc, setDoc, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
@@ -261,467 +235,400 @@
       appId: "1:314397349425:web:992853535b9f8bd61de710"
     };
 
-    let db;
-    try {
-        const app = initializeApp(firebaseConfig);
-        db = getFirestore(app);
-        console.log("Neuro-Link Established");
-    } catch(e) {
-        console.error("Firebase Init Error:", e);
-    }
-
-    // --- GAME LOGIC ---
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    let appData = { users: {}, currentUser: null };
-
-    const isTouch = ('ontouchstart' in window || navigator.maxTouchPoints > 0) && window.innerWidth < 1024;
-    
-    const SHAPES = ['circle', 'square', 'triangle', 'diamond', 'cross'];
-    const L2_COLORS = ['#22d3ee', '#4ade80', '#f472b6', '#fbbf24'];
-    const DIRECTIONS = ['NW', 'NE', 'SW', 'SE'];
-    
-    let state = 'IDLE', currentTask = null, selectionBoxes = [];
-    let centerX, centerY, minDim;
-    let targetShape, satShape, satColorIdx, satDirIdx;
-    let uShape, uSat, uColor, uDir;
-    let sessionZone = 0;
-    
-    let activeDistractors = []; 
-    let lastFlashRadius = 0; // NEW: Stores radius for HUD drawing
-
-    // --- INPUT THROTTLE & FX ---
-    let inputLocked = false; 
-    let lastSelectionIndex = -1;
-    let ripples = [];
-
-    function save() { localStorage.setItem('neuroElite_v21_sci', JSON.stringify(appData)); }
-    function load() {
-        const saved = localStorage.getItem('neuroElite_v21_sci');
-        if (saved) appData = JSON.parse(saved);
-        if (appData.currentUser) { checkDailyStreak(); updateUI(); } else showUserMenu();
-    }
-
-    function checkDailyStreak() {
-        const u = appData.users[appData.currentUser];
-        const today = new Date().toISOString().split('T')[0];
-        if (!u.lastPlayDate) { u.lastPlayDate = today; u.dailyStreak = 1; }
-        else if (u.lastPlayDate !== today) {
-            const diff = (new Date(today) - new Date(u.lastPlayDate)) / 86400000;
-            if (diff === 1) u.dailyStreak++; else if (diff > 1) u.dailyStreak = 1;
-            u.lastPlayDate = today;
-        }
-        save();
-    }
-
-    function updateUI() {
-        const u = appData.users[appData.currentUser];
-        if(!u) return;
-        document.getElementById('user-display').innerText = appData.currentUser;
-        document.getElementById('score-val').innerText = Math.floor(u.score || 0).toLocaleString();
-        document.getElementById('speed-val').innerText = Math.round(u.speed) + 'ms';
-        document.getElementById('daily-streak-badge').innerText = `🔥 ${u.dailyStreak || 0}`;
-        document.getElementById('mode-indicator').innerText = u.level3 ? "T3" : (u.level2 ? "T2" : "T1");
-        
-        // --- IMPROVED ZONE THERMOMETER LOGIC ---
-        const fill = document.getElementById('zone-fill');
-        const label = document.getElementById('zone-label');
-        const percentage = Math.min(sessionZone * 10, 100);
-        
-        fill.style.width = percentage + "%";
-        
-        let mult = 1.0;
-        let newLabel = "";
-        
-        if (sessionZone >= 10) {
-            mult = 5.0;
-            fill.style.background = "linear-gradient(90deg, #f59e0b, #ef4444)"; // Gold to Red
-            fill.classList.add('zone-gold');
-            newLabel = "SINGULARITY: 5.0x";
-            canvas.classList.add('singularity-glow');
-        } else if (sessionZone >= 5) {
-            mult = 2.5;
-            fill.style.background = "linear-gradient(90deg, #a855f7, #ec4899)"; // Purple to Pink
-            fill.classList.add('zone-gold');
-            newLabel = "OVERCLOCK: 2.5x";
-            canvas.classList.remove('singularity-glow');
-        } else {
-            mult = 1.0 + (sessionZone * 0.1);
-            fill.style.background = "linear-gradient(90deg, var(--accent), #38bdf8)"; // Blue to Cyan
-            fill.classList.remove('zone-gold');
-            newLabel = `ZONE: ${mult.toFixed(1)}x`;
-            canvas.classList.remove('singularity-glow');
-        }
-
-        // Text Pop Animation check
-        if (label.innerText !== newLabel) {
-            label.innerText = newLabel;
-            label.classList.remove('text-pop-anim');
-            void label.offsetWidth; // Trigger reflow
-            label.classList.add('text-pop-anim');
-        }
-    }
-
-    function drawShape(type, x, y, size, color) {
-        ctx.beginPath(); ctx.fillStyle = color;
-        if (type === 'circle') ctx.arc(x, y, size, 0, Math.PI * 2);
-        else if (type === 'square') ctx.rect(x - size, y - size, size * 2, size * 2);
-        else if (type === 'triangle') { ctx.moveTo(x, y - size); ctx.lineTo(x + size, y + size); ctx.lineTo(x - size, y + size); ctx.closePath(); }
-        else if (type === 'diamond') { ctx.moveTo(x, y - size * 1.2); ctx.lineTo(x + size * 1.2, y); ctx.lineTo(x, y + size * 1.2); ctx.lineTo(x - size * 1.2, y); ctx.closePath(); }
-        else if (type === 'cross') { ctx.rect(x - size/3, y - size, size/1.5, size * 2); ctx.rect(x - size, y - size/3, size * 2, size/1.5); }
-        ctx.fill();
-    }
-
-    function generateDistractors(cx, cy, radius, safeAngle, count = 10) {
-        activeDistractors = [];
-        const step = (Math.PI * 2) / count;
-        
-        for (let i = 0; i < count; i++) {
-            const angle = i * step;
-            const diff = Math.abs(Math.atan2(Math.sin(angle - safeAngle), Math.cos(angle - safeAngle)));
-            
-            if (diff > 0.6) {
-                const jitterX = (Math.random() - 0.5) * 20;
-                const jitterY = (Math.random() - 0.5) * 20;
-                activeDistractors.push({
-                    x: cx + Math.cos(angle) * radius + jitterX,
-                    y: cy + Math.sin(angle) * radius + jitterY,
-                    shape: SHAPES[Math.floor(Math.random() * SHAPES.length)]
-                });
+    // --- IIFE: IMMEDIATE ENCLOSURE TO HIDE GLOBALS ---
+    (function() {
+        // Honeypot: Fake global variable to catch script kiddies
+        window.gameScore = 0;
+        let honeyPotTriggered = false;
+        Object.defineProperty(window, 'gameScore', {
+            get: () => 0,
+            set: (val) => { 
+                console.warn("Unauthorized memory access detected."); 
+                honeyPotTriggered = true; 
             }
-        }
-    }
-
-    function executeFlash() {
-        if (state !== 'IDLE') return;
-        state = 'FLASHING';
-        const u = appData.users[appData.currentUser];
-        
-        targetShape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
-        satShape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
-        satColorIdx = u.level2 ? Math.floor(Math.random() * L2_COLORS.length) : -1;
-        satDirIdx = Math.floor(Math.random() * 4);
-
-        lastFlashRadius = minDim * 0.35; // Capture this for HUD
-        const angle = u.level3 
-            ? [Math.PI*1.25, Math.PI*1.75, Math.PI*0.75, Math.PI*0.25][satDirIdx] 
-            : Math.random() * Math.PI * 2;
-        
-        const satX = centerX + Math.cos(angle) * lastFlashRadius; 
-        const satY = centerY + Math.sin(angle) * lastFlashRadius;
-
-        generateDistractors(centerX, centerY, lastFlashRadius, angle, 12);
-
-        let startTime = null;
-        
-        function animate(now) {
-            if (!startTime) startTime = now;
-            const elapsed = now - startTime;
-            
-            if (elapsed < u.speed) {
-                ctx.clearRect(0,0,canvas.width,canvas.height);
-                
-                activeDistractors.forEach(d => {
-                    drawShape(d.shape, d.x, d.y, minDim * 0.05, '#334155'); 
-                });
-
-                drawShape(targetShape, centerX, centerY, minDim * 0.06, '#fff');
-                drawShape(satShape, satX, satY, minDim * 0.05, u.level2 ? L2_COLORS[satColorIdx] : '#8b5cf6');
-                
-                requestAnimationFrame(animate);
-            } else if (elapsed < u.speed + 100) {
-                ctx.fillStyle = "#000"; ctx.fillRect(0,0,canvas.width, canvas.height);
-                for(let i=0; i<100; i++) { 
-                    ctx.fillStyle = Math.random() > 0.5 ? "#fff" : "#111"; 
-                    ctx.fillRect(Math.random()*canvas.width, Math.random()*canvas.height, 20, 20); 
-                }
-                requestAnimationFrame(animate);
-            } else { 
-                state = 'QUESTIONING'; 
-                inputLocked = false;
-                startQuestionLoop(); 
-            }
-        }
-        requestAnimationFrame(animate);
-    }
-
-    function startQuestionLoop() {
-        askTask('CENTER', SHAPES);
-        let lastTime = 0; 
-        let pulseTime = 0;
-
-        function loop(now) {
-            if (state === 'QUESTIONING') {
-                if(!lastTime) lastTime = now;
-                const dt = (now - lastTime) / 16.67; 
-                lastTime = now;
-                pulseTime += dt * 0.05;
-
-                ctx.fillStyle = '#020617'; ctx.fillRect(0,0,canvas.width,canvas.height);
-                
-                // --- INSTRUCTION TEXT LOGIC (ADDED) ---
-                let title = "", sub = "";
-                // Define labels based on current task
-                if(currentTask === 'CENTER') { 
-                    title = "CORE ID"; 
-                    sub = "SELECT CENTER SHAPE";
-                } else if(currentTask === 'SATELLITE') { 
-                    title = "PERIPHERAL ID"; 
-                    sub = "SELECT SATELLITE SHAPE";
-                } else if(currentTask === 'COLOR') { 
-                    title = "SPECTRUM ID"; 
-                    sub = "MATCH SATELLITE COLOR";
-                } else { 
-                    title = "VECTOR ID"; 
-                    sub = "INDICATE ORIGIN";
-                }
-
-                // Draw Text
-                ctx.textAlign = "center";
-                ctx.shadowColor = "rgba(0,0,0,1)";
-                ctx.shadowBlur = 4;
-
-                // Main Title
-                ctx.fillStyle = "#fff";
-                ctx.font = `900 ${minDim * 0.07}px 'Inter', system-ui`; // Responsive font size
-                ctx.fillText(title, centerX, centerY - minDim * 0.15);
-
-                // Subtitle
-                ctx.fillStyle = "#0ea5e9"; // var(--accent)
-                ctx.font = `700 ${minDim * 0.03}px monospace`;
-                ctx.letterSpacing = "2px";
-                ctx.fillText(sub, centerX, centerY - minDim * 0.08);
-
-                ctx.shadowBlur = 0; // Reset Shadow
-                
-                // --- SELECTION UI ---
-                
-                // Draw Selection Items
-                const items = currentTask === 'CENTER' ? SHAPES : 
-                              (currentTask === 'SATELLITE' ? SHAPES : 
-                              (currentTask === 'COLOR' ? L2_COLORS : DIRECTIONS));
-                              
-                const rowWidth = canvas.width * 0.85, spacing = rowWidth / (items.length - 1), startX = (canvas.width - rowWidth) / 2;
-                
-                selectionBoxes = [];
-                items.forEach((item, i) => {
-                    const x = startX + (i * spacing), y = centerY + 60;
-                    const isSelected = (i === lastSelectionIndex);
-
-                    // --- DRAW "DEPRESSED" HIGHLIGHT ---
-                    if (isSelected) {
-                        ctx.save();
-                        ctx.shadowBlur = 20;
-                        ctx.shadowColor = "rgba(14, 165, 233, 0.8)";
-                        ctx.fillStyle = "rgba(14, 165, 233, 0.2)";
-                        ctx.beginPath();
-                        ctx.arc(x, y, minDim * 0.08, 0, Math.PI*2);
-                        ctx.fill();
-                        ctx.restore();
-                    }
-                    
-                    if (currentTask === 'COLOR') { 
-                        ctx.fillStyle = item; ctx.beginPath(); ctx.arc(x, y, minDim * 0.06, 0, Math.PI*2); ctx.fill(); 
-                    }
-                    else if (currentTask === 'DIRECTION') { 
-                        ctx.fillStyle = "#fff"; ctx.font = `bold ${minDim * 0.04}px monospace`; ctx.fillText(item, x, y + 10); 
-                    }
-                    else { 
-                        drawShape(item, x, y, minDim * 0.05, '#fff'); 
-                    }
-
-                    // --- DRAW PC LABELS ---
-                    if (!isTouch) {
-                        ctx.fillStyle = isSelected ? "var(--accent)" : "rgba(255, 255, 255, 0.3)";
-                        ctx.font = `bold ${minDim * 0.02}px monospace`;
-                        ctx.fillText(`[${i + 1}]`, x, y + minDim * 0.15); 
-                    }
-
-                    selectionBoxes.push({ key: item, val: i, x1: x - spacing/2, x2: x + spacing/2, y1: y - 100, y2: y + 100, cx: x, cy: y });
-                });
-
-                drawRipples(dt);
-                requestAnimationFrame(loop);
-            }
-        }
-        requestAnimationFrame(loop);
-    }
-
-    function askTask(type, items) {
-        currentTask = type; 
-    }
-    
-    // --- RIPPLE EFFECT LOGIC ---
-    function spawnRipple(x, y, color) {
-        ripples.push({ x: x, y: y, radius: 0, opacity: 1, color: color });
-    }
-    
-    function drawRipples(dt = 1.0) {
-        for (let i = ripples.length - 1; i >= 0; i--) {
-            const r = ripples[i];
-            r.radius += 5 * dt; 
-            r.opacity -= 0.05 * dt; 
-            
-            ctx.beginPath();
-            ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
-            ctx.strokeStyle = `rgba(255, 255, 255, ${r.opacity})`; 
-            if(r.color) ctx.fillStyle = r.color; 
-            ctx.lineWidth = 2;
-            ctx.stroke();
-            
-            if (r.opacity <= 0) ripples.splice(i, 1);
-        }
-    }
-
-    // --- CENTRALIZED SELECTION LOGIC ---
-    function processHit(hit) {
-        // Set state for visual feedback
-        lastSelectionIndex = hit.val;
-        inputLocked = true;
-        
-        // Wait 320ms before moving to next screen so user sees the highlight
-        setTimeout(() => { 
-            inputLocked = false; 
-            lastSelectionIndex = -1; // Reset selection
-            
-            // Logic to move to next state
-            const u = appData.users[appData.currentUser];
-            if (currentTask === 'CENTER') { uShape = hit.key; askTask('SATELLITE', SHAPES); }
-            else if (currentTask === 'SATELLITE') {
-                uSat = hit.key;
-                if (u.level3) askTask('DIRECTION', DIRECTIONS);
-                else if (u.level2) askTask('COLOR', L2_COLORS);
-                else finalizeTrial();
-            } else if (currentTask === 'COLOR') { uColor = hit.val; finalizeTrial(); }
-            else if (currentTask === 'DIRECTION') { uDir = hit.val; if (u.level2) askTask('COLOR', L2_COLORS); else finalizeTrial(); }
-
-        }, 320);
-    }
-
-    function handleInput(e) {
-        if (state !== 'QUESTIONING' || inputLocked) return;
-        
-        const rect = canvas.getBoundingClientRect();
-        const clientX = e.clientX || (e.touches && e.touches.length > 0 ? e.touches[0].clientX : 0);
-        const clientY = e.clientY || (e.touches && e.touches.length > 0 ? e.touches[0].clientY : 0);
-        
-        const x = clientX - rect.left;
-        const y = clientY - rect.top;
-        
-        spawnRipple(x, y);
-
-        const hit = selectionBoxes.find(b => x > b.x1 && x < b.x2 && y > b.y1 && y < b.y2);
-        if (!hit) return;
-        
-        processHit(hit);
-    }
-
-    // --- NEW SYSTEM MESSAGE HELPER ---
-    function triggerSystemMessage(text, type) {
-        const el = document.getElementById('system-message');
-        el.innerText = text;
-        el.className = ''; // Wipe classes
-        
-        // Add specific class based on upgrade/downgrade
-        if(type === 'upgrade') {
-            el.classList.add('sys-upgrade');
-        } else {
-            el.classList.add('sys-alert');
-        }
-        
-        // Ensure standard visibility
-        // Removing 'hidden' triggers the fade in due to CSS opacity transition
-        requestAnimationFrame(() => {
-             el.classList.remove('hidden');
         });
 
-        // Hide after 3.5 seconds
-        setTimeout(() => {
-            el.classList.add('hidden');
-        }, 3500);
-    }
+        // Protected Scope Variables
+        let db;
+        try {
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            console.log("Neuro-Link Secured.");
+        } catch(e) { console.error("Link Error:", e); }
 
-    function finalizeTrial() {
-        const u = appData.users[appData.currentUser];
-        let correct = (uShape === targetShape && uSat === satShape);
-        if (u.level2 && uColor !== satColorIdx) correct = false;
-        if (u.level3 && uDir !== satDirIdx) correct = false;
-
-        state = 'IDLE';
+        const SALT = "NEURO_SECURE_SALT_9283"; // Change this periodically
+        let appData = { users: {}, currentUser: null };
         
-        if (correct) {
-            sessionZone++;
-            let zMult = 1.0 + (sessionZone * 0.1);
-            if (sessionZone >= 5) zMult = 2.5;
-            if (sessionZone >= 10) zMult = 5.0;
+        // Bot Detection Metrics
+        let clickHistory = [];
+        
+        // DOM Elements
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const isTouch = ('ontouchstart' in window || navigator.maxTouchPoints > 0) && window.innerWidth < 1024;
 
-            let baseXP = u.level3 ? 200 : (u.level2 ? 50 : 10);
-            let speedEfficiency = Math.pow(450 / u.speed, 2);
-            u.score = (u.score || 0) + (baseXP * speedEfficiency * zMult);
-            
-            u.streak = Math.max(0, u.streak) + 1;
-            
-            if (u.streak >= 3) { 
-                u.speed = Math.max(16, u.speed * 0.88); 
-                u.streak = 0; 
-                
-                // --- TIER PROMOTION LOGIC (UPDATED WITH HUD) ---
-                if (!u.level2 && u.speed <= 350) {
-                    u.level2 = true;
-                    u.speed = 400; 
-                    triggerSystemMessage("SYSTEM UPGRADE: TIER 2 UNLOCKED (CHROMATIC SYNC)", 'upgrade');
-                }
-                else if (u.level2 && !u.level3 && u.speed <= 220) {
-                    u.level3 = true;
-                    u.speed = 300; 
-                    triggerSystemMessage("SYSTEM UPGRADE: TIER 3 UNLOCKED (VECTOR SYNC)", 'upgrade');
-                }
-                // ---------------------------------------
+        // Constants
+        const SHAPES = ['circle', 'square', 'triangle', 'diamond', 'cross'];
+        const L2_COLORS = ['#22d3ee', '#4ade80', '#f472b6', '#fbbf24'];
+        const DIRECTIONS = ['NW', 'NE', 'SW', 'SE'];
+
+        // Game State
+        let state = 'IDLE', currentTask = null, selectionBoxes = [];
+        let centerX, centerY, minDim;
+        let targetShape, satShape, satColorIdx, satDirIdx;
+        let uShape, uSat, uColor, uDir;
+        let sessionZone = 0;
+        let activeDistractors = [], lastFlashRadius = 0;
+        let inputLocked = false, lastSelectionIndex = -1, ripples = [];
+        let animFrameId;
+
+        // --- SECURITY: HASHING FUNCTIONS ---
+        // Simple hash to verify data integrity
+        function generateHash(data) {
+            const str = JSON.stringify(data) + SALT;
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                const char = str.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash; // Convert to 32bit integer
             }
+            return hash.toString();
+        }
+
+        function save() {
+            if (honeyPotTriggered) return; // Don't save if tampered
+            const hash = generateHash(appData);
+            localStorage.setItem('neuroElite_v3_secure', JSON.stringify(appData));
+            localStorage.setItem('neuroElite_sig', hash);
+        }
+
+        function load() {
+            const saved = localStorage.getItem('neuroElite_v3_secure');
+            const sig = localStorage.getItem('neuroElite_sig');
             
-            document.getElementById('msg-title').innerText = "SYNC SUCCESS";
-            document.getElementById('msg-title').style.color = "#10b981";
-        } else {
-            sessionZone = 0;
-            u.streak = Math.min(0, u.streak) - 1;
-            u.speed = Math.min(1000, u.speed + 40);
-            document.getElementById('msg-title').innerText = "ZONE SHATTERED";
-            document.getElementById('msg-title').style.color = "#ef4444";
-            
-            // Demotion Logic (UPDATED WITH HUD)
-            if (u.streak <= -3 && (u.level2 || u.level3)) {
-                if (u.level3) {
-                    u.level3 = false; 
-                    triggerSystemMessage("SYSTEM WARNING: TIER 3 REVOKED", 'alert');
+            if (saved && sig) {
+                const check = generateHash(JSON.parse(saved));
+                if (check === sig) {
+                    appData = JSON.parse(saved);
                 } else {
-                    u.level2 = false;
-                    triggerSystemMessage("SYSTEM WARNING: TIER 2 REVOKED", 'alert');
+                    console.error("Data corruption or tampering detected. Resetting.");
+                    alert("System Integrity Failure: Save data corrupted.");
+                    localStorage.clear();
+                    appData = { users: {}, currentUser: null };
                 }
-                u.streak = 0; u.speed += 100;
+            }
+            if (appData.currentUser) { checkDailyStreak(); updateUI(); } else showUserMenu();
+        }
+
+        // --- GAME LOGIC ---
+        function checkDailyStreak() {
+            const u = appData.users[appData.currentUser];
+            const today = new Date().toISOString().split('T')[0];
+            if (!u.lastPlayDate) { u.lastPlayDate = today; u.dailyStreak = 1; }
+            else if (u.lastPlayDate !== today) {
+                const diff = (new Date(today) - new Date(u.lastPlayDate)) / 86400000;
+                if (diff >= 0.9 && diff < 2) u.dailyStreak++; else if (diff >= 2) u.dailyStreak = 1;
+                u.lastPlayDate = today;
+            }
+            save();
+        }
+
+        function updateUI() {
+            const u = appData.users[appData.currentUser];
+            if(!u) return;
+            document.getElementById('user-display').innerText = appData.currentUser;
+            document.getElementById('score-val').innerText = Math.floor(u.score || 0).toLocaleString();
+            document.getElementById('speed-val').innerText = Math.round(u.speed) + 'ms';
+            document.getElementById('daily-streak-badge').innerText = `🔥 ${u.dailyStreak || 0}`;
+            document.getElementById('mode-indicator').innerText = u.level3 ? "T3" : (u.level2 ? "T2" : "T1");
+            
+            const fill = document.getElementById('zone-fill');
+            const label = document.getElementById('zone-label');
+            const percentage = Math.min(sessionZone * 10, 100);
+            
+            fill.style.width = percentage + "%";
+            let mult = 1.0;
+            let newLabel = "";
+            
+            if (sessionZone >= 10) {
+                mult = 5.0;
+                fill.style.background = "linear-gradient(90deg, #f59e0b, #ef4444)";
+                fill.classList.add('zone-gold');
+                newLabel = "SINGULARITY: 5.0x";
+                canvas.classList.add('singularity-glow');
+            } else if (sessionZone >= 5) {
+                mult = 2.5;
+                fill.style.background = "linear-gradient(90deg, #a855f7, #ec4899)";
+                fill.classList.add('zone-gold');
+                newLabel = "OVERCLOCK: 2.5x";
+                canvas.classList.remove('singularity-glow');
+            } else {
+                mult = 1.0 + (sessionZone * 0.1);
+                fill.style.background = "linear-gradient(90deg, var(--accent), #38bdf8)";
+                fill.classList.remove('zone-gold');
+                newLabel = `ZONE: ${mult.toFixed(1)}x`;
+                canvas.classList.remove('singularity-glow');
+            }
+
+            if (label.innerText !== newLabel) {
+                label.innerText = newLabel;
+                label.classList.remove('text-pop-anim');
+                void label.offsetWidth;
+                label.classList.add('text-pop-anim');
             }
         }
-        u.history.push(Math.round(u.speed));
-        u.resultsHistory.push({ correct, date: new Date().toISOString().split('T')[0] });
-        save(); updateUI();
-        
-        const startBtn = document.getElementById('start-btn');
-        const overlay = document.getElementById('main-overlay');
-        
-        startBtn.classList.add('locked-btn');
-        overlay.classList.remove('hidden');
-        
-        setTimeout(() => {
-            startBtn.classList.remove('locked-btn');
-        }, 600);
-        
-        backgroundSync();
-    }
 
-    function backgroundSync() {
-        if (!appData.currentUser) return;
-        
-        const sync = () => {
+        function drawShape(type, x, y, size, color) {
+            ctx.beginPath(); ctx.fillStyle = color;
+            if (type === 'circle') ctx.arc(x, y, size, 0, Math.PI * 2);
+            else if (type === 'square') ctx.rect(x - size, y - size, size * 2, size * 2);
+            else if (type === 'triangle') { ctx.moveTo(x, y - size); ctx.lineTo(x + size, y + size); ctx.lineTo(x - size, y + size); ctx.closePath(); }
+            else if (type === 'diamond') { ctx.moveTo(x, y - size * 1.2); ctx.lineTo(x + size * 1.2, y); ctx.lineTo(x, y + size * 1.2); ctx.lineTo(x - size * 1.2, y); ctx.closePath(); }
+            else if (type === 'cross') { ctx.rect(x - size/3, y - size, size/1.5, size * 2); ctx.rect(x - size, y - size/3, size * 2, size/1.5); }
+            ctx.fill();
+        }
+
+        function executeFlash() {
+            if (state !== 'IDLE') return;
+            state = 'FLASHING';
             const u = appData.users[appData.currentUser];
+            
+            targetShape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+            satShape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+            satColorIdx = u.level2 ? Math.floor(Math.random() * L2_COLORS.length) : -1;
+            satDirIdx = Math.floor(Math.random() * 4);
+
+            lastFlashRadius = minDim * 0.35;
+            const angle = u.level3 
+                ? [Math.PI*1.25, Math.PI*1.75, Math.PI*0.75, Math.PI*0.25][satDirIdx] 
+                : Math.random() * Math.PI * 2;
+            
+            const satX = centerX + Math.cos(angle) * lastFlashRadius; 
+            const satY = centerY + Math.sin(angle) * lastFlashRadius;
+
+            // Generate distractors
+            activeDistractors = [];
+            const count = 12;
+            const step = (Math.PI * 2) / count;
+            for (let i = 0; i < count; i++) {
+                const a = i * step;
+                const diff = Math.abs(Math.atan2(Math.sin(a - angle), Math.cos(a - angle)));
+                if (diff > 0.6) {
+                    activeDistractors.push({
+                        x: centerX + Math.cos(a) * lastFlashRadius + (Math.random()-0.5)*20,
+                        y: centerY + Math.sin(a) * lastFlashRadius + (Math.random()-0.5)*20,
+                        shape: SHAPES[Math.floor(Math.random() * SHAPES.length)]
+                    });
+                }
+            }
+
+            let startTime = null;
+            function animate(now) {
+                if (!startTime) startTime = now;
+                const elapsed = now - startTime;
+                
+                if (elapsed < u.speed) {
+                    ctx.clearRect(0,0,canvas.width,canvas.height);
+                    activeDistractors.forEach(d => drawShape(d.shape, d.x, d.y, minDim * 0.05, '#334155'));
+                    drawShape(targetShape, centerX, centerY, minDim * 0.06, '#fff');
+                    drawShape(satShape, satX, satY, minDim * 0.05, u.level2 ? L2_COLORS[satColorIdx] : '#8b5cf6');
+                    animFrameId = requestAnimationFrame(animate);
+                } else if (elapsed < u.speed + 100) {
+                    ctx.fillStyle = "#000"; ctx.fillRect(0,0,canvas.width, canvas.height);
+                    animFrameId = requestAnimationFrame(animate);
+                } else { 
+                    state = 'QUESTIONING'; inputLocked = false; startQuestionLoop(); 
+                }
+            }
+            animFrameId = requestAnimationFrame(animate);
+        }
+
+        function startQuestionLoop() {
+            askTask('CENTER', SHAPES);
+            function loop(now) {
+                if (state === 'QUESTIONING') {
+                    ctx.fillStyle = '#020617'; ctx.fillRect(0,0,canvas.width,canvas.height);
+                    
+                    let title = "", sub = "";
+                    if(currentTask === 'CENTER') { title = "CORE ID"; sub = "SELECT CENTER SHAPE"; }
+                    else if(currentTask === 'SATELLITE') { title = "PERIPHERAL ID"; sub = "SELECT SATELLITE SHAPE"; }
+                    else if(currentTask === 'COLOR') { title = "SPECTRUM ID"; sub = "MATCH SATELLITE COLOR"; }
+                    else { title = "VECTOR ID"; sub = "INDICATE ORIGIN"; }
+
+                    ctx.textAlign = "center";
+                    ctx.fillStyle = "#fff";
+                    ctx.font = `900 ${minDim * 0.07}px 'Inter', system-ui`;
+                    ctx.fillText(title, centerX, centerY - minDim * 0.15);
+
+                    ctx.fillStyle = "#0ea5e9";
+                    ctx.font = `700 ${minDim * 0.03}px monospace`;
+                    ctx.fillText(sub, centerX, centerY - minDim * 0.08);
+
+                    const items = currentTask === 'CENTER' ? SHAPES : 
+                                  (currentTask === 'SATELLITE' ? SHAPES : 
+                                  (currentTask === 'COLOR' ? L2_COLORS : DIRECTIONS));
+                              
+                    const rowWidth = canvas.width * 0.85, spacing = rowWidth / (items.length - 1), startX = (canvas.width - rowWidth) / 2;
+                    
+                    selectionBoxes = [];
+                    items.forEach((item, i) => {
+                        const x = startX + (i * spacing), y = centerY + 60;
+                        const isSelected = (i === lastSelectionIndex);
+
+                        if (isSelected) {
+                            ctx.save(); ctx.shadowBlur = 20; ctx.shadowColor = "rgba(14, 165, 233, 0.8)";
+                            ctx.fillStyle = "rgba(14, 165, 233, 0.2)"; ctx.beginPath(); ctx.arc(x, y, minDim * 0.08, 0, Math.PI*2); ctx.fill(); ctx.restore();
+                        }
+                        
+                        if (currentTask === 'COLOR') { ctx.fillStyle = item; ctx.beginPath(); ctx.arc(x, y, minDim * 0.06, 0, Math.PI*2); ctx.fill(); }
+                        else if (currentTask === 'DIRECTION') { ctx.fillStyle = "#fff"; ctx.font = `bold ${minDim * 0.04}px monospace`; ctx.fillText(item, x, y + 10); }
+                        else { drawShape(item, x, y, minDim * 0.05, '#fff'); }
+
+                        if (!isTouch) {
+                            ctx.fillStyle = isSelected ? "var(--accent)" : "rgba(255, 255, 255, 0.3)";
+                            ctx.font = `bold ${minDim * 0.02}px monospace`;
+                            ctx.fillText(`[${i + 1}]`, x, y + minDim * 0.15); 
+                        }
+
+                        selectionBoxes.push({ key: item, val: i, x1: x - spacing/2, x2: x + spacing/2, y1: y - 100, y2: y + 100, cx: x, cy: y });
+                    });
+
+                    // Ripples
+                    for (let i = ripples.length - 1; i >= 0; i--) {
+                        const r = ripples[i]; r.radius += 5; r.opacity -= 0.05;
+                        ctx.beginPath(); ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${r.opacity})`; ctx.stroke();
+                        if (r.opacity <= 0) ripples.splice(i, 1);
+                    }
+                    animFrameId = requestAnimationFrame(loop);
+                }
+            }
+            animFrameId = requestAnimationFrame(loop);
+        }
+
+        function askTask(type, items) { currentTask = type; }
+        
+        function processHit(hit) {
+            lastSelectionIndex = hit.val;
+            inputLocked = true;
+            
+            setTimeout(() => { 
+                inputLocked = false; lastSelectionIndex = -1;
+                const u = appData.users[appData.currentUser];
+                if (currentTask === 'CENTER') { uShape = hit.key; askTask('SATELLITE', SHAPES); }
+                else if (currentTask === 'SATELLITE') {
+                    uSat = hit.key;
+                    if (u.level3) askTask('DIRECTION', DIRECTIONS);
+                    else if (u.level2) askTask('COLOR', L2_COLORS);
+                    else finalizeTrial();
+                } else if (currentTask === 'COLOR') { uColor = hit.val; finalizeTrial(); }
+                else if (currentTask === 'DIRECTION') { uDir = hit.val; if (u.level2) askTask('COLOR', L2_COLORS); else finalizeTrial(); }
+            }, 320);
+        }
+
+        function handleInput(e) {
+            if (state !== 'QUESTIONING' || inputLocked) return;
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.clientX || (e.touches && e.touches.length > 0 ? e.touches[0].clientX : 0);
+            const clientY = e.clientY || (e.touches && e.touches.length > 0 ? e.touches[0].clientY : 0);
+            const x = clientX - rect.left;
+            const y = clientY - rect.top;
+            
+            ripples.push({ x: x, y: y, radius: 0, opacity: 1 });
+
+            const hit = selectionBoxes.find(b => x > b.x1 && x < b.x2 && y > b.y1 && y < b.y2);
+            if (!hit) return;
+
+            // --- SECURITY: BOT DETECTION ---
+            // Humans rarely click exact center pixels (variance < 2px is suspicious)
+            const dist = Math.sqrt(Math.pow(hit.cx - x, 2) + Math.pow(hit.cy - y, 2));
+            clickHistory.push(dist);
+            if (clickHistory.length > 10) clickHistory.shift();
+            // Calculate variance
+            const variance = clickHistory.reduce((a, b) => a + b, 0) / clickHistory.length;
+            if (clickHistory.length >= 5 && variance < 2.0) {
+                console.warn("Input entropy too low. Automated input detected.");
+                honeyPotTriggered = true; // Flag user
+            }
+
+            processHit(hit);
+        }
+
+        function triggerSystemMessage(text, type) {
+            const el = document.getElementById('system-message');
+            el.innerText = text; el.className = ''; 
+            if(type === 'upgrade') el.classList.add('sys-upgrade'); else el.classList.add('sys-alert');
+            requestAnimationFrame(() => el.classList.remove('hidden'));
+            setTimeout(() => el.classList.add('hidden'), 3500);
+        }
+
+        function finalizeTrial() {
+            if (honeyPotTriggered) {
+                // Silently fail or reset
+                appData.users[appData.currentUser].score = 0;
+                location.reload(); 
+                return;
+            }
+
+            const u = appData.users[appData.currentUser];
+            let correct = (uShape === targetShape && uSat === satShape);
+            if (u.level2 && uColor !== satColorIdx) correct = false;
+            if (u.level3 && uDir !== satDirIdx) correct = false;
+
+            state = 'IDLE'; cancelAnimationFrame(animFrameId);
+            
+            if (correct) {
+                sessionZone++;
+                let zMult = 1.0 + (sessionZone * 0.1);
+                if (sessionZone >= 5) zMult = 2.5;
+                if (sessionZone >= 10) zMult = 5.0;
+
+                let baseXP = u.level3 ? 200 : (u.level2 ? 50 : 10);
+                let speedEfficiency = Math.pow(450 / u.speed, 2);
+                u.score = (u.score || 0) + (baseXP * speedEfficiency * zMult);
+                u.streak = Math.max(0, u.streak) + 1;
+                
+                if (u.streak >= 3) { 
+                    u.speed = Math.max(16, u.speed * 0.88); 
+                    u.streak = 0; 
+                    if (!u.level2 && u.speed <= 350) { u.level2 = true; u.speed = 400; triggerSystemMessage("TIER 2 UNLOCKED", 'upgrade'); }
+                    else if (u.level2 && !u.level3 && u.speed <= 220) { u.level3 = true; u.speed = 300; triggerSystemMessage("TIER 3 UNLOCKED", 'upgrade'); }
+                }
+                document.getElementById('msg-title').innerText = "SYNC SUCCESS";
+                document.getElementById('msg-title').style.color = "#10b981";
+            } else {
+                sessionZone = 0;
+                u.streak = Math.min(0, u.streak) - 1;
+                u.speed = Math.min(1000, u.speed + 40);
+                document.getElementById('msg-title').innerText = "ZONE SHATTERED";
+                document.getElementById('msg-title').style.color = "#ef4444";
+                if (u.streak <= -3 && (u.level2 || u.level3)) {
+                    if (u.level3) { u.level3 = false; triggerSystemMessage("TIER 3 REVOKED", 'alert'); }
+                    else { u.level2 = false; triggerSystemMessage("TIER 2 REVOKED", 'alert'); }
+                    u.streak = 0; u.speed += 100;
+                }
+            }
+            u.history.push(Math.round(u.speed));
+            u.resultsHistory.push({ correct, date: new Date().toISOString().split('T')[0] });
+            save(); updateUI();
+            
+            const startBtn = document.getElementById('start-btn');
+            const overlay = document.getElementById('main-overlay');
+            startBtn.classList.add('locked-btn');
+            overlay.classList.remove('hidden');
+            setTimeout(() => startBtn.classList.remove('locked-btn'), 600);
+            
+            backgroundSync();
+        }
+
+        function backgroundSync() {
+            if (!appData.currentUser || honeyPotTriggered) return;
+            
+            const u = appData.users[appData.currentUser];
+            
+            // --- SECURITY: SANITY CHECK ---
+            if (u.speed < 100) { console.warn("Sync rejected: Speed anomaly."); return; }
+
             const ind = document.getElementById('sync-indicator');
             ind.classList.add('syncing');
 
@@ -737,156 +644,116 @@
                 accuracy: accuracy,
                 tier: u.level3 ? "T3" : (u.level2 ? "T2" : "T1"),
                 timestamp: new Date()
-            }, { merge: true })
-            .then(() => {
-                setTimeout(() => ind.classList.remove('syncing'), 500);
-            })
-            .catch((e) => {
-                console.log("Bg Sync Fail (harmless)", e);
-                ind.classList.remove('syncing');
-            });
+            }, { merge: true }) // Merge ensures we don't overwrite if rules block us
+            .then(() => setTimeout(() => ind.classList.remove('syncing'), 500))
+            .catch((e) => { console.log("Bg Sync Fail", e); ind.classList.remove('syncing'); });
+        }
+
+        // --- UI HANDLERS ---
+        function hideOverlays() { document.querySelectorAll('.overlay').forEach(o => o.classList.add('hidden')); }
+        
+        // Attach Event Listeners
+        document.getElementById('start-btn').onclick = () => { hideOverlays(); setTimeout(executeFlash, 300); };
+        
+        document.getElementById('btn-user').onclick = showUserMenu;
+        document.getElementById('btn-analytics').onclick = showAnalytics;
+        document.getElementById('btn-analytics-2').onclick = showAnalytics;
+        document.getElementById('btn-leaderboard').onclick = showLeaderboard;
+        document.getElementById('btn-lb-main').onclick = showLeaderboard;
+        
+        document.getElementById('btn-close-analytics').onclick = () => { hideOverlays(); document.getElementById('main-overlay').classList.remove('hidden'); };
+        document.getElementById('btn-close-lb').onclick = () => { hideOverlays(); document.getElementById('main-overlay').classList.remove('hidden'); };
+        document.getElementById('btn-close-user').onclick = () => { if(appData.currentUser) { hideOverlays(); document.getElementById('main-overlay').classList.remove('hidden'); } };
+        
+        document.getElementById('btn-new-user').onclick = () => {
+            const n = prompt("Agent ID:");
+            if (n && n.trim()) {
+                appData.users[n] = { speed: 450, score: 0, streak: 0, history: [450], resultsHistory: [], level2: false, level3: false, totalTimeMs: 0, dailyStreak: 0, lastPlayDate: null };
+                appData.currentUser = n; sessionZone = 0; save(); updateUI(); hideOverlays(); document.getElementById('main-overlay').classList.remove('hidden');
+            }
         };
 
-        if (window.requestIdleCallback) {
-            window.requestIdleCallback(sync);
-        } else {
-            setTimeout(sync, 0);
+        async function showLeaderboard() {
+            hideOverlays(); document.getElementById('leaderboard-overlay').classList.remove('hidden');
+            const list = document.getElementById('lb-list'); list.innerHTML = "";
+            document.getElementById('lb-loading').style.display = 'block';
+
+            try {
+                const q = query(collection(db, "leaderboard"), orderBy("score", "desc"), limit(20));
+                const querySnapshot = await getDocs(q);
+                document.getElementById('lb-loading').style.display = 'none';
+                
+                let rank = 1;
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const acc = data.accuracy !== undefined ? data.accuracy + "%" : "--";
+                    const peak = data.speed ? data.speed + "ms" : "--";
+                    const row = document.createElement('div'); row.className = 'lb-row';
+                    row.innerHTML = `<div class="lb-rank">${rank++}</div><div class="lb-name"><span class="lb-tier">${data.tier}</span>${data.name}</div><div class="lb-right"><span class="lb-score">${data.score.toLocaleString()}</span><div class="lb-sub"><span class="lb-stat peak">⚡${peak}</span><span class="lb-stat acc">🎯${acc}</span></div></div>`;
+                    list.appendChild(row);
+                });
+                if (querySnapshot.empty) list.innerHTML = "<div style='opacity:0.5; margin-top:20px'>NO DATA ON THE GRID</div>";
+            } catch (e) { console.error(e); document.getElementById('lb-loading').innerText = "CONNECTION FAILURE"; }
         }
-    }
 
-    function shareResults() {
-        const u = appData.users[appData.currentUser];
-        const report = `🧠 NEURAL REPORT\n🏆 Q-XP: ${Math.floor(u.score).toLocaleString()}\n⚡ Peak: ${Math.min(...u.history)}ms\n🔥 Days: ${u.dailyStreak}\n\nLink up and compete.`;
-        if (navigator.share) navigator.share({ text: report });
-        else { navigator.clipboard.writeText(report); alert("Data copied."); }
-    }
-
-    window.uploadScore = function() { backgroundSync(); }
-
-    window.showLeaderboard = async function() {
-        hideOverlays();
-        document.getElementById('leaderboard-overlay').classList.remove('hidden');
-        const list = document.getElementById('lb-list');
-        list.innerHTML = "";
-        document.getElementById('lb-loading').style.display = 'block';
-
-        try {
-            const q = query(collection(db, "leaderboard"), orderBy("score", "desc"), limit(20));
-            const querySnapshot = await getDocs(q);
-            
-            document.getElementById('lb-loading').style.display = 'none';
-            
-            let rank = 1;
-            querySnapshot.forEach((doc) => {
-                const data = doc.data();
-                const acc = data.accuracy !== undefined ? data.accuracy + "%" : "--";
-                const peak = data.speed ? data.speed + "ms" : "--";
-
-                const row = document.createElement('div');
-                row.className = 'lb-row';
-                row.innerHTML = `
-                    <div class="lb-rank">${rank++}</div>
-                    <div class="lb-name">
-                        <span class="lb-tier">${data.tier}</span>
-                        ${data.name}
-                    </div>
-                    <div class="lb-right">
-                        <span class="lb-score">${data.score.toLocaleString()}</span>
-                        <div class="lb-sub">
-                            <span class="lb-stat peak" title="Peak Latency">⚡${peak}</span>
-                            <span class="lb-stat acc" title="Accuracy">🎯${acc}</span>
-                        </div>
-                    </div>
-                `;
-                list.appendChild(row);
+        function showAnalytics() {
+            hideOverlays(); document.getElementById('analytics-overlay').classList.remove('hidden');
+            const u = appData.users[appData.currentUser];
+            const cv = document.getElementById('chart-canvas'), cx = cv.getContext('2d');
+            cv.width = cv.offsetWidth * 2; cv.height = cv.offsetHeight * 2;
+            cx.strokeStyle = "#0ea5e9"; cx.lineWidth = 4; cx.beginPath();
+            const data = u.history.slice(-30);
+            data.forEach((v, i) => {
+                const x = (i / (data.length - 1 || 1)) * cv.width;
+                const y = cv.height - (v / 1000 * cv.height);
+                if (i === 0) cx.moveTo(x,y); else cx.lineTo(x,y);
             });
+            cx.stroke();
+            const acc = Math.round((u.resultsHistory.filter(r => r.correct).length / u.resultsHistory.length * 100)) || 0;
+            document.getElementById('stat-peak').innerText = `${Math.min(...u.history)}ms`;
+            document.getElementById('stat-acc-total').innerText = `${acc}%`;
+            document.getElementById('stat-uptime').innerText = (u.totalTimeMs / 3600000).toFixed(1) + 'h';
+            document.getElementById('stat-grade').innerText = acc > 90 ? "S" : (acc > 75 ? "A" : "B");
+        }
 
-            if (querySnapshot.empty) {
-                list.innerHTML = "<div style='opacity:0.5; margin-top:20px'>NO DATA ON THE GRID</div>";
+        function showUserMenu() {
+            hideOverlays(); document.getElementById('user-overlay').classList.remove('hidden');
+            const list = document.getElementById('user-list'); list.innerHTML = '';
+            Object.keys(appData.users).forEach(name => {
+                const btn = document.createElement('div'); btn.className = 'a-card';
+                btn.style.marginBottom = '8px'; btn.style.cursor = 'pointer';
+                btn.innerHTML = `<span class="l">${name}</span><span class="v">${Math.round(appData.users[name].speed)}ms</span>`;
+                btn.onclick = () => { appData.currentUser = name; sessionZone = 0; checkDailyStreak(); updateUI(); hideOverlays(); document.getElementById('main-overlay').classList.remove('hidden'); };
+                list.appendChild(btn);
+            });
+        }
+
+        function resize() { 
+            canvas.width = window.innerWidth; canvas.height = window.innerHeight - 96; 
+            centerX = canvas.width / 2; centerY = canvas.height / 2; 
+            minDim = Math.min(canvas.width, canvas.height); 
+        }
+
+        window.addEventListener('resize', resize);
+        canvas.addEventListener('mousedown', handleInput);
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleInput(e); }, {passive: false});
+        window.addEventListener('keydown', (e) => {
+            if (state !== 'QUESTIONING' || inputLocked) return;
+            const index = parseInt(e.key) - 1;
+            if (index >= 0 && index < selectionBoxes.length) {
+                const hit = selectionBoxes[index];
+                ripples.push({ x: hit.cx, y: hit.cy, radius: 0, opacity: 1 });
+                // Keyboard has 0 variance, so we skip bot check for keys, 
+                // but we could limit keyboard usage if desired.
+                processHit(hit);
             }
-
-        } catch (e) {
-            console.error(e);
-            document.getElementById('lb-loading').innerText = "CONNECTION FAILURE";
-        }
-    }
-
-    window.closeLeaderboard = function() {
-        hideOverlays();
-        document.getElementById('main-overlay').classList.remove('hidden');
-    }
-
-    window.showAnalytics = function() {
-        hideOverlays(); document.getElementById('analytics-overlay').classList.remove('hidden');
-        const u = appData.users[appData.currentUser];
-        const cv = document.getElementById('chart-canvas'), cx = cv.getContext('2d');
-        cv.width = cv.offsetWidth * 2; cv.height = cv.offsetHeight * 2;
-        cx.strokeStyle = "#0ea5e9"; cx.lineWidth = 4; cx.beginPath();
-        const data = u.history.slice(-30);
-        data.forEach((v, i) => {
-            const x = (i / (data.length - 1 || 1)) * cv.width;
-            const y = cv.height - (v / 1000 * cv.height);
-            if (i === 0) cx.moveTo(x,y); else cx.lineTo(x,y);
         });
-        cx.stroke();
-        const acc = Math.round((u.resultsHistory.filter(r => r.correct).length / u.resultsHistory.length * 100)) || 0;
-        document.getElementById('stat-peak').innerText = `${Math.min(...u.history)}ms`;
-        document.getElementById('stat-acc-total').innerText = `${acc}%`;
-        document.getElementById('stat-uptime').innerText = (u.totalTimeMs / 3600000).toFixed(1) + 'h';
-        document.getElementById('stat-grade').innerText = acc > 90 ? "S" : (acc > 75 ? "A" : "B");
-    }
 
-    window.showUserMenu = function() {
-        hideOverlays(); document.getElementById('user-overlay').classList.remove('hidden');
-        const list = document.getElementById('user-list'); list.innerHTML = '';
-        Object.keys(appData.users).forEach(name => {
-            const btn = document.createElement('div'); btn.className = 'a-card';
-            btn.style.marginBottom = '8px'; btn.style.cursor = 'pointer';
-            btn.innerHTML = `<span class="l">${name}</span><span class="v">${Math.round(appData.users[name].speed)}ms</span>`;
-            btn.onclick = () => { appData.currentUser = name; sessionZone = 0; checkDailyStreak(); updateUI(); hideOverlays(); document.getElementById('main-overlay').classList.remove('hidden'); };
-            list.appendChild(btn);
-        });
-    }
+        // Init
+        resize(); load();
+        setInterval(() => { if (appData.currentUser) appData.users[appData.currentUser].totalTimeMs += 2000; }, 2000);
 
-    window.createNewUser = function() {
-        const n = prompt("Agent ID:");
-        if (n && n.trim()) {
-            appData.users[n] = { speed: 450, score: 0, streak: 0, history: [450], resultsHistory: [], level2: false, level3: false, totalTimeMs: 0, dailyStreak: 0, lastPlayDate: null };
-            appData.currentUser = n; sessionZone = 0; save(); updateUI(); hideOverlays(); document.getElementById('main-overlay').classList.remove('hidden');
-        }
-    }
-
-    window.shareResults = shareResults;
-    window.closeAnalytics = closeAnalytics;
-    window.closeUserMenu = closeUserMenu;
-
-    function hideOverlays() { document.querySelectorAll('.overlay').forEach(o => o.classList.add('hidden')); }
-    function closeAnalytics() { hideOverlays(); document.getElementById('main-overlay').classList.remove('hidden'); }
-    function closeUserMenu() { if(appData.currentUser) hideOverlays(), document.getElementById('main-overlay').classList.remove('hidden'); }
-    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight - 96; centerX = canvas.width / 2; centerY = canvas.height / 2; minDim = Math.min(canvas.width, canvas.height); }
-
-    window.addEventListener('resize', resize);
-    canvas.addEventListener('mousedown', handleInput);
-    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleInput(e); }, {passive: false});
-    
-    // --- KEYBOARD LISTENER ---
-    window.addEventListener('keydown', (e) => {
-        if (state !== 'QUESTIONING' || inputLocked) return;
-        
-        // Convert key '1' -> index 0, '2' -> index 1, etc.
-        const index = parseInt(e.key) - 1;
-        
-        if (index >= 0 && index < selectionBoxes.length) {
-            const hit = selectionBoxes[index];
-            spawnRipple(hit.cx, hit.cy);
-            processHit(hit);
-        }
-    });
-
-    document.getElementById('start-btn').addEventListener('click', () => { hideOverlays(); setTimeout(executeFlash, 300); });
-
-    setInterval(() => { if (appData.currentUser) appData.users[appData.currentUser].totalTimeMs += 2000; }, 2000);
-    resize(); load();
+    })(); // End IIFE
 </script>
 </body>
 </html>
