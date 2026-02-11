@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neuro-Speed Elite 3.5</title>
+    <title>Neuro-Speed Elite 3.6 [GRID RECOVERY]</title>
     <style>
         :root { 
             --bg: #020617; --panel: #0f172a; --accent: #0ea5e9; --text: #f8fafc; 
@@ -100,6 +100,7 @@
         }
         .action-btn:active { transform: scale(0.97); }
         .secondary-btn { background: #334155; }
+        .danger-btn { background: rgba(239, 68, 68, 0.1); border: 1px solid var(--fail); color: var(--fail); }
         .locked-btn { opacity: 0.5; pointer-events: none; filter: grayscale(1); }
 
         .analytics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 15px 0; }
@@ -232,6 +233,7 @@
                 <div class="a-card"><span class="l">Uptime</span><span class="v" id="stat-uptime">0.0h</span></div>
             </div>
             <div id="analytics-actions"></div>
+            <div id="analytics-danger-zone" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;"></div>
             <button class="action-btn secondary-btn" id="btn-close-analytics" style="margin-top:10px">RETURN</button>
         </div>
 
@@ -245,13 +247,13 @@
         <div id="user-overlay" class="overlay hidden">
             <h3>Select Agent</h3>
             <div id="user-list" style="max-height: 200px; overflow-y: auto;"></div>
-            <button class="action-btn" style="background:transparent; border: 1px dashed #444" id="btn-new-user">+ NEW LINK</button>
+            <button class="action-btn" style="background:transparent; border: 1px dashed #444" id="btn-new-user">+ NEW / RECOVER</button>
             <button class="action-btn" style="background:#334155" id="btn-close-user">CANCEL</button>
         </div>
 
         <div id="new-link-overlay" class="overlay hidden">
-            <h3 style="color: var(--accent); letter-spacing: 2px;">NEW CONNECTION</h3>
-            <p style="font-size: 0.8rem; opacity: 0.7; margin-bottom: 20px;">ENTER PUBLIC DESIGNATION FOR THE GRID</p>
+            <h3 style="color: var(--accent); letter-spacing: 2px;">CONNECTION</h3>
+            <p style="font-size: 0.8rem; opacity: 0.7; margin-bottom: 20px;">ENTER DESIGNATION TO CREATE OR RECOVER</p>
             
             <input type="text" id="new-agent-name" placeholder="AGENT_ID" maxlength="12" autocomplete="off">
             
@@ -277,12 +279,12 @@
 
 <script type="module">
     /* ----------------------------------------------------
-       NEURO-SPEED ELITE 3.5 [SECURE SYNC ENABLED]
+       NEURO-SPEED ELITE 3.6 [GRID RECOVERY ENABLED]
        ----------------------------------------------------
     */
 
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, doc, setDoc, query, orderBy, limit, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, collection, doc, setDoc, query, orderBy, limit, getDocs, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBbUKJ9FgkTMU2WHM4N0uYAujLBDBV-ILs",
@@ -417,7 +419,7 @@
                     // --- SYNC RESOLUTION ---
                     const cloudScore = cloudData.score || 0;
                     
-                    if (cloudScore !== u.score) {
+                    if (cloudScore > u.score) {
                         u.score = cloudScore;
                         u.speed = cloudData.speed; 
                         
@@ -437,7 +439,6 @@
             
             // If we are here, sync is done or failed gracefully, restore main UI if not in game
             if(state === 'IDLE' && document.getElementById('pin-overlay').classList.contains('hidden') === false) {
-                 // Close pin overlay if it was open for sync
                  hideOverlays();
                  document.getElementById('main-overlay').classList.remove('hidden');
             }
@@ -877,52 +878,111 @@
             if (e.key === 'Enter') document.getElementById('btn-pin-confirm').click();
         });
 
-        // --- NEW LINK HANDLERS ---
+        // --- NEW LINK HANDLERS (UPDATED FOR RELINK) ---
         document.getElementById('btn-new-user').onclick = () => {
              hideOverlays(); 
              const overlay = document.getElementById('new-link-overlay');
              const input = document.getElementById('new-agent-name');
              overlay.classList.remove('hidden');
              input.value = '';
+             document.getElementById('btn-create-link').innerText = "INITIALIZE";
              setTimeout(() => input.focus(), 100);
         };
 
-        async function createNewUser() {
+        // This replaces the old createNewUser function with one that checks the grid first
+        async function handleNewLinkAttempt() {
             const input = document.getElementById('new-agent-name');
+            const btn = document.getElementById('btn-create-link');
             const n = input.value.trim().toUpperCase();
             
-            if (n && n.length > 0) {
-                if (appData.users[n]) {
-                    alert("DESIGNATION ALREADY TAKEN LOCALLY.");
-                    return;
-                }
+            if (!n || n.length === 0) return;
 
-                // New User PIN Flow
-                let pin = null;
-                // We use the new UI for this too
-                pin = await requestPin("SECURE NEW LINK", "SET OPTIONAL 4-DIGIT PIN (OR LEAVE BLANK)");
-                if (pin === "") pin = null; // Blank is null
-
-                appData.users[n] = { 
-                    speed: 450, score: 0, peakScore: 0, streak: 0, 
-                    history: [450], resultsHistory: [], 
-                    level2: false, level3: false, totalTimeMs: 0, 
-                    dailyStreak: 0, lastPlayDate: null,
-                    pin: pin
-                };
-
-                appData.currentUser = n; sessionZone = 0; save(); updateUI(); hideOverlays(); 
-                document.getElementById('main-overlay').classList.remove('hidden');
-                
-                // Immediately sync PIN to cloud
-                backgroundSync();
+            // 1. Check Local Existence
+            if (appData.users[n]) {
+                alert("DESIGNATION ALREADY ACTIVE ON DEVICE.");
+                return;
             }
+
+            // 2. Check Cloud Existence (Relink Flow)
+            btn.innerText = "SCANNING GRID...";
+            try {
+                const docRef = doc(db, "leaderboard", n);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    // USER FOUND IN CLOUD
+                    const cloudData = docSnap.data();
+                    let authenticated = false;
+
+                    // PIN Verification
+                    if (cloudData.pin) {
+                        const enteredPin = await requestPin("RECOVERY MODE", `AGENT ${n} DETECTED. ENTER KEY.`);
+                        if (enteredPin === cloudData.pin) {
+                            authenticated = true;
+                        } else if (enteredPin !== null) {
+                            alert("INVALID KEY. RECOVERY ABORTED.");
+                        }
+                    } else {
+                        authenticated = true; // No PIN protected, allow claim
+                    }
+
+                    if (authenticated) {
+                        // RESTORE USER
+                        appData.users[n] = { 
+                            speed: cloudData.speed || 450, 
+                            score: cloudData.score || 0, 
+                            peakScore: cloudData.score || 0, 
+                            streak: 0, 
+                            history: [cloudData.speed || 450], 
+                            resultsHistory: [], 
+                            level2: cloudData.tier === 'T2' || cloudData.tier === 'T3', 
+                            level3: cloudData.tier === 'T3', 
+                            totalTimeMs: 0, 
+                            dailyStreak: 0, 
+                            lastPlayDate: null,
+                            pin: cloudData.pin
+                        };
+
+                        appData.currentUser = n; sessionZone = 0;
+                        save(); updateUI(); hideOverlays();
+                        document.getElementById('main-overlay').classList.remove('hidden');
+                        triggerSystemMessage("NEURAL LINK RESTORED", "upgrade");
+                        return; // Done
+                    } else {
+                        btn.innerText = "INITIALIZE"; // Reset button text if auth failed/cancelled
+                        return;
+                    }
+                }
+            } catch (e) {
+                console.error("Grid Scan Error", e);
+                // Fall through to create new if scan fails (offline)
+            }
+
+            // 3. Create New User (If not found or offline)
+            
+            // New User PIN Setup
+            let pin = await requestPin("SECURE NEW LINK", "SET OPTIONAL 4-DIGIT PIN (OR LEAVE BLANK)");
+            if (pin === "") pin = null;
+
+            appData.users[n] = { 
+                speed: 450, score: 0, peakScore: 0, streak: 0, 
+                history: [450], resultsHistory: [], 
+                level2: false, level3: false, totalTimeMs: 0, 
+                dailyStreak: 0, lastPlayDate: null,
+                pin: pin
+            };
+
+            appData.currentUser = n; sessionZone = 0; save(); updateUI(); hideOverlays(); 
+            document.getElementById('main-overlay').classList.remove('hidden');
+            
+            // Immediately sync to cloud to reserve name
+            backgroundSync();
         }
 
-        document.getElementById('btn-create-link').onclick = createNewUser;
+        document.getElementById('btn-create-link').onclick = handleNewLinkAttempt;
         
         document.getElementById('new-agent-name').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') createNewUser();
+            if (e.key === 'Enter') handleNewLinkAttempt();
         });
 
         document.getElementById('btn-cancel-link').onclick = () => {
@@ -974,9 +1034,9 @@
             document.getElementById('stat-uptime').innerText = (u.totalTimeMs / 3600000).toFixed(1) + 'h';
             document.getElementById('stat-grade').innerText = acc > 90 ? "S" : (acc > 75 ? "A" : "B");
 
-            // --- ADD PIN BUTTON FOR EXISTING USERS ---
+            // --- ADD PIN BUTTON ---
             const actionContainer = document.getElementById('analytics-actions');
-            actionContainer.innerHTML = ''; // Clear previous
+            actionContainer.innerHTML = ''; 
 
             if (!u.pin) {
                 const btn = document.createElement('button');
@@ -992,7 +1052,7 @@
                         save();
                         backgroundSync();
                         triggerSystemMessage("PROTOCOL SECURED", "upgrade");
-                        showAnalytics(); // Refresh to remove button
+                        showAnalytics(); 
                     } else if (newPin !== null) {
                         alert("INVALID LENGTH");
                         showAnalytics();
@@ -1009,6 +1069,25 @@
                  lbl.style.marginTop = "10px";
                  actionContainer.appendChild(lbl);
             }
+
+            // --- UNLINK BUTTON (NEW FEATURE) ---
+            const dangerContainer = document.getElementById('analytics-danger-zone');
+            dangerContainer.innerHTML = '';
+            
+            const unlinkBtn = document.createElement('button');
+            unlinkBtn.className = 'action-btn danger-btn';
+            unlinkBtn.innerText = "SEVER CONNECTION (UNLINK)";
+            unlinkBtn.style.fontSize = '0.75rem';
+            unlinkBtn.onclick = () => {
+                if(confirm("WARNING: THIS WILL REMOVE THIS AGENT FROM THIS DEVICE.\n\nData will remain on the Grid (Cloud) if synced.\nYou can relink later using the PIN.")) {
+                    const nameToRemove = appData.currentUser;
+                    delete appData.users[nameToRemove];
+                    appData.currentUser = null;
+                    save();
+                    location.reload(); // Hard reset to clear state
+                }
+            };
+            dangerContainer.appendChild(unlinkBtn);
         }
 
         function showUserMenu() {
