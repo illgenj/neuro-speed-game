@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neuro-Speed Elite 2.5 [HUD Update]</title>
+    <title>Neuro-Speed Elite 2.5</title>
     <style>
         :root { 
             --bg: #020617; --panel: #0f172a; --accent: #0ea5e9; --text: #f8fafc; 
@@ -379,58 +379,7 @@
 
                 ctx.fillStyle = '#020617'; ctx.fillRect(0,0,canvas.width,canvas.height);
                 
-                // --- HUD VISUAL CONTEXT (The Fix) ---
-                const pulseAlpha = 0.5 + Math.sin(pulseTime) * 0.2;
-                
-                if (currentTask === 'CENTER') {
-                    // Draw Center Target Reticle
-                    ctx.strokeStyle = `rgba(14, 165, 233, ${pulseAlpha + 0.2})`; // Cyan
-                    ctx.lineWidth = 3;
-                    ctx.beginPath();
-                    // Draw brackets []
-                    const s = minDim * 0.08;
-                    const g = minDim * 0.03;
-                    // Left bracket
-                    ctx.moveTo(centerX - g, centerY - s); 
-                    ctx.lineTo(centerX - s, centerY - s); 
-                    ctx.lineTo(centerX - s, centerY + s); 
-                    ctx.lineTo(centerX - g, centerY + s);
-                    // Right bracket
-                    ctx.moveTo(centerX + g, centerY - s); 
-                    ctx.lineTo(centerX + s, centerY - s); 
-                    ctx.lineTo(centerX + s, centerY + s); 
-                    ctx.lineTo(centerX + g, centerY + s);
-                    ctx.stroke();
-                    
-                    // Text
-                    ctx.fillStyle = "#fff"; ctx.textAlign = "center"; 
-                    ctx.font = `900 ${minDim * 0.05}px sans-serif`;
-                    ctx.fillText("CENTER TARGET", centerX, centerY - minDim * 0.25);
-                    
-                } else if (currentTask === 'SATELLITE') {
-                    // Draw Perimeter Ring (Orbit)
-                    ctx.strokeStyle = `rgba(168, 85, 247, ${pulseAlpha})`; // Purple
-                    ctx.lineWidth = 2;
-                    ctx.setLineDash([15, 20]); // Dashed line
-                    ctx.beginPath();
-                    ctx.arc(centerX, centerY, lastFlashRadius, 0, Math.PI * 2);
-                    ctx.stroke();
-                    ctx.setLineDash([]); // Reset
-                    
-                    // Text
-                    ctx.fillStyle = "#fff"; ctx.textAlign = "center"; 
-                    ctx.font = `900 ${minDim * 0.05}px sans-serif`;
-                    ctx.fillText("PERIMETER TARGET", centerX, centerY - minDim * 0.25); // Better text
-                    
-                } else if (currentTask === 'COLOR') {
-                    ctx.fillStyle = "#fff"; ctx.textAlign = "center"; 
-                    ctx.font = `900 ${minDim * 0.05}px sans-serif`;
-                    ctx.fillText("SATELLITE COLOR", centerX, centerY - minDim * 0.25);
-                } else if (currentTask === 'DIRECTION') {
-                     ctx.fillStyle = "#fff"; ctx.textAlign = "center"; 
-                    ctx.font = `900 ${minDim * 0.05}px sans-serif`;
-                    ctx.fillText("SATELLITE DIRECTION", centerX, centerY - minDim * 0.25);
-                }
+                // --- SELECTION UI ONLY ---
                 
                 // Draw Selection Items
                 const items = currentTask === 'CENTER' ? SHAPES : 
