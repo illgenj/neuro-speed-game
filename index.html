@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neuro-Speed Elite 22.0 + DYNAMIC DENSITY</title>
+    <title>Neuro-Speed Elite 23.0 + OMNI LEADERBOARD</title>
     <style>
         :root {
             --bg: #020617;
@@ -15,7 +15,7 @@
             --gold: #f59e0b;
             --quantum: #a855f7;
             --hyper: #f43f5e;
-            --glass: rgba(15, 23, 42, 0.96);
+            --glass: rgba(15, 23, 42, 0.98);
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         body {
@@ -63,11 +63,11 @@
         .overlay {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             background: var(--glass); backdrop-filter: blur(20px);
-            padding: 30px; border-radius: 24px; text-align: center;
-            border: 1px solid rgba(255,255,255,0.1); width: 90%; max-width: 400px;
+            padding: 25px; border-radius: 24px; text-align: center;
+            border: 1px solid rgba(255,255,255,0.1); width: 95%; max-width: 600px;
             z-index: 100; box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.9);
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            max-height: 80vh; overflow-y: auto;
+            max-height: 85vh; overflow-y: auto; display: flex; flex-direction: column;
         }
         .hidden { opacity: 0; pointer-events: none; transform: translate(-50%, -45%) scale(0.95); }
         .action-btn {
@@ -86,12 +86,32 @@
         .a-card .v { display: block; font-weight: 800; color: var(--accent); font-size: 1rem; }
         .a-card .l { font-size: 0.5rem; opacity: 0.4; text-transform: uppercase; font-weight: 700; }
 
-        /* Leaderboard Specifics */
-        .lb-row { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; }
-        .lb-rank { width: 30px; color: var(--gold); font-weight: 900; }
-        .lb-name { flex-grow: 1; text-align: left; font-weight: 600; }
+        /* --- ADVANCED LEADERBOARD STYLES --- */
+        .lb-container { width: 100%; overflow-x: auto; margin-bottom: 20px; }
+        
+        /* Grid Layout Definition */
+        .lb-grid { 
+            display: grid; 
+            grid-template-columns: 0.5fr 2fr 1.2fr 1fr 1fr 1fr; /* Rank, Name, Score, Speed, Acc, Time */
+            gap: 5px; 
+            min-width: 500px; /* Force scroll on small mobile */
+        }
+        
+        .lb-header { 
+            font-size: 0.6rem; color: #94a3b8; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+            padding-bottom: 10px; border-bottom: 2px solid rgba(255,255,255,0.1); margin-bottom: 10px;
+        }
+        
+        .lb-row { 
+            font-size: 0.8rem; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); 
+            align-items: center; color: #cbd5e1;
+        }
+
+        .lb-rank { color: var(--gold); font-weight: 900; }
+        .lb-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: left;}
         .lb-score { color: var(--accent); font-family: monospace; font-weight: 700; }
-        .lb-tier { font-size: 0.6rem; background: #1e293b; padding: 2px 6px; border-radius: 4px; margin-right: 8px; color: #94a3b8; }
+        .lb-val { font-family: monospace; opacity: 0.8; }
+        .lb-tier { font-size: 0.55rem; background: #1e293b; padding: 2px 4px; border-radius: 4px; margin-right: 6px; color: #94a3b8; vertical-align: middle; }
 
         /* Auto-save indicator */
         #sync-indicator {
@@ -160,7 +180,20 @@
     <div id="leaderboard-overlay" class="overlay hidden">
         <h2 style="color: var(--gold); letter-spacing: 2px;">GLOBAL GRID</h2>
         <div id="lb-loading" style="font-size: 0.8rem; opacity: 0.6; padding: 20px;">CONNECTING TO CORE...</div>
-        <div id="lb-list" style="margin-bottom: 20px;"></div>
+        
+        <div class="lb-container">
+            <div class="lb-grid lb-header">
+                <div>#</div>
+                <div style="text-align: left">AGENT</div>
+                <div>XP</div>
+                <div>MS</div>
+                <div>ACC</div>
+                <div>TIME</div>
+            </div>
+            <div id="lb-list">
+                </div>
+        </div>
+
         <button class="action-btn" onclick="closeLeaderboard()">RETURN</button>
     </div>
 
@@ -218,11 +251,11 @@ let inputLocked = false;
 let ripples = []; 
 
 function save() {
-    localStorage.setItem('neuroElite_v22', JSON.stringify(appData));
+    localStorage.setItem('neuroElite_v23', JSON.stringify(appData));
 }
 
 function load() {
-    const saved = localStorage.getItem('neuroElite_v22');
+    const saved = localStorage.getItem('neuroElite_v23');
     if (saved) appData = JSON.parse(saved);
     if (appData.currentUser) {
         checkDailyStreak();
@@ -336,13 +369,10 @@ function executeFlash() {
         const safeZoneSat = minDim * 0.12;
         
         // --- ADAPTIVE DENSITY FORMULA ---
-        // At 400ms: ~5 distractors
-        // At 200ms: ~30 distractors
-        // At 100ms: ~50 distractors
         const baseSpeed = Math.min(400, Math.max(10, u.speed));
         const speedFactor = (400 - baseSpeed); 
         const count = 5 + Math.floor(speedFactor / 8); 
-        const finalCount = Math.min(count, 60); // Cap at 60
+        const finalCount = Math.min(count, 60);
 
         for(let i=0; i<finalCount; i++) {
             let dx, dy, valid = false, attempts = 0;
@@ -379,7 +409,7 @@ function executeFlash() {
         if (elapsed < u.speed) {
             ctx.clearRect(0,0,canvas.width,canvas.height);
             
-            // Draw Distractors (Background layer)
+            // Draw Distractors
             if (u.distractors) {
                 currentDistractors.forEach(d => {
                     drawShape(d.s, d.x, d.y, d.sz, d.c);
@@ -601,16 +631,24 @@ function backgroundSync() {
         const ind = document.getElementById('sync-indicator');
         ind.classList.add('syncing');
 
-        // Determine tier string
         let tier = "T1";
         if (u.distractors) tier = "T4";
         else if (u.level3) tier = "T3";
         else if (u.level2) tier = "T2";
 
+        // Calculate advanced stats
+        const acc = u.resultsHistory.length > 0 
+            ? Math.round((u.resultsHistory.filter(r => r.correct).length / u.resultsHistory.length * 100)) 
+            : 0;
+        
+        const uptimeMin = Math.round(u.totalTimeMs / 60000);
+
         setDoc(doc(db, "leaderboard", appData.currentUser), {
             name: appData.currentUser,
             score: Math.floor(u.score),
             speed: Math.min(...u.history),
+            accuracy: acc,
+            uptime: uptimeMin,
             tier: tier,
             timestamp: new Date()
         }, { merge: true })
@@ -632,23 +670,46 @@ window.showLeaderboard = async function() {
     document.getElementById('lb-loading').style.display = 'block';
 
     try {
-        const q = query(collection(db, "leaderboard"), orderBy("score", "desc"), limit(20));
+        // Fetch top 50 by Score (to avoid heavy multi-field indexes for new users)
+        const q = query(collection(db, "leaderboard"), orderBy("score", "desc"), limit(50));
         const querySnapshot = await getDocs(q);
+        
+        let docs = [];
+        querySnapshot.forEach((doc) => docs.push(doc.data()));
+
+        // Client-side tie-breaker sorting: Score -> Speed (asc) -> Accuracy -> Uptime
+        docs.sort((a, b) => {
+            if (b.score !== a.score) return b.score - a.score;
+            if (a.speed !== b.speed) return a.speed - b.speed; // Lower ms is better
+            if ((b.accuracy || 0) !== (a.accuracy || 0)) return (b.accuracy || 0) - (a.accuracy || 0);
+            return (b.uptime || 0) - (a.uptime || 0);
+        });
+
         document.getElementById('lb-loading').style.display = 'none';
+        
         let rank = 1;
-        querySnapshot.forEach((doc) => {
-            const data = doc.data();
+        docs.forEach((data) => {
             const row = document.createElement('div');
-            row.className = 'lb-row';
+            row.className = 'lb-grid lb-row';
+            
+            // Format time nicely
+            let timeStr = "0m";
+            if (data.uptime > 60) timeStr = (data.uptime / 60).toFixed(1) + "h";
+            else timeStr = (data.uptime || 0) + "m";
+
             row.innerHTML = `
                 <div class="lb-rank">${rank++}</div>
                 <div class="lb-name">
                     <span class="lb-tier">${data.tier || 'T1'}</span> ${data.name}
                 </div>
                 <div class="lb-score">${data.score.toLocaleString()}</div>
+                <div class="lb-val">${data.speed}</div>
+                <div class="lb-val">${data.accuracy || 0}%</div>
+                <div class="lb-val">${timeStr}</div>
             `;
             list.appendChild(row);
         });
+        
         if (querySnapshot.empty) { list.innerHTML = "<div style='opacity:0.5; margin-top:20px'>NO DATA ON THE GRID</div>"; }
     } catch (e) {
         console.error(e);
