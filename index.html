@@ -206,6 +206,9 @@
     let uShape, uSat, uColor, uDir;
     let sessionZone = 0;
     
+    // --- INPUT THROTTLE ---
+    let inputLocked = false; // Prevents "blowing through" selections on touch
+    
     // --- VISUAL FX SYSTEM ---
     let ripples = []; // Array to store active ripples
 
@@ -302,6 +305,7 @@
                 requestAnimationFrame(animate);
             } else { 
                 state = 'QUESTIONING'; 
+                inputLocked = false; // Ensure input is open
                 startQuestionLoop(); 
             }
         }
@@ -378,7 +382,10 @@
     }
 
     function handleInput(e) {
-        if (state !== 'QUESTIONING') return;
+        // --- INPUT LOCK CHECK ---
+        // Prevents processing if game is not in questioning state OR if input is currently locked (throttled)
+        if (state !== 'QUESTIONING' || inputLocked) return;
+        
         const rect = canvas.getBoundingClientRect();
         // Check for touch support vs mouse safely
         const clientX = e.clientX || (e.touches && e.touches.length > 0 ? e.touches[0].clientX : 0);
@@ -391,6 +398,11 @@
 
         const hit = selectionBoxes.find(b => x > b.x1 && x < b.x2 && y > b.y1 && y < b.y2);
         if (!hit) return;
+        
+        // --- ACTIVATE LOCK ---
+        // Lock input for 250ms after a successful hit to prevent accidental double-taps
+        inputLocked = true;
+        setTimeout(() => { inputLocked = false; }, 250);
         
         const u = appData.users[appData.currentUser];
         if (currentTask === 'CENTER') { uShape = hit.key; askTask('SATELLITE', SHAPES); }
@@ -410,6 +422,8 @@
         if (u.level3 && uDir !== satDirIdx) correct = false;
 
         state = 'IDLE';
+        inputLocked = false; // Reset lock for next game loop
+
         if (correct) {
             sessionZone++;
             let zMult = 1.0 + (sessionZone * 0.1);
