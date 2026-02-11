@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neuro-Speed Elite 3.2</title>
+    <title>Neuro-Speed Elite 3.3</title>
     <style>
         :root { 
             --bg: #020617; --panel: #0f172a; --accent: #0ea5e9; --text: #f8fafc; 
@@ -254,12 +254,12 @@
 
 <script type="module">
     /* ----------------------------------------------------
-       NEURO-SPEED ELITE 3.2 [VOLATILITY ENGINE]
+       NEURO-SPEED ELITE 3.3 [SYNC+SECURE]
        ----------------------------------------------------
     */
 
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, doc, setDoc, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, collection, doc, setDoc, query, orderBy, limit, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBbUKJ9FgkTMU2WHM4N0uYAujLBDBV-ILs",
@@ -338,6 +338,61 @@
             localStorage.setItem('neuroElite_sig', hash);
         }
 
+        // --- CLOUD SYNC & SECURITY ---
+        async function forceCloudSync() {
+            if (!appData.currentUser || !db) return;
+            const u = appData.users[appData.currentUser];
+            const ind = document.getElementById('sync-indicator');
+            ind.classList.add('syncing');
+
+            try {
+                // Fetch the latest data from the grid
+                const docRef = doc(db, "leaderboard", appData.currentUser);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const cloudData = docSnap.data();
+                    
+                    // --- SECURITY CHECK ---
+                    // If cloud has a PIN and local user doesn't match
+                    if (cloudData.pin && u.pin !== cloudData.pin) {
+                        const entry = prompt(`🔒 SECURE ID DETECTED.\nENTER NEURAL KEY FOR AGENT: ${appData.currentUser}`);
+                        
+                        if (entry === cloudData.pin) {
+                            u.pin = cloudData.pin; // Auth Success, save locally
+                            alert("IDENTITY CONFIRMED. SYNCING...");
+                        } else {
+                            alert("⛔ ACCESS DENIED: INVALID KEY.");
+                            appData.currentUser = null; 
+                            ind.classList.remove('syncing');
+                            showUserMenu();
+                            return; // Stop sync
+                        }
+                    }
+
+                    const cloudScore = cloudData.score || 0;
+                    const localScore = u.score || 0;
+
+                    // CONFLICT RESOLUTION: Cloud > Local
+                    if (cloudScore > localScore) {
+                        u.score = cloudScore;
+                        u.speed = cloudData.speed; 
+                        
+                        // Recalculate Tiers based on speed
+                        u.level2 = (u.speed <= 400);
+                        u.level3 = (u.speed <= 300);
+                        
+                        save(); // Update local storage
+                        updateUI();
+                        triggerSystemMessage("NEURAL SYNC COMPLETE", "upgrade");
+                    }
+                }
+            } catch (e) {
+                console.warn("Cloud handshake failed:", e);
+            }
+            setTimeout(() => ind.classList.remove('syncing'), 800);
+        }
+
         function load() {
             const saved = localStorage.getItem('neuroElite_v3_secure');
             const sig = localStorage.getItem('neuroElite_sig');
@@ -346,7 +401,11 @@
                 if (check === sig) { appData = JSON.parse(saved); } 
                 else { localStorage.clear(); appData = { users: {}, currentUser: null }; }
             }
-            if (appData.currentUser) { checkDailyStreak(); updateUI(); } else showUserMenu();
+            if (appData.currentUser) { 
+                checkDailyStreak(); 
+                updateUI();
+                forceCloudSync(); // Trigger Sync on Load
+            } else showUserMenu();
         }
 
         // --- LOGIC ---
@@ -366,17 +425,14 @@
             const u = appData.users[appData.currentUser];
             if(!u) return;
 
-            // Initialize Peak if not exists
             if (!u.peakScore) u.peakScore = 0;
             if (u.score > u.peakScore) u.peakScore = u.score;
 
             document.getElementById('user-display').innerText = appData.currentUser;
             
-            // SCORE DISPLAY LOGIC
             const currentDisplay = Math.floor(u.score || 0);
             document.getElementById('score-val').innerText = currentDisplay.toLocaleString();
             
-            // Trend Coloring
             const scoreEl = document.getElementById('score-val');
             if (currentDisplay < u.peakScore * 0.5) scoreEl.style.color = 'var(--fail)';
             else if (currentDisplay > u.peakScore * 0.9) scoreEl.style.color = 'var(--success)';
@@ -519,7 +575,7 @@
                         });
 
                     } else {
-                        const items = currentTask === 'CENTER' ? SHAPES : (currentTask === 'SATELLITE' ? SHAPES : L2_COLORS);       
+                        const items = currentTask === 'CENTER' ? SHAPES : (currentTask === 'SATELLITE' ? SHAPES : L2_COLORS);        
                         const rowWidth = canvas.width * 0.85; 
                         const spacing = rowWidth / (items.length - 1); 
                         const startX = (canvas.width - rowWidth) / 2;
@@ -633,7 +689,6 @@
                 sessionZone++;
 
                 // 1. Calculate Target Rating based on Difficulty (Speed)
-                // Faster speed (lower ms) = Higher potential rating
                 let performanceVal = Math.max(100, (1500 - u.speed)); 
                 
                 // 2. Apply Tier Multipliers
@@ -650,7 +705,6 @@
                 let roundTarget = performanceVal * tierMult * zoneMult * 10;
 
                 // 4. Moving Average (The "Climb")
-                // Score moves 15% of the way towards the round target
                 u.score = (u.score || 0) + ((roundTarget - (u.score || 0)) * 0.15);
                 
                 u.streak = Math.max(0, u.streak) + 1;
@@ -669,15 +723,13 @@
 
             } else {
                 // --- THE CRASH ---
-                // If you miss, you lose percentage of your TOTAL score.
                 sessionZone = 0;
                 
-                // Penalize 20% of current rating
                 let penalty = u.score * 0.20; 
                 u.score = Math.max(0, u.score - penalty);
 
                 u.streak = Math.min(0, u.streak) - 1;
-                u.speed = Math.min(1000, u.speed + 80); // Slow down on fail
+                u.speed = Math.min(1000, u.speed + 80); 
 
                 document.getElementById('msg-title').innerText = "SYNC LOST";
                 document.getElementById('msg-title').style.color = "#ef4444";
@@ -712,8 +764,13 @@
             const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
 
             setDoc(doc(db, "leaderboard", appData.currentUser), {
-                name: appData.currentUser, score: Math.floor(u.score), speed: Math.min(...u.history),
-                accuracy: accuracy, tier: u.level3 ? "T3" : (u.level2 ? "T2" : "T1"), timestamp: new Date()
+                name: appData.currentUser, 
+                score: Math.floor(u.score), 
+                speed: Math.min(...u.history),
+                accuracy: accuracy, 
+                tier: u.level3 ? "T3" : (u.level2 ? "T2" : "T1"), 
+                timestamp: new Date(),
+                pin: u.pin || null // Include PIN in the database
             }, { merge: true }).then(() => setTimeout(() => ind.classList.remove('syncing'), 500))
             .catch((e) => { console.log("Bg Sync Fail", e); ind.classList.remove('syncing'); });
         }
@@ -747,12 +804,26 @@
             
             if (n && n.length > 0) {
                 if (appData.users[n]) {
-                    alert("DESIGNATION ALREADY TAKEN.");
+                    alert("DESIGNATION ALREADY TAKEN LOCALLY.");
                     return;
                 }
-                appData.users[n] = { speed: 450, score: 0, peakScore: 0, streak: 0, history: [450], resultsHistory: [], level2: false, level3: false, totalTimeMs: 0, dailyStreak: 0, lastPlayDate: null };
+
+                // --- OPTIONAL PIN SECURITY ---
+                const pin = prompt("SET OPTIONAL 4-DIGIT PIN (Or leave blank for public access):");
+
+                appData.users[n] = { 
+                    speed: 450, score: 0, peakScore: 0, streak: 0, 
+                    history: [450], resultsHistory: [], 
+                    level2: false, level3: false, totalTimeMs: 0, 
+                    dailyStreak: 0, lastPlayDate: null,
+                    pin: pin || null
+                };
+
                 appData.currentUser = n; sessionZone = 0; save(); updateUI(); hideOverlays(); 
                 document.getElementById('main-overlay').classList.remove('hidden');
+                
+                // Immediately sync PIN to cloud
+                backgroundSync();
             }
         }
 
@@ -783,8 +854,9 @@
                 querySnapshot.forEach((doc) => {
                     const data = doc.data();
                     const acc = data.accuracy !== undefined ? data.accuracy + "%" : "--";
+                    const isSecure = data.pin ? "🔒" : "";
                     const row = document.createElement('div'); row.className = 'lb-row';
-                    row.innerHTML = `<div class="lb-rank">${rank++}</div><div class="lb-name"><span class="lb-tier">${data.tier}</span>${data.name}</div><div class="lb-right"><span class="lb-score">${data.score.toLocaleString()}</span><div class="lb-sub"><span class="lb-stat peak">⚡${data.speed}ms</span><span class="lb-stat acc">🎯${acc}</span></div></div>`;
+                    row.innerHTML = `<div class="lb-rank">${rank++}</div><div class="lb-name"><span class="lb-tier">${data.tier}</span>${data.name} <span style="font-size:0.7em">${isSecure}</span></div><div class="lb-right"><span class="lb-score">${data.score.toLocaleString()}</span><div class="lb-sub"><span class="lb-stat peak">⚡${data.speed}ms</span><span class="lb-stat acc">🎯${acc}</span></div></div>`;
                     list.appendChild(row);
                 });
                 if (querySnapshot.empty) list.innerHTML = "<div style='opacity:0.5; margin-top:20px'>NO DATA ON THE GRID</div>";
@@ -819,7 +891,15 @@
                 btn.style.marginBottom = '8px'; btn.style.cursor = 'pointer';
                 const s = appData.users[name].score ? Math.floor(appData.users[name].score) : 0;
                 btn.innerHTML = `<span class="l">${name}</span><span class="v" style="color:var(--gold)">${s} Rating</span>`;
-                btn.onclick = () => { appData.currentUser = name; sessionZone = 0; checkDailyStreak(); updateUI(); hideOverlays(); document.getElementById('main-overlay').classList.remove('hidden'); };
+                btn.onclick = () => { 
+                    appData.currentUser = name; 
+                    sessionZone = 0; 
+                    checkDailyStreak(); 
+                    updateUI(); 
+                    hideOverlays(); 
+                    document.getElementById('main-overlay').classList.remove('hidden');
+                    forceCloudSync();
+                };
                 list.appendChild(btn);
             });
         }
