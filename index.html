@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neuro-Speed Elite 3.4</title>
+    <title>Neuro-Speed Elite 3.4 [LIVE GRID]</title>
     <style>
         :root { 
             --bg: #020617; --panel: #0f172a; --accent: #0ea5e9; --text: #f8fafc; 
@@ -254,7 +254,7 @@
 
 <script type="module">
     /* ----------------------------------------------------
-       NEURO-SPEED ELITE 3.3 [SYNC+SECURE]
+       NEURO-SPEED ELITE 3.4 [LIVE SYNC ENABLED]
        ----------------------------------------------------
     */
 
@@ -369,12 +369,11 @@
                         }
                     }
 
+                    // --- SYNC RESOLUTION ---
+                    // Note: If cloud data exists, we prioritize cloud score/speed on load 
+                    // to ensure cross-device consistency. 
                     const cloudScore = cloudData.score || 0;
                     
-                    // --- SYNC RESOLUTION FOR RATING ---
-                    // IMPORTANT: We use cloud data as authority on load to ensure "Current Rating" 
-                    // is synced across devices, even if it dropped on another device.
-                    // We DO NOT check (cloud > local) because that acts like a 'Total Score' ratchet.
                     if (cloudScore !== u.score) {
                         u.score = cloudScore;
                         u.speed = cloudData.speed; 
@@ -676,7 +675,7 @@
         // ==========================================
         //  CORE SCORING LOGIC (VOLATILITY ENGINE)
         // ==========================================
-        function finalizeTrial() {
+        async function finalizeTrial() {
             if (honeyPotTriggered) { appData.users[appData.currentUser].score = 0; location.reload(); return; }
 
             const u = appData.users[appData.currentUser];
@@ -723,14 +722,14 @@
                 document.getElementById('msg-body').innerText = `RATING: ${Math.floor(u.score)}`;
 
             } else {
-                // --- THE CRASH ---
+                // --- THE CRASH (Penalties applied here) ---
                 sessionZone = 0;
                 
                 let penalty = u.score * 0.20; 
-                u.score = Math.max(0, u.score - penalty);
+                u.score = Math.max(0, u.score - penalty); // Score drop
 
                 u.streak = Math.min(0, u.streak) - 1;
-                u.speed = Math.min(1000, u.speed + 80); 
+                u.speed = Math.min(1000, u.speed + 80); // Speed drop (slower)
 
                 document.getElementById('msg-title').innerText = "SYNC LOST";
                 document.getElementById('msg-title').style.color = "#ef4444";
@@ -747,32 +746,50 @@
             u.resultsHistory.push({ correct, date: new Date().toISOString().split('T')[0] });
             save(); updateUI();
             
+            // --- SYNC LOCK: Prevent checking grid before penalty is saved ---
             const startBtn = document.getElementById('start-btn');
-            startBtn.classList.add('locked-btn');
-            document.getElementById('main-overlay').classList.remove('hidden');
-            setTimeout(() => startBtn.classList.remove('locked-btn'), 600);
+            const lbBtn = document.getElementById('btn-lb-main');
             
-            backgroundSync();
+            startBtn.classList.add('locked-btn');
+            
+            // Lock Leaderboard button specifically to allow sync to complete
+            const oldLbText = lbBtn.innerText;
+            lbBtn.innerText = "SAVING DATA...";
+            lbBtn.classList.add('locked-btn');
+            
+            document.getElementById('main-overlay').classList.remove('hidden');
+
+            // Wait for sync to complete (ensures penalty is on server)
+            await backgroundSync();
+            
+            // Unlock Buttons
+            setTimeout(() => startBtn.classList.remove('locked-btn'), 600);
+            lbBtn.classList.remove('locked-btn');
+            lbBtn.innerText = oldLbText;
         }
 
         function backgroundSync() {
-            if (!appData.currentUser || honeyPotTriggered || appData.users[appData.currentUser].speed < 100) return;
+            if (!appData.currentUser || honeyPotTriggered || appData.users[appData.currentUser].speed < 100) return Promise.resolve();
             const u = appData.users[appData.currentUser];
-            const ind = document.getElementById('sync-indicator'); ind.classList.add('syncing');
+            const ind = document.getElementById('sync-indicator'); 
+            ind.classList.add('syncing');
 
             const total = u.resultsHistory.length;
             const correct = u.resultsHistory.filter(r => r.correct).length;
             const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
 
-            setDoc(doc(db, "leaderboard", appData.currentUser), {
+            // UPDATED: Return the promise so we can await it
+            // UPDATED: 'speed' now uses Math.round(u.speed), capturing the CURRENT (possibly slower) speed
+            return setDoc(doc(db, "leaderboard", appData.currentUser), {
                 name: appData.currentUser, 
                 score: Math.floor(u.score), 
-                speed: Math.min(...u.history),
+                speed: Math.round(u.speed), // Capture current mental state, including drops
                 accuracy: accuracy, 
                 tier: u.level3 ? "T3" : (u.level2 ? "T2" : "T1"), 
                 timestamp: new Date(),
-                pin: u.pin || null // Include PIN in the database
-            }, { merge: true }).then(() => setTimeout(() => ind.classList.remove('syncing'), 500))
+                pin: u.pin || null 
+            }, { merge: true })
+            .then(() => setTimeout(() => ind.classList.remove('syncing'), 500))
             .catch((e) => { console.log("Bg Sync Fail", e); ind.classList.remove('syncing'); });
         }
 
@@ -848,6 +865,9 @@
             const list = document.getElementById('lb-list'); list.innerHTML = "";
             document.getElementById('lb-loading').style.display = 'block';
             try {
+                // Because we now allow scores to DROP, we fetch the fresh data.
+                // The query remains the same, but the underlying data (score/speed)
+                // has been updated by the locked backgroundSync in finalizeTrial.
                 const q = query(collection(db, "leaderboard"), orderBy("score", "desc"), limit(20));
                 const querySnapshot = await getDocs(q);
                 document.getElementById('lb-loading').style.display = 'none';
@@ -857,7 +877,7 @@
                     const acc = data.accuracy !== undefined ? data.accuracy + "%" : "--";
                     const isSecure = data.pin ? "🔒" : "";
                     const row = document.createElement('div'); row.className = 'lb-row';
-                    // ensure lb-score displays rating
+                    // The data.speed here will now be the CURRENT speed (potentially slower), not just the peak.
                     row.innerHTML = `<div class="lb-rank">${rank++}</div><div class="lb-name"><span class="lb-tier">${data.tier}</span>${data.name} <span style="font-size:0.7em">${isSecure}</span></div><div class="lb-right"><span class="lb-score">${data.score.toLocaleString()}</span><div class="lb-sub"><span class="lb-stat peak">⚡${data.speed}ms</span><span class="lb-stat acc">🎯${acc}</span></div></div>`;
                     list.appendChild(row);
                 });
