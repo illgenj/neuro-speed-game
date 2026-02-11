@@ -211,8 +211,8 @@
     const ctx = canvas.getContext('2d');
     let appData = { users: {}, currentUser: null };
 
-    // Detect if user is on a touch device
-    const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    // Only hide numbers if it's a touch device AND the screen is small (like a phone)
+    const isTouch = ('ontouchstart' in window || navigator.maxTouchPoints > 0) && window.innerWidth < 1024;
     
     const SHAPES = ['circle', 'square', 'triangle', 'diamond', 'cross'];
     const L2_COLORS = ['#22d3ee', '#4ade80', '#f472b6', '#fbbf24'];
