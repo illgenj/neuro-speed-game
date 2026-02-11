@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neuro-Speed Elite 3.3</title>
+    <title>Neuro-Speed Elite 3.4</title>
     <style>
         :root { 
             --bg: #020617; --panel: #0f172a; --accent: #0ea5e9; --text: #f8fafc; 
@@ -354,7 +354,6 @@
                     const cloudData = docSnap.data();
                     
                     // --- SECURITY CHECK ---
-                    // If cloud has a PIN and local user doesn't match
                     if (cloudData.pin && u.pin !== cloudData.pin) {
                         const entry = prompt(`🔒 SECURE ID DETECTED.\nENTER NEURAL KEY FOR AGENT: ${appData.currentUser}`);
                         
@@ -371,10 +370,12 @@
                     }
 
                     const cloudScore = cloudData.score || 0;
-                    const localScore = u.score || 0;
-
-                    // CONFLICT RESOLUTION: Cloud > Local
-                    if (cloudScore > localScore) {
+                    
+                    // --- SYNC RESOLUTION FOR RATING ---
+                    // IMPORTANT: We use cloud data as authority on load to ensure "Current Rating" 
+                    // is synced across devices, even if it dropped on another device.
+                    // We DO NOT check (cloud > local) because that acts like a 'Total Score' ratchet.
+                    if (cloudScore !== u.score) {
                         u.score = cloudScore;
                         u.speed = cloudData.speed; 
                         
@@ -856,6 +857,7 @@
                     const acc = data.accuracy !== undefined ? data.accuracy + "%" : "--";
                     const isSecure = data.pin ? "🔒" : "";
                     const row = document.createElement('div'); row.className = 'lb-row';
+                    // ensure lb-score displays rating
                     row.innerHTML = `<div class="lb-rank">${rank++}</div><div class="lb-name"><span class="lb-tier">${data.tier}</span>${data.name} <span style="font-size:0.7em">${isSecure}</span></div><div class="lb-right"><span class="lb-score">${data.score.toLocaleString()}</span><div class="lb-sub"><span class="lb-stat peak">⚡${data.speed}ms</span><span class="lb-stat acc">🎯${acc}</span></div></div>`;
                     list.appendChild(row);
                 });
