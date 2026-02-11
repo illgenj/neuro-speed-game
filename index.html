@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neuro-Speed Elite 20.0 + HAPTIC VISUALS</title>
+    <title>Neuro-Speed Elite 2.1 [Scientific Update]</title>
     <style>
         :root { 
             --bg: #020617; --panel: #0f172a; --accent: #0ea5e9; --text: #f8fafc; 
@@ -77,7 +77,7 @@
         .action-btn:active { transform: scale(0.97); }
         .secondary-btn { background: #334155; }
         
-        /* New locked state for buttons to prevent accidental double-taps */
+        /* New locked state for buttons */
         .locked-btn { opacity: 0.5; pointer-events: none; filter: grayscale(1); }
 
         .analytics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 15px 0; }
@@ -209,15 +209,19 @@
     let uShape, uSat, uColor, uDir;
     let sessionZone = 0;
     
+    // --- DISTRACTOR SYSTEM (Science Update) ---
+    // Stores the "dummy" shapes that appear in the periphery
+    let activeDistractors = []; 
+
     // --- INPUT THROTTLE ---
-    let inputLocked = false; // Prevents "blowing through" selections on touch
+    let inputLocked = false; 
     
     // --- VISUAL FX SYSTEM ---
-    let ripples = []; // Array to store active ripples
+    let ripples = [];
 
-    function save() { localStorage.setItem('neuroElite_v18', JSON.stringify(appData)); }
+    function save() { localStorage.setItem('neuroElite_v21_sci', JSON.stringify(appData)); }
     function load() {
-        const saved = localStorage.getItem('neuroElite_v18');
+        const saved = localStorage.getItem('neuroElite_v21_sci');
         if (saved) appData = JSON.parse(saved);
         if (appData.currentUser) { checkDailyStreak(); updateUI(); } else showUserMenu();
     }
@@ -276,18 +280,56 @@
         ctx.fill();
     }
 
+    // --- DISTRACTOR GENERATOR (New) ---
+    // Generates visual noise to tax selective attention
+    function generateDistractors(cx, cy, radius, safeAngle, count = 10) {
+        activeDistractors = [];
+        const step = (Math.PI * 2) / count;
+        
+        for (let i = 0; i < count; i++) {
+            const angle = i * step;
+            // Calculate minimal distance between this distractor and the target
+            // We use atan2 logic to find the shortest arc difference
+            const diff = Math.abs(Math.atan2(Math.sin(angle - safeAngle), Math.cos(angle - safeAngle)));
+            
+            // Only add distractor if it's not too close to target (0.6 radians buffer)
+            if (diff > 0.6) {
+                // Add jitter to position so they aren't perfectly uniform
+                const jitterX = (Math.random() - 0.5) * 20;
+                const jitterY = (Math.random() - 0.5) * 20;
+                activeDistractors.push({
+                    x: cx + Math.cos(angle) * radius + jitterX,
+                    y: cy + Math.sin(angle) * radius + jitterY,
+                    shape: SHAPES[Math.floor(Math.random() * SHAPES.length)]
+                });
+            }
+        }
+    }
+
     function executeFlash() {
         if (state !== 'IDLE') return;
         state = 'FLASHING';
         const u = appData.users[appData.currentUser];
+        
+        // 1. Setup Targets
         targetShape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
         satShape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
         satColorIdx = u.level2 ? Math.floor(Math.random() * L2_COLORS.length) : -1;
         satDirIdx = Math.floor(Math.random() * 4);
 
+        // 2. Setup Geometry
         const radius = minDim * 0.35;
-        const angle = u.level3 ? [Math.PI*1.25, Math.PI*1.75, Math.PI*0.75, Math.PI*0.25][satDirIdx] : Math.random() * Math.PI * 2;
-        const satX = centerX + Math.cos(angle) * radius, satY = centerY + Math.sin(angle) * radius;
+        // Level 3 limits angles to corners, otherwise random
+        const angle = u.level3 
+            ? [Math.PI*1.25, Math.PI*1.75, Math.PI*0.75, Math.PI*0.25][satDirIdx] 
+            : Math.random() * Math.PI * 2;
+        
+        const satX = centerX + Math.cos(angle) * radius; 
+        const satY = centerY + Math.sin(angle) * radius;
+
+        // 3. GENERATE DISTRACTORS
+        // We pass the target angle so we don't draw a distractor on top of the target
+        generateDistractors(centerX, centerY, radius, angle, 12);
 
         let startTime = null;
         
@@ -297,12 +339,27 @@
             
             if (elapsed < u.speed) {
                 ctx.clearRect(0,0,canvas.width,canvas.height);
+                
+                // A. Draw Distractors (Dim/Ghostly)
+                // Color is dark slate (#1e293b) vs Target bright violet (#8b5cf6)
+                // This forces the user to discriminate, not just detect.
+                activeDistractors.forEach(d => {
+                    drawShape(d.shape, d.x, d.y, minDim * 0.05, '#334155'); 
+                });
+
+                // B. Draw Real Targets (Bright/Signal)
                 drawShape(targetShape, centerX, centerY, minDim * 0.06, '#fff');
                 drawShape(satShape, satX, satY, minDim * 0.05, u.level2 ? L2_COLORS[satColorIdx] : '#8b5cf6');
+                
                 requestAnimationFrame(animate);
             } else if (elapsed < u.speed + 100) {
+                // Mask Phase
                 ctx.fillStyle = "#000"; ctx.fillRect(0,0,canvas.width, canvas.height);
-                for(let i=0; i<100; i++) { ctx.fillStyle = Math.random() > 0.5 ? "#fff" : "#111"; ctx.fillRect(Math.random()*canvas.width, Math.random()*canvas.height, 20, 20); }
+                // Visual Noise Mask to scrub retinal afterimage
+                for(let i=0; i<100; i++) { 
+                    ctx.fillStyle = Math.random() > 0.5 ? "#fff" : "#111"; 
+                    ctx.fillRect(Math.random()*canvas.width, Math.random()*canvas.height, 20, 20); 
+                }
                 requestAnimationFrame(animate);
             } else { 
                 state = 'QUESTIONING'; 
@@ -313,18 +370,16 @@
         requestAnimationFrame(animate);
     }
 
-    // --- NEW QUESTION LOOP (Supports Animation) ---
     function startQuestionLoop() {
         askTask('CENTER', SHAPES);
-        let lastTime = 0; // For delta time calculation
+        let lastTime = 0; 
 
         function loop(now) {
             if (state === 'QUESTIONING') {
                 if(!lastTime) lastTime = now;
-                const dt = (now - lastTime) / 16.67; // Normalize to ~60fps (1.0 at 60Hz)
+                const dt = (now - lastTime) / 16.67; 
                 lastTime = now;
 
-                // Redraw background/UI
                 ctx.fillStyle = '#020617'; ctx.fillRect(0,0,canvas.width,canvas.height);
                 
                 // Draw Question
@@ -347,7 +402,7 @@
                     selectionBoxes.push({ key: item, val: i, x1: x - spacing/2, x2: x + spacing/2, y1: y - 100, y2: y + 100 });
                 });
 
-                // Draw Ripples with Delta Time
+                // Draw Ripples
                 drawRipples(dt);
                 
                 requestAnimationFrame(loop);
@@ -368,8 +423,8 @@
     function drawRipples(dt = 1.0) {
         for (let i = ripples.length - 1; i >= 0; i--) {
             const r = ripples[i];
-            r.radius += 5 * dt; // Scale speed by Delta Time
-            r.opacity -= 0.05 * dt; // Scale fade by Delta Time
+            r.radius += 5 * dt; 
+            r.opacity -= 0.05 * dt; 
             
             ctx.beginPath();
             ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
@@ -383,12 +438,9 @@
     }
 
     function handleInput(e) {
-        // --- INPUT LOCK CHECK ---
-        // Prevents processing if game is not in questioning state OR if input is currently locked (throttled)
         if (state !== 'QUESTIONING' || inputLocked) return;
         
         const rect = canvas.getBoundingClientRect();
-        // Check for touch support vs mouse safely
         const clientX = e.clientX || (e.touches && e.touches.length > 0 ? e.touches[0].clientX : 0);
         const clientY = e.clientY || (e.touches && e.touches.length > 0 ? e.touches[0].clientY : 0);
         
@@ -400,8 +452,6 @@
         const hit = selectionBoxes.find(b => x > b.x1 && x < b.x2 && y > b.y1 && y < b.y2);
         if (!hit) return;
         
-        // --- ACTIVATE LOCK ---
-        // Increased from 250ms to 320ms to catch double-taps and ghost clicks more effectively
         inputLocked = true;
         setTimeout(() => { inputLocked = false; }, 320);
         
@@ -424,10 +474,6 @@
 
         state = 'IDLE';
         
-        // FIX: REMOVED "inputLocked = false;" 
-        // We now let the 320ms throttle from handleInput persist to prevent the 
-        // final tap from registering as a click on the next screen.
-
         if (correct) {
             sessionZone++;
             let zMult = 1.0 + (sessionZone * 0.1);
@@ -457,14 +503,12 @@
         u.resultsHistory.push({ correct, date: new Date().toISOString().split('T')[0] });
         save(); updateUI();
         
-        // FIX: Add visual lock to Start Button to prevent immediate double-tap
         const startBtn = document.getElementById('start-btn');
         const overlay = document.getElementById('main-overlay');
         
         startBtn.classList.add('locked-btn');
         overlay.classList.remove('hidden');
         
-        // Unfreeze button after 600ms (prevents blowing right past the result screen)
         setTimeout(() => {
             startBtn.classList.remove('locked-btn');
         }, 600);
