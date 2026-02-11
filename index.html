@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neuro-Speed Elite 2.4 [Feedback Update]</title>
+    <title>Neuro-Speed Elite 2.5 [HUD Update]</title>
     <style>
         :root { 
             --bg: #020617; --panel: #0f172a; --accent: #0ea5e9; --text: #f8fafc; 
@@ -211,7 +211,6 @@
     const ctx = canvas.getContext('2d');
     let appData = { users: {}, currentUser: null };
 
-    // Only hide numbers if it's a touch device AND the screen is small (like a phone)
     const isTouch = ('ontouchstart' in window || navigator.maxTouchPoints > 0) && window.innerWidth < 1024;
     
     const SHAPES = ['circle', 'square', 'triangle', 'diamond', 'cross'];
@@ -225,10 +224,11 @@
     let sessionZone = 0;
     
     let activeDistractors = []; 
+    let lastFlashRadius = 0; // NEW: Stores radius for HUD drawing
 
     // --- INPUT THROTTLE & FX ---
     let inputLocked = false; 
-    let lastSelectionIndex = -1; // New: Tracks which item is currently "depressed"
+    let lastSelectionIndex = -1;
     let ripples = [];
 
     function save() { localStorage.setItem('neuroElite_v21_sci', JSON.stringify(appData)); }
@@ -322,15 +322,15 @@
         satColorIdx = u.level2 ? Math.floor(Math.random() * L2_COLORS.length) : -1;
         satDirIdx = Math.floor(Math.random() * 4);
 
-        const radius = minDim * 0.35;
+        lastFlashRadius = minDim * 0.35; // Capture this for HUD
         const angle = u.level3 
             ? [Math.PI*1.25, Math.PI*1.75, Math.PI*0.75, Math.PI*0.25][satDirIdx] 
             : Math.random() * Math.PI * 2;
         
-        const satX = centerX + Math.cos(angle) * radius; 
-        const satY = centerY + Math.sin(angle) * radius;
+        const satX = centerX + Math.cos(angle) * lastFlashRadius; 
+        const satY = centerY + Math.sin(angle) * lastFlashRadius;
 
-        generateDistractors(centerX, centerY, radius, angle, 12);
+        generateDistractors(centerX, centerY, lastFlashRadius, angle, 12);
 
         let startTime = null;
         
@@ -368,18 +368,69 @@
     function startQuestionLoop() {
         askTask('CENTER', SHAPES);
         let lastTime = 0; 
+        let pulseTime = 0;
 
         function loop(now) {
             if (state === 'QUESTIONING') {
                 if(!lastTime) lastTime = now;
                 const dt = (now - lastTime) / 16.67; 
                 lastTime = now;
+                pulseTime += dt * 0.05;
 
                 ctx.fillStyle = '#020617'; ctx.fillRect(0,0,canvas.width,canvas.height);
                 
-                // Draw Question Header
-                ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.font = `900 ${minDim * 0.05}px sans-serif`;
-                ctx.fillText(`${currentTask} IDENT`, centerX, centerY - minDim * 0.25);
+                // --- HUD VISUAL CONTEXT (The Fix) ---
+                const pulseAlpha = 0.5 + Math.sin(pulseTime) * 0.2;
+                
+                if (currentTask === 'CENTER') {
+                    // Draw Center Target Reticle
+                    ctx.strokeStyle = `rgba(14, 165, 233, ${pulseAlpha + 0.2})`; // Cyan
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    // Draw brackets []
+                    const s = minDim * 0.08;
+                    const g = minDim * 0.03;
+                    // Left bracket
+                    ctx.moveTo(centerX - g, centerY - s); 
+                    ctx.lineTo(centerX - s, centerY - s); 
+                    ctx.lineTo(centerX - s, centerY + s); 
+                    ctx.lineTo(centerX - g, centerY + s);
+                    // Right bracket
+                    ctx.moveTo(centerX + g, centerY - s); 
+                    ctx.lineTo(centerX + s, centerY - s); 
+                    ctx.lineTo(centerX + s, centerY + s); 
+                    ctx.lineTo(centerX + g, centerY + s);
+                    ctx.stroke();
+                    
+                    // Text
+                    ctx.fillStyle = "#fff"; ctx.textAlign = "center"; 
+                    ctx.font = `900 ${minDim * 0.05}px sans-serif`;
+                    ctx.fillText("CENTER TARGET", centerX, centerY - minDim * 0.25);
+                    
+                } else if (currentTask === 'SATELLITE') {
+                    // Draw Perimeter Ring (Orbit)
+                    ctx.strokeStyle = `rgba(168, 85, 247, ${pulseAlpha})`; // Purple
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([15, 20]); // Dashed line
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, lastFlashRadius, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.setLineDash([]); // Reset
+                    
+                    // Text
+                    ctx.fillStyle = "#fff"; ctx.textAlign = "center"; 
+                    ctx.font = `900 ${minDim * 0.05}px sans-serif`;
+                    ctx.fillText("PERIMETER TARGET", centerX, centerY - minDim * 0.25); // Better text
+                    
+                } else if (currentTask === 'COLOR') {
+                    ctx.fillStyle = "#fff"; ctx.textAlign = "center"; 
+                    ctx.font = `900 ${minDim * 0.05}px sans-serif`;
+                    ctx.fillText("SATELLITE COLOR", centerX, centerY - minDim * 0.25);
+                } else if (currentTask === 'DIRECTION') {
+                     ctx.fillStyle = "#fff"; ctx.textAlign = "center"; 
+                    ctx.font = `900 ${minDim * 0.05}px sans-serif`;
+                    ctx.fillText("SATELLITE DIRECTION", centerX, centerY - minDim * 0.25);
+                }
                 
                 // Draw Selection Items
                 const items = currentTask === 'CENTER' ? SHAPES : 
@@ -390,7 +441,7 @@
                 
                 selectionBoxes = [];
                 items.forEach((item, i) => {
-                    const x = startX + (i * spacing), y = centerY + 40;
+                    const x = startX + (i * spacing), y = centerY + 60;
                     const isSelected = (i === lastSelectionIndex);
 
                     // --- DRAW "DEPRESSED" HIGHLIGHT ---
