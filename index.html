@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neuro-Speed Elite 3.1 </title>
+    <title>Neuro-Speed Elite 3.1 [SECURED]</title>
     <style>
         :root { 
             --bg: #020617; --panel: #0f172a; --accent: #0ea5e9; --text: #f8fafc; 
@@ -145,6 +145,29 @@
         .sys-upgrade { border-color: var(--success) !important; color: var(--success); box-shadow: 0 0 30px rgba(16, 185, 129, 0.3) !important; }
         .sys-alert { border-color: var(--fail) !important; color: var(--fail); box-shadow: 0 0 30px rgba(239, 68, 68, 0.3) !important; }
 
+        /* --- INPUT STYLING --- */
+        #new-agent-name {
+            background: rgba(0,0,0,0.3);
+            border: 2px solid #334155;
+            color: var(--accent);
+            padding: 15px;
+            font-family: monospace;
+            font-weight: 800;
+            font-size: 1.2rem;
+            width: 100%;
+            text-align: center;
+            border-radius: 8px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            transition: all 0.2s;
+            caret-color: var(--gold);
+        }
+        #new-agent-name:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 20px rgba(14, 165, 233, 0.2);
+        }
+        #new-agent-name::placeholder { color: rgba(255,255,255,0.2); }
+
     </style>
 </head>
 <body>
@@ -214,12 +237,24 @@
             <button class="action-btn" style="background:transparent; border: 1px dashed #444" id="btn-new-user">+ NEW LINK</button>
             <button class="action-btn" style="background:#334155" id="btn-close-user">CANCEL</button>
         </div>
+
+        <div id="new-link-overlay" class="overlay hidden">
+            <h3 style="color: var(--accent); letter-spacing: 2px;">NEW CONNECTION</h3>
+            <p style="font-size: 0.8rem; opacity: 0.7; margin-bottom: 20px;">ENTER PUBLIC DESIGNATION FOR THE GRID</p>
+            
+            <input type="text" id="new-agent-name" placeholder="AGENT_ID" maxlength="12" autocomplete="off">
+            
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button id="btn-create-link" class="action-btn">INITIALIZE</button>
+                <button id="btn-cancel-link" class="action-btn secondary-btn">ABORT</button>
+            </div>
+        </div>
+
     </div>
 
 <script type="module">
     /* ----------------------------------------------------
-       NEURAL-SPEED ELITE v3.0 [SECURED CLIENT]
-       Includes: LocalStorage Hashing, Enclosure, Bot Checks
+       NEURAL-SPEED ELITE v3.1 [SECURED CLIENT]
        ----------------------------------------------------
     */
 
@@ -235,20 +270,14 @@
       appId: "1:314397349425:web:992853535b9f8bd61de710"
     };
 
-    // --- IIFE: IMMEDIATE ENCLOSURE TO HIDE GLOBALS ---
     (function() {
-        // Honeypot: Fake global variable to catch script kiddies
+        // Honeypot
         window.gameScore = 0;
         let honeyPotTriggered = false;
         Object.defineProperty(window, 'gameScore', {
-            get: () => 0,
-            set: (val) => { 
-                console.warn("Unauthorized memory access detected."); 
-                honeyPotTriggered = true; 
-            }
+            get: () => 0, set: (val) => { console.warn("Unauthorized memory access detected."); honeyPotTriggered = true; }
         });
 
-        // Protected Scope Variables
         let db;
         try {
             const app = initializeApp(firebaseConfig);
@@ -256,13 +285,10 @@
             console.log("Neuro-Link Secured.");
         } catch(e) { console.error("Link Error:", e); }
 
-        const SALT = "NEURO_SECURE_SALT_9283"; // Change this periodically
+        const SALT = "NEURO_SECURE_SALT_9283"; 
         let appData = { users: {}, currentUser: null };
-        
-        // Bot Detection Metrics
         let clickHistory = [];
         
-        // DOM Elements
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const isTouch = ('ontouchstart' in window || navigator.maxTouchPoints > 0) && window.innerWidth < 1024;
@@ -271,16 +297,16 @@
         const SHAPES = ['circle', 'square', 'triangle', 'diamond', 'cross'];
         const L2_COLORS = ['#22d3ee', '#4ade80', '#f472b6', '#fbbf24'];
         
-        // Mapped to Numpad Keys (Standard Canvas 0rad = East)
+        // Circular Direction Mapping (Standard Canvas 0rad = East)
         const DIR_MAP = [
-            { id: 0, key: 6, label: 'E', rad: 0, x: 1, y: 0 },
-            { id: 1, key: 3, label: 'SE', rad: 0.25 * Math.PI, x: 1, y: 1 },
-            { id: 2, key: 2, label: 'S', rad: 0.5 * Math.PI, x: 0, y: 1 },
-            { id: 3, key: 1, label: 'SW', rad: 0.75 * Math.PI, x: -1, y: 1 },
-            { id: 4, key: 4, label: 'W', rad: Math.PI, x: -1, y: 0 },
-            { id: 5, key: 7, label: 'NW', rad: 1.25 * Math.PI, x: -1, y: -1 },
-            { id: 6, key: 8, label: 'N', rad: 1.5 * Math.PI, x: 0, y: -1 },
-            { id: 7, key: 9, label: 'NE', rad: 1.75 * Math.PI, x: 1, y: -1 }
+            { id: 0, key: 6, label: '6', angle: 0 },            // East
+            { id: 1, key: 3, label: '3', angle: Math.PI*0.25 },// SE
+            { id: 2, key: 2, label: '2', angle: Math.PI*0.5 }, // South
+            { id: 3, key: 1, label: '1', angle: Math.PI*0.75 },// SW
+            { id: 4, key: 4, label: '4', angle: Math.PI },      // West
+            { id: 5, key: 7, label: '7', angle: Math.PI*1.25 },// NW
+            { id: 6, key: 8, label: '8', angle: Math.PI*1.5 }, // North
+            { id: 7, key: 9, label: '9', angle: Math.PI*1.75 } // NE
         ];
 
         // Game State
@@ -293,21 +319,20 @@
         let inputLocked = false, lastSelectionIndex = -1, ripples = [];
         let animFrameId;
 
-        // --- SECURITY: HASHING FUNCTIONS ---
-        // Simple hash to verify data integrity
+        // --- HASHING & SAVE ---
         function generateHash(data) {
             const str = JSON.stringify(data) + SALT;
             let hash = 0;
             for (let i = 0; i < str.length; i++) {
                 const char = str.charCodeAt(i);
                 hash = ((hash << 5) - hash) + char;
-                hash = hash & hash; // Convert to 32bit integer
+                hash = hash & hash;
             }
             return hash.toString();
         }
 
         function save() {
-            if (honeyPotTriggered) return; // Don't save if tampered
+            if (honeyPotTriggered) return;
             const hash = generateHash(appData);
             localStorage.setItem('neuroElite_v3_secure', JSON.stringify(appData));
             localStorage.setItem('neuroElite_sig', hash);
@@ -316,22 +341,15 @@
         function load() {
             const saved = localStorage.getItem('neuroElite_v3_secure');
             const sig = localStorage.getItem('neuroElite_sig');
-            
             if (saved && sig) {
                 const check = generateHash(JSON.parse(saved));
-                if (check === sig) {
-                    appData = JSON.parse(saved);
-                } else {
-                    console.error("Data corruption or tampering detected. Resetting.");
-                    alert("System Integrity Failure: Save data corrupted.");
-                    localStorage.clear();
-                    appData = { users: {}, currentUser: null };
-                }
+                if (check === sig) { appData = JSON.parse(saved); } 
+                else { localStorage.clear(); appData = { users: {}, currentUser: null }; }
             }
             if (appData.currentUser) { checkDailyStreak(); updateUI(); } else showUserMenu();
         }
 
-        // --- GAME LOGIC ---
+        // --- LOGIC ---
         function checkDailyStreak() {
             const u = appData.users[appData.currentUser];
             const today = new Date().toISOString().split('T')[0];
@@ -356,36 +374,17 @@
             const fill = document.getElementById('zone-fill');
             const label = document.getElementById('zone-label');
             const percentage = Math.min(sessionZone * 10, 100);
-            
             fill.style.width = percentage + "%";
-            let mult = 1.0;
-            let newLabel = "";
             
             if (sessionZone >= 10) {
-                mult = 5.0;
-                fill.style.background = "linear-gradient(90deg, #f59e0b, #ef4444)";
-                fill.classList.add('zone-gold');
-                newLabel = "SINGULARITY: 5.0x";
-                canvas.classList.add('singularity-glow');
+                fill.style.background = "linear-gradient(90deg, #f59e0b, #ef4444)"; fill.classList.add('zone-gold');
+                label.innerText = "SINGULARITY: 5.0x"; canvas.classList.add('singularity-glow');
             } else if (sessionZone >= 5) {
-                mult = 2.5;
-                fill.style.background = "linear-gradient(90deg, #a855f7, #ec4899)";
-                fill.classList.add('zone-gold');
-                newLabel = "OVERCLOCK: 2.5x";
-                canvas.classList.remove('singularity-glow');
+                fill.style.background = "linear-gradient(90deg, #a855f7, #ec4899)"; fill.classList.add('zone-gold');
+                label.innerText = "OVERCLOCK: 2.5x"; canvas.classList.remove('singularity-glow');
             } else {
-                mult = 1.0 + (sessionZone * 0.1);
-                fill.style.background = "linear-gradient(90deg, var(--accent), #38bdf8)";
-                fill.classList.remove('zone-gold');
-                newLabel = `ZONE: ${mult.toFixed(1)}x`;
-                canvas.classList.remove('singularity-glow');
-            }
-
-            if (label.innerText !== newLabel) {
-                label.innerText = newLabel;
-                label.classList.remove('text-pop-anim');
-                void label.offsetWidth;
-                label.classList.add('text-pop-anim');
+                fill.style.background = "linear-gradient(90deg, var(--accent), #38bdf8)"; fill.classList.remove('zone-gold');
+                label.innerText = `ZONE: ${(1.0 + (sessionZone * 0.1)).toFixed(1)}x`; canvas.classList.remove('singularity-glow');
             }
         }
 
@@ -407,26 +406,20 @@
             targetShape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
             satShape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
             satColorIdx = u.level2 ? Math.floor(Math.random() * L2_COLORS.length) : -1;
-            
-            // Level 3 now supports all 8 directions to match new Numpad UI
             satDirIdx = Math.floor(Math.random() * 8); 
 
             lastFlashRadius = minDim * 0.35;
-            const angle = u.level3 
-                ? DIR_MAP[satDirIdx].rad 
-                : Math.random() * Math.PI * 2;
+            // Snaps to grid if L3, otherwise random
+            const angle = u.level3 ? DIR_MAP[satDirIdx].angle : Math.random() * Math.PI * 2;
             
             const satX = centerX + Math.cos(angle) * lastFlashRadius; 
             const satY = centerY + Math.sin(angle) * lastFlashRadius;
 
-            // Generate distractors
             activeDistractors = [];
-            const count = 12;
-            const step = (Math.PI * 2) / count;
+            const count = 12; const step = (Math.PI * 2) / count;
             for (let i = 0; i < count; i++) {
                 const a = i * step;
-                const diff = Math.abs(Math.atan2(Math.sin(a - angle), Math.cos(a - angle)));
-                if (diff > 0.6) {
+                if (Math.abs(Math.atan2(Math.sin(a - angle), Math.cos(a - angle))) > 0.6) {
                     activeDistractors.push({
                         x: centerX + Math.cos(a) * lastFlashRadius + (Math.random()-0.5)*20,
                         y: centerY + Math.sin(a) * lastFlashRadius + (Math.random()-0.5)*20,
@@ -466,13 +459,12 @@
                     if(currentTask === 'CENTER') { title = "CORE ID"; sub = "SELECT CENTER SHAPE"; }
                     else if(currentTask === 'SATELLITE') { title = "PERIPHERAL ID"; sub = "SELECT SATELLITE SHAPE"; }
                     else if(currentTask === 'COLOR') { title = "SPECTRUM ID"; sub = "MATCH SATELLITE COLOR"; }
-                    else { title = "VECTOR ID"; sub = "INDICATE ORIGIN (NUMPAD)"; }
+                    else { title = "VECTOR ID"; sub = "INDICATE ORIGIN"; }
 
                     ctx.textAlign = "center";
                     ctx.fillStyle = "#fff";
                     ctx.font = `900 ${minDim * 0.07}px 'Inter', system-ui`;
                     ctx.fillText(title, centerX, centerY - minDim * 0.15);
-
                     ctx.fillStyle = "#0ea5e9";
                     ctx.font = `700 ${minDim * 0.03}px monospace`;
                     ctx.fillText(sub, centerX, centerY - minDim * 0.08);
@@ -480,18 +472,17 @@
                     selectionBoxes = [];
 
                     if (currentTask === 'DIRECTION') {
-                        // --- NEW GRID LAYOUT FOR VECTORS ---
-                        const gridCenterY = centerY + 80;
-                        const spacing = minDim * 0.18;
+                        // --- CIRCULAR LAYOUT (Compass Rose) ---
+                        // "Mirroring actual location"
+                        const layoutRadius = minDim * 0.3; // Distance from center
                         const btnSize = minDim * 0.07;
 
                         DIR_MAP.forEach(dir => {
-                            const x = centerX + (dir.x * spacing);
-                            const y = gridCenterY + (dir.y * spacing);
+                            const x = centerX + Math.cos(dir.angle) * layoutRadius;
+                            const y = centerY + Math.sin(dir.angle) * layoutRadius;
                             
                             const isSelected = (dir.id === lastSelectionIndex);
 
-                            // Draw Circle
                             ctx.beginPath();
                             if (isSelected) {
                                 ctx.shadowBlur = 20; ctx.shadowColor = "rgba(14, 165, 233, 0.8)";
@@ -504,23 +495,21 @@
                             ctx.lineWidth = 3;
                             ctx.arc(x, y, btnSize, 0, Math.PI * 2);
                             ctx.fill(); ctx.stroke();
-                            ctx.shadowBlur = 0; // Reset
+                            ctx.shadowBlur = 0;
 
-                            // Draw Key Label
+                            // Label (Numpad Number)
                             ctx.fillStyle = isSelected ? "#fff" : "#64748b";
                             ctx.font = `800 ${minDim * 0.05}px monospace`;
                             ctx.textBaseline = "middle";
-                            ctx.fillText(dir.key, x, y);
-                            ctx.textBaseline = "alphabetic"; // Reset
+                            ctx.fillText(dir.label, x, y);
+                            ctx.textBaseline = "alphabetic";
 
                             selectionBoxes.push({ key: dir.key, val: dir.id, x1: x - btnSize, x2: x + btnSize, y1: y - btnSize, y2: y + btnSize, cx: x, cy: y });
                         });
 
                     } else {
                         // --- STANDARD LINEAR LAYOUT ---
-                        const items = currentTask === 'CENTER' ? SHAPES : 
-                                      (currentTask === 'SATELLITE' ? SHAPES : L2_COLORS);
-                              
+                        const items = currentTask === 'CENTER' ? SHAPES : (currentTask === 'SATELLITE' ? SHAPES : L2_COLORS);       
                         const rowWidth = canvas.width * 0.85; 
                         const spacing = rowWidth / (items.length - 1); 
                         const startX = (canvas.width - rowWidth) / 2;
@@ -528,12 +517,10 @@
                         items.forEach((item, i) => {
                             const x = startX + (i * spacing), y = centerY + 60;
                             const isSelected = (i === lastSelectionIndex);
-
                             if (isSelected) {
                                 ctx.save(); ctx.shadowBlur = 20; ctx.shadowColor = "rgba(14, 165, 233, 0.8)";
                                 ctx.fillStyle = "rgba(14, 165, 233, 0.2)"; ctx.beginPath(); ctx.arc(x, y, minDim * 0.08, 0, Math.PI*2); ctx.fill(); ctx.restore();
                             }
-                            
                             if (currentTask === 'COLOR') { ctx.fillStyle = item; ctx.beginPath(); ctx.arc(x, y, minDim * 0.06, 0, Math.PI*2); ctx.fill(); }
                             else { drawShape(item, x, y, minDim * 0.05, '#fff'); }
 
@@ -542,12 +529,10 @@
                                 ctx.font = `bold ${minDim * 0.02}px monospace`;
                                 ctx.fillText(`[${i + 1}]`, x, y + minDim * 0.15); 
                             }
-
                             selectionBoxes.push({ key: item, val: i, x1: x - spacing/2, x2: x + spacing/2, y1: y - 100, y2: y + 100, cx: x, cy: y });
                         });
                     }
 
-                    // Ripples
                     for (let i = ripples.length - 1; i >= 0; i--) {
                         const r = ripples[i]; r.radius += 5; r.opacity -= 0.05;
                         ctx.beginPath(); ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
@@ -569,14 +554,27 @@
             setTimeout(() => { 
                 inputLocked = false; lastSelectionIndex = -1;
                 const u = appData.users[appData.currentUser];
-                if (currentTask === 'CENTER') { uShape = hit.key; askTask('SATELLITE', SHAPES); }
+                
+                // SEQUENCE LOGIC: CENTER -> SAT -> COLOR (L2) -> DIRECTION (L3)
+                if (currentTask === 'CENTER') { 
+                    uShape = hit.key; 
+                    askTask('SATELLITE', SHAPES); 
+                }
                 else if (currentTask === 'SATELLITE') {
                     uSat = hit.key;
-                    if (u.level3) askTask('DIRECTION', null); // Passed null as we handle drawing internally
-                    else if (u.level2) askTask('COLOR', L2_COLORS);
+                    if (u.level2) askTask('COLOR', L2_COLORS); // Color before Direction
+                    else if (u.level3) askTask('DIRECTION', null);
                     else finalizeTrial();
-                } else if (currentTask === 'COLOR') { uColor = hit.val; finalizeTrial(); }
-                else if (currentTask === 'DIRECTION') { uDir = hit.val; if (u.level2) askTask('COLOR', L2_COLORS); else finalizeTrial(); }
+                } 
+                else if (currentTask === 'COLOR') { 
+                    uColor = hit.val; 
+                    if (u.level3) askTask('DIRECTION', null); // Direction Last
+                    else finalizeTrial();
+                }
+                else if (currentTask === 'DIRECTION') { 
+                    uDir = hit.val; 
+                    finalizeTrial(); 
+                }
             }, 320);
         }
 
@@ -589,21 +587,14 @@
             const y = clientY - rect.top;
             
             ripples.push({ x: x, y: y, radius: 0, opacity: 1 });
-
             const hit = selectionBoxes.find(b => x > b.x1 && x < b.x2 && y > b.y1 && y < b.y2);
             if (!hit) return;
 
-            // --- SECURITY: BOT DETECTION ---
-            // Humans rarely click exact center pixels (variance < 2px is suspicious)
             const dist = Math.sqrt(Math.pow(hit.cx - x, 2) + Math.pow(hit.cy - y, 2));
             clickHistory.push(dist);
             if (clickHistory.length > 10) clickHistory.shift();
-            // Calculate variance
             const variance = clickHistory.reduce((a, b) => a + b, 0) / clickHistory.length;
-            if (clickHistory.length >= 5 && variance < 2.0) {
-                console.warn("Input entropy too low. Automated input detected.");
-                honeyPotTriggered = true; // Flag user
-            }
+            if (clickHistory.length >= 5 && variance < 2.0) { console.warn("Automated input detected."); honeyPotTriggered = true; }
 
             processHit(hit);
         }
@@ -617,12 +608,7 @@
         }
 
         function finalizeTrial() {
-            if (honeyPotTriggered) {
-                // Silently fail or reset
-                appData.users[appData.currentUser].score = 0;
-                location.reload(); 
-                return;
-            }
+            if (honeyPotTriggered) { appData.users[appData.currentUser].score = 0; location.reload(); return; }
 
             const u = appData.users[appData.currentUser];
             let correct = (uShape === targetShape && uSat === satShape);
@@ -667,87 +653,104 @@
             save(); updateUI();
             
             const startBtn = document.getElementById('start-btn');
-            const overlay = document.getElementById('main-overlay');
             startBtn.classList.add('locked-btn');
-            overlay.classList.remove('hidden');
+            document.getElementById('main-overlay').classList.remove('hidden');
             setTimeout(() => startBtn.classList.remove('locked-btn'), 600);
             
             backgroundSync();
         }
 
         function backgroundSync() {
-            if (!appData.currentUser || honeyPotTriggered) return;
-            
+            if (!appData.currentUser || honeyPotTriggered || appData.users[appData.currentUser].speed < 100) return;
             const u = appData.users[appData.currentUser];
-            
-            // --- SECURITY: SANITY CHECK ---
-            if (u.speed < 100) { console.warn("Sync rejected: Speed anomaly."); return; }
-
-            const ind = document.getElementById('sync-indicator');
-            ind.classList.add('syncing');
+            const ind = document.getElementById('sync-indicator'); ind.classList.add('syncing');
 
             const total = u.resultsHistory.length;
             const correct = u.resultsHistory.filter(r => r.correct).length;
             const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
-            const peakLatency = Math.min(...u.history);
 
             setDoc(doc(db, "leaderboard", appData.currentUser), {
-                name: appData.currentUser,
-                score: Math.floor(u.score),
-                speed: peakLatency,
-                accuracy: accuracy,
-                tier: u.level3 ? "T3" : (u.level2 ? "T2" : "T1"),
-                timestamp: new Date()
-            }, { merge: true }) // Merge ensures we don't overwrite if rules block us
-            .then(() => setTimeout(() => ind.classList.remove('syncing'), 500))
+                name: appData.currentUser, score: Math.floor(u.score), speed: Math.min(...u.history),
+                accuracy: accuracy, tier: u.level3 ? "T3" : (u.level2 ? "T2" : "T1"), timestamp: new Date()
+            }, { merge: true }).then(() => setTimeout(() => ind.classList.remove('syncing'), 500))
             .catch((e) => { console.log("Bg Sync Fail", e); ind.classList.remove('syncing'); });
         }
 
-        // --- UI HANDLERS ---
+        // --- HANDLERS ---
         function hideOverlays() { document.querySelectorAll('.overlay').forEach(o => o.classList.add('hidden')); }
         
-        // Attach Event Listeners
         document.getElementById('start-btn').onclick = () => { hideOverlays(); setTimeout(executeFlash, 300); };
-        
         document.getElementById('btn-user').onclick = showUserMenu;
         document.getElementById('btn-analytics').onclick = showAnalytics;
         document.getElementById('btn-analytics-2').onclick = showAnalytics;
         document.getElementById('btn-leaderboard').onclick = showLeaderboard;
         document.getElementById('btn-lb-main').onclick = showLeaderboard;
-        
         document.getElementById('btn-close-analytics').onclick = () => { hideOverlays(); document.getElementById('main-overlay').classList.remove('hidden'); };
         document.getElementById('btn-close-lb').onclick = () => { hideOverlays(); document.getElementById('main-overlay').classList.remove('hidden'); };
         document.getElementById('btn-close-user').onclick = () => { if(appData.currentUser) { hideOverlays(); document.getElementById('main-overlay').classList.remove('hidden'); } };
         
+        // --- NEW LINK HANDLERS ---
+        
+        // Open the New Link Overlay
         document.getElementById('btn-new-user').onclick = () => {
-            const n = prompt("Agent ID:");
-            if (n && n.trim()) {
+             hideOverlays(); 
+             const overlay = document.getElementById('new-link-overlay');
+             const input = document.getElementById('new-agent-name');
+             overlay.classList.remove('hidden');
+             input.value = '';
+             setTimeout(() => input.focus(), 100);
+        };
+
+        // Initialize User Creation Logic
+        function createNewUser() {
+            const input = document.getElementById('new-agent-name');
+            const n = input.value.trim().toUpperCase();
+            
+            if (n && n.length > 0) {
+                if (appData.users[n]) {
+                    alert("DESIGNATION ALREADY TAKEN.");
+                    return;
+                }
                 appData.users[n] = { speed: 450, score: 0, streak: 0, history: [450], resultsHistory: [], level2: false, level3: false, totalTimeMs: 0, dailyStreak: 0, lastPlayDate: null };
-                appData.currentUser = n; sessionZone = 0; save(); updateUI(); hideOverlays(); document.getElementById('main-overlay').classList.remove('hidden');
+                appData.currentUser = n; sessionZone = 0; save(); updateUI(); hideOverlays(); 
+                document.getElementById('main-overlay').classList.remove('hidden');
             }
+        }
+
+        document.getElementById('btn-create-link').onclick = createNewUser;
+        
+        // Handle Enter Key in Input
+        document.getElementById('new-agent-name').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') createNewUser();
+        });
+
+        document.getElementById('btn-cancel-link').onclick = () => {
+             hideOverlays();
+             if (appData.currentUser) {
+                 document.getElementById('main-overlay').classList.remove('hidden');
+             } else {
+                 showUserMenu();
+             }
         };
 
         async function showLeaderboard() {
             hideOverlays(); document.getElementById('leaderboard-overlay').classList.remove('hidden');
             const list = document.getElementById('lb-list'); list.innerHTML = "";
             document.getElementById('lb-loading').style.display = 'block';
-
             try {
                 const q = query(collection(db, "leaderboard"), orderBy("score", "desc"), limit(20));
                 const querySnapshot = await getDocs(q);
                 document.getElementById('lb-loading').style.display = 'none';
-                
                 let rank = 1;
                 querySnapshot.forEach((doc) => {
                     const data = doc.data();
                     const acc = data.accuracy !== undefined ? data.accuracy + "%" : "--";
-                    const peak = data.speed ? data.speed + "ms" : "--";
                     const row = document.createElement('div'); row.className = 'lb-row';
-                    row.innerHTML = `<div class="lb-rank">${rank++}</div><div class="lb-name"><span class="lb-tier">${data.tier}</span>${data.name}</div><div class="lb-right"><span class="lb-score">${data.score.toLocaleString()}</span><div class="lb-sub"><span class="lb-stat peak">⚡${peak}</span><span class="lb-stat acc">🎯${acc}</span></div></div>`;
+                    row.innerHTML = `<div class="lb-rank">${rank++}</div><div class="lb-name"><span class="lb-tier">${data.tier}</span>${data.name}</div><div class="lb-right"><span class="lb-score">${data.score.toLocaleString()}</span><div class="lb-sub"><span class="lb-stat peak">⚡${data.speed}ms</span><span class="lb-stat acc">🎯${acc}</span></div></div>`;
                     list.appendChild(row);
                 });
                 if (querySnapshot.empty) list.innerHTML = "<div style='opacity:0.5; margin-top:20px'>NO DATA ON THE GRID</div>";
-            } catch (e) { console.error(e); document.getElementById('lb-loading').innerText = "CONNECTION FAILURE"; }
+            } catch (e) { document.getElementById('lb-loading').innerText = "CONNECTION FAILURE"; }
         }
 
         function showAnalytics() {
@@ -795,11 +798,10 @@
         window.addEventListener('keydown', (e) => {
             if (state !== 'QUESTIONING' || inputLocked) return;
             
-            // Check for NumPad inputs (or regular numbers) for Directional Phase
+            // Directional Input (Numpad)
             if (currentTask === 'DIRECTION') {
                  const keyVal = parseInt(e.key);
                  if (!isNaN(keyVal)) {
-                     // Find the selection box that matches the Key Number (not the index!)
                      const hit = selectionBoxes.find(b => b.key === keyVal);
                      if (hit) {
                         ripples.push({ x: hit.cx, y: hit.cy, radius: 0, opacity: 1 });
@@ -809,7 +811,7 @@
                  }
             }
             
-            // Standard linear input handling (original logic)
+            // Standard Linear Input (1-5)
             const index = parseInt(e.key) - 1;
             if (index >= 0 && index < selectionBoxes.length && currentTask !== 'DIRECTION') {
                 const hit = selectionBoxes[index];
@@ -818,11 +820,10 @@
             }
         });
 
-        // Init
         resize(); load();
         setInterval(() => { if (appData.currentUser) appData.users[appData.currentUser].totalTimeMs += 2000; }, 2000);
 
-    })(); // End IIFE
+    })();
 </script>
 </body>
 </html>
