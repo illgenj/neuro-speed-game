@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neuro-Speed Elite 3.1</title>
+    <title>Neuro-Speed Elite 3.2</title>
     <style>
         :root { 
             --bg: #020617; --panel: #0f172a; --accent: #0ea5e9; --text: #f8fafc; 
@@ -36,7 +36,7 @@
         
         .label { font-size: 0.5rem; text-transform: uppercase; opacity: 0.4; letter-spacing: 1.2px; margin-bottom: 2px; font-weight: 700; }
         .val { font-size: 0.85rem; font-weight: 800; color: var(--accent); font-family: monospace; }
-        .xp-val { color: var(--gold); }
+        .xp-val { color: var(--gold); transition: color 0.3s; }
 
         /* --- ZONE THERMOMETER --- */
         #zone-container {
@@ -180,7 +180,7 @@
                 <span id="daily-streak-badge" style="font-size: 0.6rem; color: var(--gold);">🔥 0</span>
             </div>
             <div class="stat" id="btn-analytics">
-                <span class="label">Q-XP</span>
+                <span class="label">RATING</span>
                 <span id="score-val" class="val xp-val">0</span>
             </div>
             <div class="stat" id="btn-analytics-2">
@@ -207,7 +207,7 @@
 
         <div id="main-overlay" class="overlay">
             <h2 id="msg-title">NEURAL READY</h2>
-            <p id="msg-body">Initiate flash sequence to begin training.</p>
+            <p id="msg-body">Initiate flash sequence to begin calibration.</p>
             <button id="start-btn" class="action-btn">INITIATE FLASH</button>
             <button id="btn-lb-main" class="action-btn secondary-btn" style="margin-top: 10px; font-size: 0.75rem;">🌐 GLOBAL GRID</button>
         </div>
@@ -254,7 +254,7 @@
 
 <script type="module">
     /* ----------------------------------------------------
-       NEURAL-SPEED ELITE v3.1 [SECURED CLIENT]
+       NEURO-SPEED ELITE 3.2 [VOLATILITY ENGINE]
        ----------------------------------------------------
     */
 
@@ -297,16 +297,16 @@
         const SHAPES = ['circle', 'square', 'triangle', 'diamond', 'cross'];
         const L2_COLORS = ['#22d3ee', '#4ade80', '#f472b6', '#fbbf24'];
         
-        // Circular Direction Mapping (Standard Canvas 0rad = East)
+        // Circular Direction Mapping
         const DIR_MAP = [
-            { id: 0, key: 6, label: '6', angle: 0 },            // East
-            { id: 1, key: 3, label: '3', angle: Math.PI*0.25 },// SE
-            { id: 2, key: 2, label: '2', angle: Math.PI*0.5 }, // South
-            { id: 3, key: 1, label: '1', angle: Math.PI*0.75 },// SW
-            { id: 4, key: 4, label: '4', angle: Math.PI },      // West
-            { id: 5, key: 7, label: '7', angle: Math.PI*1.25 },// NW
-            { id: 6, key: 8, label: '8', angle: Math.PI*1.5 }, // North
-            { id: 7, key: 9, label: '9', angle: Math.PI*1.75 } // NE
+            { id: 0, key: 6, label: '6', angle: 0 },            
+            { id: 1, key: 3, label: '3', angle: Math.PI*0.25 },
+            { id: 2, key: 2, label: '2', angle: Math.PI*0.5 }, 
+            { id: 3, key: 1, label: '1', angle: Math.PI*0.75 },
+            { id: 4, key: 4, label: '4', angle: Math.PI },      
+            { id: 5, key: 7, label: '7', angle: Math.PI*1.25 },
+            { id: 6, key: 8, label: '8', angle: Math.PI*1.5 }, 
+            { id: 7, key: 9, label: '9', angle: Math.PI*1.75 } 
         ];
 
         // Game State
@@ -318,7 +318,7 @@
         let activeDistractors = [], lastFlashRadius = 0;
         let inputLocked = false, lastSelectionIndex = -1, ripples = [];
         let animFrameId;
-
+        
         // --- HASHING & SAVE ---
         function generateHash(data) {
             const str = JSON.stringify(data) + SALT;
@@ -365,8 +365,23 @@
         function updateUI() {
             const u = appData.users[appData.currentUser];
             if(!u) return;
+
+            // Initialize Peak if not exists
+            if (!u.peakScore) u.peakScore = 0;
+            if (u.score > u.peakScore) u.peakScore = u.score;
+
             document.getElementById('user-display').innerText = appData.currentUser;
-            document.getElementById('score-val').innerText = Math.floor(u.score || 0).toLocaleString();
+            
+            // SCORE DISPLAY LOGIC
+            const currentDisplay = Math.floor(u.score || 0);
+            document.getElementById('score-val').innerText = currentDisplay.toLocaleString();
+            
+            // Trend Coloring
+            const scoreEl = document.getElementById('score-val');
+            if (currentDisplay < u.peakScore * 0.5) scoreEl.style.color = 'var(--fail)';
+            else if (currentDisplay > u.peakScore * 0.9) scoreEl.style.color = 'var(--success)';
+            else scoreEl.style.color = 'var(--gold)';
+
             document.getElementById('speed-val').innerText = Math.round(u.speed) + 'ms';
             document.getElementById('daily-streak-badge').innerText = `🔥 ${u.dailyStreak || 0}`;
             document.getElementById('mode-indicator').innerText = u.level3 ? "T3" : (u.level2 ? "T2" : "T1");
@@ -378,13 +393,13 @@
             
             if (sessionZone >= 10) {
                 fill.style.background = "linear-gradient(90deg, #f59e0b, #ef4444)"; fill.classList.add('zone-gold');
-                label.innerText = "SINGULARITY: 5.0x"; canvas.classList.add('singularity-glow');
+                label.innerText = "SINGULARITY: MAX"; canvas.classList.add('singularity-glow');
             } else if (sessionZone >= 5) {
                 fill.style.background = "linear-gradient(90deg, #a855f7, #ec4899)"; fill.classList.add('zone-gold');
-                label.innerText = "OVERCLOCK: 2.5x"; canvas.classList.remove('singularity-glow');
+                label.innerText = "OVERCLOCK: ACTIVE"; canvas.classList.remove('singularity-glow');
             } else {
                 fill.style.background = "linear-gradient(90deg, var(--accent), #38bdf8)"; fill.classList.remove('zone-gold');
-                label.innerText = `ZONE: ${(1.0 + (sessionZone * 0.1)).toFixed(1)}x`; canvas.classList.remove('singularity-glow');
+                label.innerText = `SYNC STREAK: ${sessionZone}`; canvas.classList.remove('singularity-glow');
             }
         }
 
@@ -409,7 +424,6 @@
             satDirIdx = Math.floor(Math.random() * 8); 
 
             lastFlashRadius = minDim * 0.35;
-            // Snaps to grid if L3, otherwise random
             const angle = u.level3 ? DIR_MAP[satDirIdx].angle : Math.random() * Math.PI * 2;
             
             const satX = centerX + Math.cos(angle) * lastFlashRadius; 
@@ -472,9 +486,7 @@
                     selectionBoxes = [];
 
                     if (currentTask === 'DIRECTION') {
-                        // --- CIRCULAR LAYOUT (Compass Rose) ---
-                        // "Mirroring actual location"
-                        const layoutRadius = minDim * 0.3; // Distance from center
+                        const layoutRadius = minDim * 0.3; 
                         const btnSize = minDim * 0.07;
 
                         DIR_MAP.forEach(dir => {
@@ -497,7 +509,6 @@
                             ctx.fill(); ctx.stroke();
                             ctx.shadowBlur = 0;
 
-                            // Label (Numpad Number)
                             ctx.fillStyle = isSelected ? "#fff" : "#64748b";
                             ctx.font = `800 ${minDim * 0.05}px monospace`;
                             ctx.textBaseline = "middle";
@@ -508,7 +519,6 @@
                         });
 
                     } else {
-                        // --- STANDARD LINEAR LAYOUT ---
                         const items = currentTask === 'CENTER' ? SHAPES : (currentTask === 'SATELLITE' ? SHAPES : L2_COLORS);       
                         const rowWidth = canvas.width * 0.85; 
                         const spacing = rowWidth / (items.length - 1); 
@@ -555,20 +565,19 @@
                 inputLocked = false; lastSelectionIndex = -1;
                 const u = appData.users[appData.currentUser];
                 
-                // SEQUENCE LOGIC: CENTER -> SAT -> COLOR (L2) -> DIRECTION (L3)
                 if (currentTask === 'CENTER') { 
                     uShape = hit.key; 
                     askTask('SATELLITE', SHAPES); 
                 }
                 else if (currentTask === 'SATELLITE') {
                     uSat = hit.key;
-                    if (u.level2) askTask('COLOR', L2_COLORS); // Color before Direction
+                    if (u.level2) askTask('COLOR', L2_COLORS); 
                     else if (u.level3) askTask('DIRECTION', null);
                     else finalizeTrial();
                 } 
                 else if (currentTask === 'COLOR') { 
                     uColor = hit.val; 
-                    if (u.level3) askTask('DIRECTION', null); // Direction Last
+                    if (u.level3) askTask('DIRECTION', null); 
                     else finalizeTrial();
                 }
                 else if (currentTask === 'DIRECTION') { 
@@ -607,6 +616,9 @@
             setTimeout(() => el.classList.add('hidden'), 3500);
         }
 
+        // ==========================================
+        //  CORE SCORING LOGIC (VOLATILITY ENGINE)
+        // ==========================================
         function finalizeTrial() {
             if (honeyPotTriggered) { appData.users[appData.currentUser].score = 0; location.reload(); return; }
 
@@ -619,35 +631,65 @@
             
             if (correct) {
                 sessionZone++;
-                let zMult = 1.0 + (sessionZone * 0.1);
-                if (sessionZone >= 5) zMult = 2.5;
-                if (sessionZone >= 10) zMult = 5.0;
 
-                let baseXP = u.level3 ? 200 : (u.level2 ? 50 : 10);
-                let speedEfficiency = Math.pow(450 / u.speed, 2);
-                u.score = (u.score || 0) + (baseXP * speedEfficiency * zMult);
+                // 1. Calculate Target Rating based on Difficulty (Speed)
+                // Faster speed (lower ms) = Higher potential rating
+                let performanceVal = Math.max(100, (1500 - u.speed)); 
+                
+                // 2. Apply Tier Multipliers
+                let tierMult = 1.0;
+                if (u.level2) tierMult = 1.5;
+                if (u.level3) tierMult = 2.5;
+                
+                // 3. Apply Zone Multiplier
+                let zoneMult = 1.0;
+                if (sessionZone > 5) zoneMult = 1.2;
+                if (sessionZone > 10) zoneMult = 1.5;
+
+                // The "Target" this round was worth
+                let roundTarget = performanceVal * tierMult * zoneMult * 10;
+
+                // 4. Moving Average (The "Climb")
+                // Score moves 15% of the way towards the round target
+                u.score = (u.score || 0) + ((roundTarget - (u.score || 0)) * 0.15);
+                
                 u.streak = Math.max(0, u.streak) + 1;
                 
+                // Speed Adjustment
                 if (u.streak >= 3) { 
-                    u.speed = Math.max(16, u.speed * 0.88); 
+                    u.speed = Math.max(16, u.speed * 0.92); 
                     u.streak = 0; 
                     if (!u.level2 && u.speed <= 350) { u.level2 = true; u.speed = 400; triggerSystemMessage("TIER 2 UNLOCKED", 'upgrade'); }
                     else if (u.level2 && !u.level3 && u.speed <= 220) { u.level3 = true; u.speed = 300; triggerSystemMessage("TIER 3 UNLOCKED", 'upgrade'); }
                 }
-                document.getElementById('msg-title').innerText = "SYNC SUCCESS";
+
+                document.getElementById('msg-title').innerText = "SYNC STABLE";
                 document.getElementById('msg-title').style.color = "#10b981";
+                document.getElementById('msg-body').innerText = `RATING: ${Math.floor(u.score)}`;
+
             } else {
+                // --- THE CRASH ---
+                // If you miss, you lose percentage of your TOTAL score.
                 sessionZone = 0;
+                
+                // Penalize 20% of current rating
+                let penalty = u.score * 0.20; 
+                u.score = Math.max(0, u.score - penalty);
+
                 u.streak = Math.min(0, u.streak) - 1;
-                u.speed = Math.min(1000, u.speed + 40);
-                document.getElementById('msg-title').innerText = "ZONE SHATTERED";
+                u.speed = Math.min(1000, u.speed + 80); // Slow down on fail
+
+                document.getElementById('msg-title').innerText = "SYNC LOST";
                 document.getElementById('msg-title').style.color = "#ef4444";
+                document.getElementById('msg-body').innerText = `RATING DROP: -${Math.floor(penalty)}`;
+
                 if (u.streak <= -3 && (u.level2 || u.level3)) {
                     if (u.level3) { u.level3 = false; triggerSystemMessage("TIER 3 REVOKED", 'alert'); }
                     else { u.level2 = false; triggerSystemMessage("TIER 2 REVOKED", 'alert'); }
                     u.streak = 0; u.speed += 100;
                 }
             }
+
             u.history.push(Math.round(u.speed));
             u.resultsHistory.push({ correct, date: new Date().toISOString().split('T')[0] });
             save(); updateUI();
@@ -690,8 +732,6 @@
         document.getElementById('btn-close-user').onclick = () => { if(appData.currentUser) { hideOverlays(); document.getElementById('main-overlay').classList.remove('hidden'); } };
         
         // --- NEW LINK HANDLERS ---
-        
-        // Open the New Link Overlay
         document.getElementById('btn-new-user').onclick = () => {
              hideOverlays(); 
              const overlay = document.getElementById('new-link-overlay');
@@ -701,7 +741,6 @@
              setTimeout(() => input.focus(), 100);
         };
 
-        // Initialize User Creation Logic
         function createNewUser() {
             const input = document.getElementById('new-agent-name');
             const n = input.value.trim().toUpperCase();
@@ -711,7 +750,7 @@
                     alert("DESIGNATION ALREADY TAKEN.");
                     return;
                 }
-                appData.users[n] = { speed: 450, score: 0, streak: 0, history: [450], resultsHistory: [], level2: false, level3: false, totalTimeMs: 0, dailyStreak: 0, lastPlayDate: null };
+                appData.users[n] = { speed: 450, score: 0, peakScore: 0, streak: 0, history: [450], resultsHistory: [], level2: false, level3: false, totalTimeMs: 0, dailyStreak: 0, lastPlayDate: null };
                 appData.currentUser = n; sessionZone = 0; save(); updateUI(); hideOverlays(); 
                 document.getElementById('main-overlay').classList.remove('hidden');
             }
@@ -719,7 +758,6 @@
 
         document.getElementById('btn-create-link').onclick = createNewUser;
         
-        // Handle Enter Key in Input
         document.getElementById('new-agent-name').addEventListener('keydown', (e) => {
             if (e.key === 'Enter') createNewUser();
         });
@@ -779,7 +817,8 @@
             Object.keys(appData.users).forEach(name => {
                 const btn = document.createElement('div'); btn.className = 'a-card';
                 btn.style.marginBottom = '8px'; btn.style.cursor = 'pointer';
-                btn.innerHTML = `<span class="l">${name}</span><span class="v">${Math.round(appData.users[name].speed)}ms</span>`;
+                const s = appData.users[name].score ? Math.floor(appData.users[name].score) : 0;
+                btn.innerHTML = `<span class="l">${name}</span><span class="v" style="color:var(--gold)">${s} Rating</span>`;
                 btn.onclick = () => { appData.currentUser = name; sessionZone = 0; checkDailyStreak(); updateUI(); hideOverlays(); document.getElementById('main-overlay').classList.remove('hidden'); };
                 list.appendChild(btn);
             });
