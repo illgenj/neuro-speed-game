@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neuro-Speed Elite 2.2 [Scoreboard Update]</title>
+    <title>Neuro-Speed Elite 2.3 [PC Input Update]</title>
     <style>
         :root { 
             --bg: #020617; --panel: #0f172a; --accent: #0ea5e9; --text: #f8fafc; 
@@ -210,6 +210,9 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     let appData = { users: {}, currentUser: null };
+
+    // Detect if user is on a touch device to hide numbers
+    const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
     
     const SHAPES = ['circle', 'square', 'triangle', 'diamond', 'cross'];
     const L2_COLORS = ['#22d3ee', '#4ade80', '#f472b6', '#fbbf24'];
@@ -408,10 +411,25 @@
                 selectionBoxes = [];
                 items.forEach((item, i) => {
                     const x = startX + (i * spacing), y = centerY + 40;
-                    if (currentTask === 'COLOR') { ctx.fillStyle = item; ctx.beginPath(); ctx.arc(x, y, minDim * 0.06, 0, Math.PI*2); ctx.fill(); }
-                    else if (currentTask === 'DIRECTION') { ctx.fillStyle = "#fff"; ctx.font = `bold ${minDim * 0.04}px monospace`; ctx.fillText(item, x, y + 10); }
-                    else { drawShape(item, x, y, minDim * 0.05, '#fff'); }
-                    selectionBoxes.push({ key: item, val: i, x1: x - spacing/2, x2: x + spacing/2, y1: y - 100, y2: y + 100 });
+                    
+                    if (currentTask === 'COLOR') { 
+                        ctx.fillStyle = item; ctx.beginPath(); ctx.arc(x, y, minDim * 0.06, 0, Math.PI*2); ctx.fill(); 
+                    }
+                    else if (currentTask === 'DIRECTION') { 
+                        ctx.fillStyle = "#fff"; ctx.font = `bold ${minDim * 0.04}px monospace`; ctx.fillText(item, x, y + 10); 
+                    }
+                    else { 
+                        drawShape(item, x, y, minDim * 0.05, '#fff'); 
+                    }
+
+                    // --- DRAW NUMBER HINTS FOR PC ---
+                    if (!isTouch) {
+                        ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+                        ctx.font = `bold ${minDim * 0.025}px monospace`;
+                        ctx.fillText(i + 1, x, y + minDim * 0.12); // Displays number below shape
+                    }
+
+                    selectionBoxes.push({ key: item, val: i, x1: x - spacing/2, x2: x + spacing/2, y1: y - 100, y2: y + 100, cx: x, cy: y });
                 });
 
                 // Draw Ripples
@@ -449,6 +467,22 @@
         }
     }
 
+    // --- CENTRALIZED SELECTION LOGIC ---
+    function processHit(hit) {
+        inputLocked = true;
+        setTimeout(() => { inputLocked = false; }, 320);
+        
+        const u = appData.users[appData.currentUser];
+        if (currentTask === 'CENTER') { uShape = hit.key; askTask('SATELLITE', SHAPES); }
+        else if (currentTask === 'SATELLITE') {
+            uSat = hit.key;
+            if (u.level3) askTask('DIRECTION', DIRECTIONS);
+            else if (u.level2) askTask('COLOR', L2_COLORS);
+            else finalizeTrial();
+        } else if (currentTask === 'COLOR') { uColor = hit.val; finalizeTrial(); }
+        else if (currentTask === 'DIRECTION') { uDir = hit.val; if (u.level2) askTask('COLOR', L2_COLORS); else finalizeTrial(); }
+    }
+
     function handleInput(e) {
         if (state !== 'QUESTIONING' || inputLocked) return;
         
@@ -464,18 +498,7 @@
         const hit = selectionBoxes.find(b => x > b.x1 && x < b.x2 && y > b.y1 && y < b.y2);
         if (!hit) return;
         
-        inputLocked = true;
-        setTimeout(() => { inputLocked = false; }, 320);
-        
-        const u = appData.users[appData.currentUser];
-        if (currentTask === 'CENTER') { uShape = hit.key; askTask('SATELLITE', SHAPES); }
-        else if (currentTask === 'SATELLITE') {
-            uSat = hit.key;
-            if (u.level3) askTask('DIRECTION', DIRECTIONS);
-            else if (u.level2) askTask('COLOR', L2_COLORS);
-            else finalizeTrial();
-        } else if (currentTask === 'COLOR') { uColor = hit.val; finalizeTrial(); }
-        else if (currentTask === 'DIRECTION') { uDir = hit.val; if (u.level2) askTask('COLOR', L2_COLORS); else finalizeTrial(); }
+        processHit(hit);
     }
 
     function finalizeTrial() {
@@ -682,6 +705,21 @@
     window.addEventListener('resize', resize);
     canvas.addEventListener('mousedown', handleInput);
     canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleInput(e); }, {passive: false});
+    
+    // --- KEYBOARD LISTENER ---
+    window.addEventListener('keydown', (e) => {
+        if (state !== 'QUESTIONING' || inputLocked) return;
+        
+        // Convert key '1' -> index 0, '2' -> index 1, etc.
+        const index = parseInt(e.key) - 1;
+        
+        if (index >= 0 && index < selectionBoxes.length) {
+            const hit = selectionBoxes[index];
+            spawnRipple(hit.cx, hit.cy);
+            processHit(hit);
+        }
+    });
+
     document.getElementById('start-btn').addEventListener('click', () => { hideOverlays(); setTimeout(executeFlash, 300); });
 
     setInterval(() => { if (appData.currentUser) appData.users[appData.currentUser].totalTimeMs += 2000; }, 2000);
