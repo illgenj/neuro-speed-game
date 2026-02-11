@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neuro-Speed Elite 3.0</title>
+    <title>Neuro-Speed Elite 3.1 </title>
     <style>
         :root { 
             --bg: #020617; --panel: #0f172a; --accent: #0ea5e9; --text: #f8fafc; 
@@ -270,7 +270,18 @@
         // Constants
         const SHAPES = ['circle', 'square', 'triangle', 'diamond', 'cross'];
         const L2_COLORS = ['#22d3ee', '#4ade80', '#f472b6', '#fbbf24'];
-        const DIRECTIONS = ['NW', 'NE', 'SW', 'SE'];
+        
+        // Mapped to Numpad Keys (Standard Canvas 0rad = East)
+        const DIR_MAP = [
+            { id: 0, key: 6, label: 'E', rad: 0, x: 1, y: 0 },
+            { id: 1, key: 3, label: 'SE', rad: 0.25 * Math.PI, x: 1, y: 1 },
+            { id: 2, key: 2, label: 'S', rad: 0.5 * Math.PI, x: 0, y: 1 },
+            { id: 3, key: 1, label: 'SW', rad: 0.75 * Math.PI, x: -1, y: 1 },
+            { id: 4, key: 4, label: 'W', rad: Math.PI, x: -1, y: 0 },
+            { id: 5, key: 7, label: 'NW', rad: 1.25 * Math.PI, x: -1, y: -1 },
+            { id: 6, key: 8, label: 'N', rad: 1.5 * Math.PI, x: 0, y: -1 },
+            { id: 7, key: 9, label: 'NE', rad: 1.75 * Math.PI, x: 1, y: -1 }
+        ];
 
         // Game State
         let state = 'IDLE', currentTask = null, selectionBoxes = [];
@@ -396,11 +407,13 @@
             targetShape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
             satShape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
             satColorIdx = u.level2 ? Math.floor(Math.random() * L2_COLORS.length) : -1;
-            satDirIdx = Math.floor(Math.random() * 4);
+            
+            // Level 3 now supports all 8 directions to match new Numpad UI
+            satDirIdx = Math.floor(Math.random() * 8); 
 
             lastFlashRadius = minDim * 0.35;
             const angle = u.level3 
-                ? [Math.PI*1.25, Math.PI*1.75, Math.PI*0.75, Math.PI*0.25][satDirIdx] 
+                ? DIR_MAP[satDirIdx].rad 
                 : Math.random() * Math.PI * 2;
             
             const satX = centerX + Math.cos(angle) * lastFlashRadius; 
@@ -453,7 +466,7 @@
                     if(currentTask === 'CENTER') { title = "CORE ID"; sub = "SELECT CENTER SHAPE"; }
                     else if(currentTask === 'SATELLITE') { title = "PERIPHERAL ID"; sub = "SELECT SATELLITE SHAPE"; }
                     else if(currentTask === 'COLOR') { title = "SPECTRUM ID"; sub = "MATCH SATELLITE COLOR"; }
-                    else { title = "VECTOR ID"; sub = "INDICATE ORIGIN"; }
+                    else { title = "VECTOR ID"; sub = "INDICATE ORIGIN (NUMPAD)"; }
 
                     ctx.textAlign = "center";
                     ctx.fillStyle = "#fff";
@@ -464,34 +477,75 @@
                     ctx.font = `700 ${minDim * 0.03}px monospace`;
                     ctx.fillText(sub, centerX, centerY - minDim * 0.08);
 
-                    const items = currentTask === 'CENTER' ? SHAPES : 
-                                  (currentTask === 'SATELLITE' ? SHAPES : 
-                                  (currentTask === 'COLOR' ? L2_COLORS : DIRECTIONS));
-                              
-                    const rowWidth = canvas.width * 0.85, spacing = rowWidth / (items.length - 1), startX = (canvas.width - rowWidth) / 2;
-                    
                     selectionBoxes = [];
-                    items.forEach((item, i) => {
-                        const x = startX + (i * spacing), y = centerY + 60;
-                        const isSelected = (i === lastSelectionIndex);
 
-                        if (isSelected) {
-                            ctx.save(); ctx.shadowBlur = 20; ctx.shadowColor = "rgba(14, 165, 233, 0.8)";
-                            ctx.fillStyle = "rgba(14, 165, 233, 0.2)"; ctx.beginPath(); ctx.arc(x, y, minDim * 0.08, 0, Math.PI*2); ctx.fill(); ctx.restore();
-                        }
+                    if (currentTask === 'DIRECTION') {
+                        // --- NEW GRID LAYOUT FOR VECTORS ---
+                        const gridCenterY = centerY + 80;
+                        const spacing = minDim * 0.18;
+                        const btnSize = minDim * 0.07;
+
+                        DIR_MAP.forEach(dir => {
+                            const x = centerX + (dir.x * spacing);
+                            const y = gridCenterY + (dir.y * spacing);
+                            
+                            const isSelected = (dir.id === lastSelectionIndex);
+
+                            // Draw Circle
+                            ctx.beginPath();
+                            if (isSelected) {
+                                ctx.shadowBlur = 20; ctx.shadowColor = "rgba(14, 165, 233, 0.8)";
+                                ctx.fillStyle = "rgba(14, 165, 233, 0.4)";
+                            } else {
+                                ctx.shadowBlur = 0;
+                                ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
+                            }
+                            ctx.strokeStyle = isSelected ? "var(--accent)" : "#334155";
+                            ctx.lineWidth = 3;
+                            ctx.arc(x, y, btnSize, 0, Math.PI * 2);
+                            ctx.fill(); ctx.stroke();
+                            ctx.shadowBlur = 0; // Reset
+
+                            // Draw Key Label
+                            ctx.fillStyle = isSelected ? "#fff" : "#64748b";
+                            ctx.font = `800 ${minDim * 0.05}px monospace`;
+                            ctx.textBaseline = "middle";
+                            ctx.fillText(dir.key, x, y);
+                            ctx.textBaseline = "alphabetic"; // Reset
+
+                            selectionBoxes.push({ key: dir.key, val: dir.id, x1: x - btnSize, x2: x + btnSize, y1: y - btnSize, y2: y + btnSize, cx: x, cy: y });
+                        });
+
+                    } else {
+                        // --- STANDARD LINEAR LAYOUT ---
+                        const items = currentTask === 'CENTER' ? SHAPES : 
+                                      (currentTask === 'SATELLITE' ? SHAPES : L2_COLORS);
+                              
+                        const rowWidth = canvas.width * 0.85; 
+                        const spacing = rowWidth / (items.length - 1); 
+                        const startX = (canvas.width - rowWidth) / 2;
                         
-                        if (currentTask === 'COLOR') { ctx.fillStyle = item; ctx.beginPath(); ctx.arc(x, y, minDim * 0.06, 0, Math.PI*2); ctx.fill(); }
-                        else if (currentTask === 'DIRECTION') { ctx.fillStyle = "#fff"; ctx.font = `bold ${minDim * 0.04}px monospace`; ctx.fillText(item, x, y + 10); }
-                        else { drawShape(item, x, y, minDim * 0.05, '#fff'); }
+                        items.forEach((item, i) => {
+                            const x = startX + (i * spacing), y = centerY + 60;
+                            const isSelected = (i === lastSelectionIndex);
 
-                        if (!isTouch) {
-                            ctx.fillStyle = isSelected ? "var(--accent)" : "rgba(255, 255, 255, 0.3)";
-                            ctx.font = `bold ${minDim * 0.02}px monospace`;
-                            ctx.fillText(`[${i + 1}]`, x, y + minDim * 0.15); 
-                        }
+                            if (isSelected) {
+                                ctx.save(); ctx.shadowBlur = 20; ctx.shadowColor = "rgba(14, 165, 233, 0.8)";
+                                ctx.fillStyle = "rgba(14, 165, 233, 0.2)"; ctx.beginPath(); ctx.arc(x, y, minDim * 0.08, 0, Math.PI*2); ctx.fill(); ctx.restore();
+                            }
+                            
+                            if (currentTask === 'COLOR') { ctx.fillStyle = item; ctx.beginPath(); ctx.arc(x, y, minDim * 0.06, 0, Math.PI*2); ctx.fill(); }
+                            else { drawShape(item, x, y, minDim * 0.05, '#fff'); }
 
-                        selectionBoxes.push({ key: item, val: i, x1: x - spacing/2, x2: x + spacing/2, y1: y - 100, y2: y + 100, cx: x, cy: y });
-                    });
+                            if (!isTouch) {
+                                ctx.fillStyle = isSelected ? "var(--accent)" : "rgba(255, 255, 255, 0.3)";
+                                ctx.font = `bold ${minDim * 0.02}px monospace`;
+                                ctx.fillText(`[${i + 1}]`, x, y + minDim * 0.15); 
+                            }
+
+                            selectionBoxes.push({ key: item, val: i, x1: x - spacing/2, x2: x + spacing/2, y1: y - 100, y2: y + 100, cx: x, cy: y });
+                        });
+                    }
 
                     // Ripples
                     for (let i = ripples.length - 1; i >= 0; i--) {
@@ -518,7 +572,7 @@
                 if (currentTask === 'CENTER') { uShape = hit.key; askTask('SATELLITE', SHAPES); }
                 else if (currentTask === 'SATELLITE') {
                     uSat = hit.key;
-                    if (u.level3) askTask('DIRECTION', DIRECTIONS);
+                    if (u.level3) askTask('DIRECTION', null); // Passed null as we handle drawing internally
                     else if (u.level2) askTask('COLOR', L2_COLORS);
                     else finalizeTrial();
                 } else if (currentTask === 'COLOR') { uColor = hit.val; finalizeTrial(); }
@@ -737,14 +791,29 @@
         window.addEventListener('resize', resize);
         canvas.addEventListener('mousedown', handleInput);
         canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleInput(e); }, {passive: false});
+        
         window.addEventListener('keydown', (e) => {
             if (state !== 'QUESTIONING' || inputLocked) return;
+            
+            // Check for NumPad inputs (or regular numbers) for Directional Phase
+            if (currentTask === 'DIRECTION') {
+                 const keyVal = parseInt(e.key);
+                 if (!isNaN(keyVal)) {
+                     // Find the selection box that matches the Key Number (not the index!)
+                     const hit = selectionBoxes.find(b => b.key === keyVal);
+                     if (hit) {
+                        ripples.push({ x: hit.cx, y: hit.cy, radius: 0, opacity: 1 });
+                        processHit(hit);
+                        return;
+                     }
+                 }
+            }
+            
+            // Standard linear input handling (original logic)
             const index = parseInt(e.key) - 1;
-            if (index >= 0 && index < selectionBoxes.length) {
+            if (index >= 0 && index < selectionBoxes.length && currentTask !== 'DIRECTION') {
                 const hit = selectionBoxes[index];
                 ripples.push({ x: hit.cx, y: hit.cy, radius: 0, opacity: 1 });
-                // Keyboard has 0 variance, so we skip bot check for keys, 
-                // but we could limit keyboard usage if desired.
                 processHit(hit);
             }
         });
