@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neuro-Speed Elite 2.7</title>
+    <title>Neuro-Speed Elite 2.8 (Patched)</title>
     <style>
         :root { 
             --bg: #020617; --panel: #0f172a; --accent: #0ea5e9; --text: #f8fafc; 
@@ -607,7 +607,26 @@
             u.score = (u.score || 0) + (baseXP * speedEfficiency * zMult);
             
             u.streak = Math.max(0, u.streak) + 1;
-            if (u.streak >= 3) { u.speed = Math.max(16, u.speed * 0.88); u.streak = 0; }
+            
+            if (u.streak >= 3) { 
+                u.speed = Math.max(16, u.speed * 0.88); 
+                u.streak = 0; 
+                
+                // --- TIER PROMOTION LOGIC (INJECTED) ---
+                if (!u.level2 && u.speed <= 350) {
+                    u.level2 = true;
+                    // Reset to ensure they can handle the new load without instant failure
+                    u.speed = 400; 
+                    alert("SYSTEM UPGRADE: TIER 2 UNLOCKED (CHROMATIC SYNC)");
+                }
+                else if (u.level2 && !u.level3 && u.speed <= 220) {
+                    u.level3 = true;
+                    u.speed = 300; // Slight ease-in for T3
+                    alert("SYSTEM UPGRADE: TIER 3 UNLOCKED (VECTOR SYNC)");
+                }
+                // ---------------------------------------
+            }
+            
             document.getElementById('msg-title').innerText = "SYNC SUCCESS";
             document.getElementById('msg-title').style.color = "#10b981";
         } else {
@@ -616,8 +635,16 @@
             u.speed = Math.min(1000, u.speed + 40);
             document.getElementById('msg-title').innerText = "ZONE SHATTERED";
             document.getElementById('msg-title').style.color = "#ef4444";
+            
+            // Demotion Logic
             if (u.streak <= -3 && (u.level2 || u.level3)) {
-                if (u.level3) u.level3 = false; else u.level2 = false;
+                if (u.level3) {
+                    u.level3 = false; 
+                    alert("SYSTEM WARNING: TIER 3 REVOKED");
+                } else {
+                    u.level2 = false;
+                    alert("SYSTEM WARNING: TIER 2 REVOKED");
+                }
                 u.streak = 0; u.speed += 100;
             }
         }
