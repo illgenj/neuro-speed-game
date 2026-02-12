@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neuro-Speed Elite 4.0</title>
+    <title>Neuro-Speed Elite 4.1</title>
     <style>
         :root { 
             --bg: #020617; --panel: #0f172a; --accent: #0ea5e9; --text: #f8fafc; 
@@ -38,6 +38,10 @@
         .val { font-size: 0.85rem; font-weight: 800; color: var(--accent); font-family: monospace; }
         .xp-val { color: var(--gold); transition: color 0.3s; }
 
+        /* Audio Toggle */
+        #btn-audio { opacity: 0.5; }
+        #btn-audio.active { opacity: 1; color: var(--success); }
+
         /* --- ZONE THERMOMETER --- */
         #zone-container {
             width: 90%; height: 24px; background: #0f172a; 
@@ -67,8 +71,14 @@
             50% { box-shadow: 0 0 25px var(--gold), inset 0 0 10px var(--gold); }
             100% { box-shadow: 0 0 10px var(--gold); }
         }
+        @keyframes text-pop {
+            0% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.4); color: #fff; }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
         
         .zone-gold { animation: bar-pulse-gold 1.5s infinite; }
+        .text-pop-anim { animation: text-pop 0.3s ease-out; }
 
         /* --- Game Area --- */
         #game-container { flex-grow: 1; position: relative; width: 100%; overflow: hidden; }
@@ -102,7 +112,7 @@
         .a-card .v { display: block; font-weight: 800; color: var(--accent); font-size: 1rem; }
         .a-card .l { font-size: 0.5rem; opacity: 0.4; text-transform: uppercase; font-weight: 700; }
 
-        /* --- SYNC BAR UI --- */
+        /* --- NEW SYNC BAR UI --- */
         #sync-vis-container {
             margin: 15px 0 20px 0;
             text-align: center;
@@ -150,6 +160,8 @@
         }
         .syncing { opacity: 1 !important; }
 
+        .singularity-glow { filter: saturate(1.5) contrast(1.1); }
+
         /* --- SYSTEM MESSAGE HUD --- */
         #system-message {
             position: absolute; top: 120px; left: 50%; transform: translateX(-50%);
@@ -158,9 +170,8 @@
             text-align: center; font-weight: 900; letter-spacing: 1px; font-size: 0.9rem;
             box-shadow: 0 10px 40px rgba(0,0,0,0.8); pointer-events: none; 
             transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            width: 85%; max-width: 450px; opacity: 0;
+            width: 85%; max-width: 450px;
         }
-        #system-message.visible { opacity: 1; }
         .sys-upgrade { border-color: var(--success) !important; color: var(--success); box-shadow: 0 0 30px rgba(16, 185, 129, 0.3) !important; }
         .sys-alert { border-color: var(--fail) !important; color: var(--fail); box-shadow: 0 0 30px rgba(239, 68, 68, 0.3) !important; }
         .sys-info { border-color: var(--accent) !important; color: var(--accent); box-shadow: 0 0 30px rgba(14, 165, 233, 0.3) !important; }
@@ -192,7 +203,7 @@
         #pin-input-field {
             letter-spacing: 10px;
             font-size: 2rem;
-            -webkit-text-security: disc; 
+            -webkit-text-security: disc; /* Makes it look like password dots but styled */
         }
         .pin-subtitle {
             font-size: 0.7rem; color: #94a3b8; margin-bottom: 15px; font-family: monospace;
@@ -217,6 +228,10 @@
                 <span class="label">LATENCY</span>
                 <span id="speed-val" class="val">---ms</span>
             </div>
+            <div class="stat" id="btn-audio">
+                <span class="label">AUDIO</span>
+                <span id="audio-icon" class="val">OFF</span>
+            </div>
             <div class="stat" id="btn-leaderboard">
                 <span class="label">GRID</span>
                 <span id="mode-indicator" class="val">T1</span>
@@ -233,10 +248,10 @@
         <canvas id="gameCanvas"></canvas>
         <div id="sync-indicator"></div>
 
-        <div id="system-message">SYSTEM READY</div>
+        <div id="system-message" class="hidden">SYSTEM READY</div>
 
         <div id="main-overlay" class="overlay">
-            <h2 id="msg-title">NEURAL READY v4.0</h2>
+            <h2 id="msg-title">NEURAL READY</h2>
             <p id="msg-body" style="margin-bottom: 15px;">Initiate flash sequence to begin calibration.</p>
             
             <div id="sync-vis-container">
