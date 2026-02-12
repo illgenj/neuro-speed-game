@@ -307,12 +307,15 @@
 
 <script type="module">
     /* ----------------------------------------------------
-       NEURO-SPEED ELITE 4.0 [WARP ENGINE + REACTIVE BG]
+       NEURO-SPEED ELITE 4.1 [STABILITY PATCH]
+       - Fixed: Leaderboard button unresponsiveness
+       - Fixed: Event listener execution order
+       - Added: Visual touch feedback on Grid button
        ----------------------------------------------------
     */
 
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, doc, setDoc, query, orderBy, limit, getDocs, getDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, collection, doc, setDoc, query, orderBy, limit, getDocs, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBbUKJ9FgkTMU2WHM4N0uYAujLBDBV-ILs",
@@ -324,30 +327,41 @@
     };
 
     (function() {
-        // --- HONEYPOT & SECURITY ---
+        // --- 1. INITIALIZATION & VARIABLES ---
         window.gameScore = 0;
         let honeyPotTriggered = false;
-        Object.defineProperty(window, 'gameScore', { get: () => 0, set: (val) => { console.warn("Unauthorized memory access."); honeyPotTriggered = true; } });
+        Object.defineProperty(window, 'gameScore', {
+            get: () => 0, set: (val) => { console.warn("Unauthorized memory access."); honeyPotTriggered = true; }
+        });
 
         let db;
-        try { const app = initializeApp(firebaseConfig); db = getFirestore(app); console.log("Neuro-Link Secured."); } catch(e) { console.error("Link Error:", e); }
+        try {
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            console.log("Neuro-Link Secured.");
+        } catch(e) { console.error("Link Error:", e); }
 
         const SALT = "NEURO_SECURE_SALT_9283"; 
         let appData = { users: {}, currentUser: null };
         let clickHistory = [];
-        let pinResolver = null, realtimeUnsubscribe = null;
+        let pinResolver = null; 
+        let realtimeUnsubscribe = null;
 
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const isTouch = ('ontouchstart' in window || navigator.maxTouchPoints > 0) && window.innerWidth < 1024;
 
-        // --- CONSTANTS ---
+        // Game Config
         const SHAPES = ['circle', 'square', 'triangle', 'diamond', 'cross'];
         const L2_COLORS = ['#22d3ee', '#4ade80', '#f472b6', '#fbbf24'];
         const QUESTION_TIMEOUT_MS = 15000;
-        
+        let questionTimerStart = 0;
+        let isTimedOut = false;
+        let lastTickTime = 0; 
+
+        // Directions
         const DIR_MAP = [
-            { id: 0, key: 6, label: '6', angle: 0 },             
+            { id: 0, key: 6, label: '6', angle: 0 },            
             { id: 1, key: 3, label: '3', angle: Math.PI*0.25 },
             { id: 2, key: 2, label: '2', angle: Math.PI*0.5 }, 
             { id: 3, key: 1, label: '1', angle: Math.PI*0.75 },
@@ -357,515 +371,160 @@
             { id: 7, key: 9, label: '9', angle: Math.PI*1.75 } 
         ];
 
-        // --- GAME STATE MACHINE ---
-        let gameState = {
-            mode: 'IDLE', // IDLE, FLASHING, QUESTIONING
-            timer: 0,     // General purpose timer (flash duration, question timeout)
-            task: null,   // CENTER, SATELLITE, COLOR, DIRECTION
-            selectionLock: 0, // Debounce timer
-            shakeIntensity: 0
-        };
-
-        // Entities
+        // State
+        let state = 'IDLE', currentTask = null, selectionBoxes = [];
         let centerX, centerY, minDim;
-        let starfield = []; 
-        let gameObjects = {
-            target: null, satellite: null, distractors: [],
-            uShape: null, uSat: null, uColor: null, uDir: null,
-            buttons: [], ripples: []
-        };
+        let targetShape, satShape, satColorIdx, satDirIdx;
+        let uShape, uSat, uColor, uDir;
         let sessionZone = 0;
+        let activeDistractors = [], lastFlashRadius = 0;
+        let inputLocked = false, lastSelectionIndex = -1, ripples = [];
+        let animFrameId;
 
-        // --- AUDIO ENGINE ---
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        const audioCtx = new AudioContext();
-        
-        function playTone(freq, type, duration) {
-            if(audioCtx.state === 'suspended') audioCtx.resume();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.start(); osc.stop(audioCtx.currentTime + duration);
-        }
-
-        // --- REACTIVE BACKGROUND SYSTEM ---
-        class Star {
-            constructor() { this.reset(true); }
-            reset(randomZ) {
-                this.x = (Math.random() - 0.5) * canvas.width * 2;
-                this.y = (Math.random() - 0.5) * canvas.height * 2;
-                this.z = randomZ ? Math.random() * 1000 : 1000;
-                this.size = Math.random() * 2;
-                this.color = Math.random() > 0.8 ? '#ffffff' : '#475569';
-            }
-            update(speed, dt) {
-                this.z -= speed * (dt / 16);
-                if (this.z <= 1) this.reset(false);
-            }
-            draw(ctx, cx, cy) {
-                const perspective = 300 / this.z;
-                const sx = cx + this.x * perspective;
-                const sy = cy + this.y * perspective;
-                const s = this.size * perspective;
-                if(sx > 0 && sx < canvas.width && sy > 0 && sy < canvas.height) {
-                    ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(sx, sy, s, 0, Math.PI*2); ctx.fill();
+        // --- 2. AUDIO SYSTEM ---
+        const AudioSys = {
+            ctx: null, enabled: false,
+            init: function() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if(AudioContext) this.ctx = new AudioContext();
                 }
+                if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+            },
+            playTone: function(freq, type, duration, vol=0.1, slideTo=null) {
+                if (!this.enabled || !this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                if (slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo, this.ctx.currentTime + duration);
+                gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + duration);
+            },
+            playUI: function(type) {
+                if(!this.enabled) return;
+                if(type === 'click') this.playTone(800, 'sine', 0.1, 0.05);
+                if(type === 'lock') this.playTone(1200, 'triangle', 0.1, 0.05, 600);
+            },
+            playGame: function(type) {
+                if(!this.enabled) return;
+                if (type === 'flash') this.playTone(200, 'triangle', 0.15, 0.1, 800);
+                else if (type === 'success') {
+                    const root = 440 * (1 + (sessionZone * 0.05));
+                    this.playTone(root, 'sine', 0.3, 0.1);
+                    setTimeout(() => this.playTone(root * 1.25, 'sine', 0.3, 0.08), 50);
+                    setTimeout(() => this.playTone(root * 1.5, 'sine', 0.4, 0.06), 100);
+                } else if (type === 'fail') {
+                    this.playTone(150, 'sawtooth', 0.4, 0.15, 50);
+                    this.playTone(140, 'sawtooth', 0.4, 0.15, 40);
+                } else if (type === 'levelUp') {
+                    this.playTone(440, 'square', 0.1, 0.1);
+                    setTimeout(() => this.playTone(880, 'square', 0.1, 0.1), 100);
+                    setTimeout(() => this.playTone(1760, 'square', 0.4, 0.1), 200);
+                } else if (type === 'timer') this.playTone(800, 'square', 0.05, 0.02);
+            },
+            toggle: function() {
+                this.enabled = !this.enabled;
+                if(this.enabled) this.init();
+                return this.enabled;
             }
-        }
+        };
 
-        // --- MAIN LOOP (DELTA TIME ENGINE) ---
-        let lastTime = 0;
-        function gameLoop(timestamp) {
-            const dt = timestamp - lastTime;
-            lastTime = timestamp;
-
-            update(dt);
-            render(dt);
-            requestAnimationFrame(gameLoop);
-        }
-
-        function update(dt) {
-            // 1. Background Logic
-            const u = appData.users[appData.currentUser];
-            let warpSpeed = 2; // Default
-            if (u) {
-                // Slower reaction time (higher ms) = Slower warp. Faster reaction = Faster warp.
-                const speedFactor = Math.max(0.5, (1000 - u.speed) / 50); 
-                warpSpeed = speedFactor + (sessionZone * 1.5); 
-                if(u.level3) warpSpeed += 5;
-            }
-            starfield.forEach(s => s.update(warpSpeed, dt));
-
-            // 2. Game State Logic
-            if (gameState.mode === 'FLASHING') {
-                gameState.timer -= dt;
-                if (gameState.timer <= 0) {
-                    gameState.mode = 'QUESTIONING';
-                    gameState.timer = QUESTION_TIMEOUT_MS;
-                    askTask('CENTER');
-                }
-            } else if (gameState.mode === 'QUESTIONING') {
-                if (gameState.selectionLock > 0) gameState.selectionLock -= dt;
-                
-                gameState.timer -= dt;
-                if (gameState.timer <= 0) {
-                    handleTimeout();
-                }
-            }
-
-            // 3. Shake Decay
-            if (gameState.shakeIntensity > 0) {
-                gameState.shakeIntensity -= dt * 0.05;
-                if (gameState.shakeIntensity < 0) gameState.shakeIntensity = 0;
-            }
-
-            // 4. Ripple update
-            for (let i = gameObjects.ripples.length - 1; i >= 0; i--) {
-                const r = gameObjects.ripples[i];
-                r.radius += dt * 0.2;
-                r.opacity -= dt * 0.002;
-                if (r.opacity <= 0) gameObjects.ripples.splice(i, 1);
-            }
-        }
-
-        function render(dt) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Camera Shake for Singularity
-            ctx.save();
-            if (gameState.shakeIntensity > 0) {
-                const dx = (Math.random() - 0.5) * gameState.shakeIntensity;
-                const dy = (Math.random() - 0.5) * gameState.shakeIntensity;
-                ctx.translate(dx, dy);
-            }
-
-            // Draw Stars
-            starfield.forEach(s => s.draw(ctx, centerX, centerY));
-
-            if (gameState.mode === 'FLASHING') {
-                const u = appData.users[appData.currentUser];
-                // Draw Distractors
-                gameObjects.distractors.forEach(d => drawShape(d.shape, d.x, d.y, minDim * 0.05, '#334155'));
-                // Draw Target
-                drawShape(gameObjects.target, centerX, centerY, minDim * 0.06, '#fff');
-                // Draw Satellite
-                drawShape(gameObjects.satellite.shape, gameObjects.satellite.x, gameObjects.satellite.y, minDim * 0.05, 
-                    u.level2 ? L2_COLORS[gameObjects.satellite.colorIdx] : '#8b5cf6');
-            
-            } else if (gameState.mode === 'QUESTIONING') {
-                // Draw Timer Bar
-                const timePct = Math.max(0, gameState.timer / QUESTION_TIMEOUT_MS);
-                const barColor = timePct < 0.2 ? '#ef4444' : (timePct < 0.5 ? '#f59e0b' : '#0ea5e9');
-                ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fillRect(0, 0, canvas.width, 6);
-                ctx.fillStyle = barColor; ctx.shadowColor = barColor; ctx.shadowBlur = 10;
-                ctx.fillRect(0, 0, canvas.width * timePct, 6); ctx.shadowBlur = 0;
-
-                // Draw Text
-                let title = "", sub = "";
-                if(gameState.task === 'CENTER') { title = "CORE ID"; sub = "SELECT CENTER SHAPE"; }
-                else if(gameState.task === 'SATELLITE') { title = "PERIPHERAL ID"; sub = "SELECT SATELLITE SHAPE"; }
-                else if(gameState.task === 'COLOR') { title = "SPECTRUM ID"; sub = "MATCH SATELLITE COLOR"; }
-                else { title = "VECTOR ID"; sub = "INDICATE ORIGIN"; }
-
-                ctx.textAlign = "center"; ctx.fillStyle = "#fff";
-                ctx.font = `900 ${minDim * 0.07}px 'Inter', system-ui`;
-                ctx.fillText(title, centerX, centerY - minDim * 0.15);
-                ctx.fillStyle = "#0ea5e9"; ctx.font = `700 ${minDim * 0.03}px monospace`;
-                ctx.fillText(sub, centerX, centerY - minDim * 0.08);
-
-                // Draw Buttons
-                gameObjects.buttons.forEach(btn => {
-                    const isSelected = (btn.val === gameObjects.lastSelection);
-                    
-                    if (gameState.task === 'DIRECTION') {
-                        ctx.beginPath();
-                        ctx.shadowBlur = isSelected ? 20 : 0; 
-                        ctx.shadowColor = "rgba(14, 165, 233, 0.8)";
-                        ctx.fillStyle = isSelected ? "rgba(14, 165, 233, 0.4)" : "rgba(255, 255, 255, 0.05)";
-                        ctx.strokeStyle = isSelected ? "var(--accent)" : "#334155"; ctx.lineWidth = 3;
-                        ctx.arc(btn.cx, btn.cy, btn.r, 0, Math.PI * 2);
-                        ctx.fill(); ctx.stroke(); ctx.shadowBlur = 0;
-                        ctx.fillStyle = isSelected ? "#fff" : "#64748b";
-                        ctx.font = `800 ${minDim * 0.05}px monospace`; ctx.textBaseline = "middle";
-                        ctx.fillText(btn.label, btn.cx, btn.cy); ctx.textBaseline = "alphabetic";
-                    } else {
-                        if (isSelected) {
-                            ctx.save(); ctx.shadowBlur = 20; ctx.shadowColor = "rgba(14, 165, 233, 0.8)";
-                            ctx.fillStyle = "rgba(14, 165, 233, 0.2)"; ctx.beginPath(); 
-                            ctx.arc(btn.cx, btn.cy, minDim * 0.08, 0, Math.PI*2); ctx.fill(); ctx.restore();
-                        }
-                        if (gameState.task === 'COLOR') { 
-                            ctx.fillStyle = btn.key; ctx.beginPath(); 
-                            ctx.arc(btn.cx, btn.cy, minDim * 0.06, 0, Math.PI*2); ctx.fill(); 
-                        } else { 
-                            drawShape(btn.key, btn.cx, btn.cy, minDim * 0.05, '#fff'); 
-                        }
-                        if (!isTouch) {
-                            ctx.fillStyle = isSelected ? "var(--accent)" : "rgba(255, 255, 255, 0.3)";
-                            ctx.font = `bold ${minDim * 0.02}px monospace`;
-                            ctx.fillText(`[${btn.val + 1}]`, btn.cx, btn.cy + minDim * 0.15); 
-                        }
-                    }
-                });
-            }
-
-            // Draw Ripples
-            gameObjects.ripples.forEach(r => {
-                ctx.beginPath(); ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
-                ctx.strokeStyle = `rgba(255, 255, 255, ${r.opacity})`; ctx.stroke();
-            });
-
-            ctx.restore();
-        }
-
-        // --- GAME LOGIC FUNCTIONS ---
-        function executeFlash() {
-            if (gameState.mode !== 'IDLE') return;
-            document.getElementById('sync-vis-container').style.opacity = '0'; 
-            
-            const u = appData.users[appData.currentUser];
-            gameState.mode = 'FLASHING';
-            gameState.timer = u.speed; // Flash duration based on user speed
-
-            // Setup Shapes
-            gameObjects.target = SHAPES[Math.floor(Math.random() * SHAPES.length)];
-            const sShape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
-            const sColorIdx = u.level2 ? Math.floor(Math.random() * L2_COLORS.length) : -1;
-            const sDirIdx = Math.floor(Math.random() * 8); 
-            
-            const radius = minDim * 0.35;
-            const angle = u.level3 ? DIR_MAP[sDirIdx].angle : Math.random() * Math.PI * 2;
-            const satX = centerX + Math.cos(angle) * radius; 
-            const satY = centerY + Math.sin(angle) * radius;
-
-            gameObjects.satellite = { shape: sShape, x: satX, y: satY, colorIdx: sColorIdx, dirIdx: sDirIdx };
-            
-            // Setup Distractors
-            gameObjects.distractors = [];
-            const count = 12; const step = (Math.PI * 2) / count;
-            for (let i = 0; i < count; i++) {
-                const a = i * step;
-                if (Math.abs(Math.atan2(Math.sin(a - angle), Math.cos(a - angle))) > 0.6) {
-                    gameObjects.distractors.push({
-                        x: centerX + Math.cos(a) * radius + (Math.random()-0.5)*20,
-                        y: centerY + Math.sin(a) * radius + (Math.random()-0.5)*20,
-                        shape: SHAPES[Math.floor(Math.random() * SHAPES.length)]
-                    });
-                }
-            }
-            playTone(440, 'sine', 0.1);
-        }
-
-        function askTask(type) {
-            gameState.task = type;
-            gameObjects.buttons = [];
-            gameObjects.lastSelection = -1;
-            
-            if (type === 'DIRECTION') {
-                const layoutRadius = minDim * 0.3; 
-                DIR_MAP.forEach(dir => {
-                    gameObjects.buttons.push({
-                        key: dir.key, val: dir.id, label: dir.label,
-                        cx: centerX + Math.cos(dir.angle) * layoutRadius,
-                        cy: centerY + Math.sin(dir.angle) * layoutRadius,
-                        r: minDim * 0.07
-                    });
-                });
-            } else {
-                const items = (type === 'CENTER' || type === 'SATELLITE') ? SHAPES : L2_COLORS;    
-                const rowWidth = canvas.width * 0.85; 
-                const spacing = rowWidth / (items.length - 1); 
-                const startX = (canvas.width - rowWidth) / 2;
-                items.forEach((item, i) => {
-                    gameObjects.buttons.push({
-                        key: item, val: i, cx: startX + (i * spacing), cy: centerY + 60, r: minDim * 0.08
-                    });
-                });
-            }
-        }
-
-        function handleInput(e) {
-            if (gameState.mode !== 'QUESTIONING' || gameState.selectionLock > 0) return;
-            const rect = canvas.getBoundingClientRect();
-            const clientX = e.clientX || (e.touches && e.touches.length > 0 ? e.touches[0].clientX : 0);
-            const clientY = e.clientY || (e.touches && e.touches.length > 0 ? e.touches[0].clientY : 0);
-            const x = clientX - rect.left;
-            const y = clientY - rect.top;
-
-            // Touch Ripple
-            gameObjects.ripples.push({ x: x, y: y, radius: 0, opacity: 1 });
-
-            // Hit Test
-            let hit = null;
-            if (gameState.task === 'DIRECTION') {
-                hit = gameObjects.buttons.find(b => Math.hypot(b.cx - x, b.cy - y) < b.r * 1.5);
-            } else {
-                hit = gameObjects.buttons.find(b => Math.hypot(b.cx - x, b.cy - y) < b.r * 1.5);
-            }
-
-            if (hit) {
-                // Honeypot check
-                const dist = Math.sqrt(Math.pow(hit.cx - x, 2) + Math.pow(hit.cy - y, 2));
-                clickHistory.push(dist); if(clickHistory.length > 10) clickHistory.shift();
-                const variance = clickHistory.reduce((a, b) => a + b, 0) / clickHistory.length;
-                if (clickHistory.length >= 5 && variance < 2.0) { console.warn("Bot?"); honeyPotTriggered = true; }
-
-                gameObjects.lastSelection = hit.val;
-                gameState.selectionLock = 320; // 320ms debounce
-                
-                // Process Answer logic
-                const u = appData.users[appData.currentUser];
-                playTone(800, 'triangle', 0.05);
-
-                setTimeout(() => {
-                    if (gameState.task === 'CENTER') { 
-                        gameObjects.uShape = hit.key; askTask('SATELLITE'); 
-                    } else if (gameState.task === 'SATELLITE') {
-                        gameObjects.uSat = hit.key;
-                        if (u.level2) askTask('COLOR'); 
-                        else if (u.level3) askTask('DIRECTION');
-                        else finalizeTrial();
-                    } else if (gameState.task === 'COLOR') { 
-                        gameObjects.uColor = hit.val; 
-                        if (u.level3) askTask('DIRECTION'); else finalizeTrial();
-                    } else if (gameState.task === 'DIRECTION') { 
-                        gameObjects.uDir = hit.val; finalizeTrial(); 
-                    }
-                }, 300);
-            }
-        }
-
-        function handleTimeout() {
-            triggerSystemMessage("NEURAL LINK SEVERED (TIMEOUT)", "alert");
-            gameObjects.uShape = null; 
-            finalizeTrial(true);
-        }
-
-        function finalizeTrial(timedOut = false) {
-            if (honeyPotTriggered) { appData.users[appData.currentUser].score = 0; location.reload(); return; }
-
-            const u = appData.users[appData.currentUser];
-            let correct = (gameObjects.uShape === gameObjects.target && gameObjects.uSat === gameObjects.satellite.shape);
-            if (u.level2 && gameObjects.uColor !== gameObjects.satellite.colorIdx) correct = false;
-            if (u.level3 && gameObjects.uDir !== gameObjects.satellite.dirIdx) correct = false;
-            if (timedOut) correct = false;
-
-            gameState.mode = 'IDLE';
-
-            // VISUAL & SCORING LOGIC
-            const prevSpeed = u.speed;
-            
-            if (correct) {
-                sessionZone++;
-                playTone(1200, 'sine', 0.2); // Success Sound
-                
-                if (sessionZone > 10) gameState.shakeIntensity = 20; // Singularity Shake
-
-                // Score Calc
-                let performanceVal = Math.max(100, (1500 - u.speed)); 
-                let tierMult = u.level3 ? 2.5 : (u.level2 ? 1.5 : 1.0);
-                let zoneMult = sessionZone > 10 ? 1.5 : (sessionZone > 5 ? 1.2 : 1.0);
-                let roundTarget = performanceVal * tierMult * zoneMult * 10;
-                
-                u.score = (u.score || 0) + ((roundTarget - (u.score || 0)) * 0.15);
-                u.streak = Math.max(0, u.streak) + 1;
-
-                if (u.streak >= 3) { 
-                    u.speed = Math.max(16, u.speed * 0.92); 
-                    u.streak = 0; 
-                    if (!u.level2 && u.speed <= 350) { u.level2 = true; u.speed = 400; triggerSystemMessage("TIER 2 UNLOCKED", 'upgrade'); }
-                    else if (u.level2 && !u.level3 && u.speed <= 220) { u.level3 = true; u.speed = 300; triggerSystemMessage("TIER 3 UNLOCKED", 'upgrade'); }
-                }
-                
-                document.getElementById('msg-title').innerText = "SYNC STABLE";
-                document.getElementById('msg-title').style.color = "#10b981";
-                document.getElementById('msg-body').innerText = `RATING: ${Math.floor(u.score)}`;
-
-            } else {
-                playTone(150, 'sawtooth', 0.4); // Failure Sound
-                sessionZone = 0;
-                let penalty = u.score * 0.20; 
-                u.score = Math.max(0, u.score - penalty); 
-                u.streak = Math.min(0, u.streak) - 1;
-                u.speed = Math.min(1000, u.speed + 80); 
-
-                document.getElementById('msg-title').innerText = timedOut ? "SYNC TIMEOUT" : "SYNC LOST";
-                document.getElementById('msg-title').style.color = "#ef4444";
-                document.getElementById('msg-body').innerText = `RATING DROP: -${Math.floor(penalty)}`;
-
-                if (u.streak <= -3 && (u.level2 || u.level3)) {
-                    if (u.level3) { u.level3 = false; triggerSystemMessage("TIER 3 REVOKED", 'alert'); }
-                    else { u.level2 = false; triggerSystemMessage("TIER 2 REVOKED", 'alert'); }
-                    u.streak = 0; u.speed += 100;
-                }
-            }
-
-            // Sync Bar Render
-            const maxLatency = 1000;
-            const oldPct = Math.max(0, Math.min(100, ((maxLatency - prevSpeed) / maxLatency) * 100));
-            const newPct = Math.max(0, Math.min(100, ((maxLatency - u.speed) / maxLatency) * 100));
-            
-            const barVis = document.getElementById('sync-vis-container');
-            const barFill = document.getElementById('sync-bar-fill');
-            const pctText = document.getElementById('sync-percentage');
-            
-            barVis.style.opacity = '1';
-            const themeColor = correct ? 'var(--success)' : 'var(--fail)';
-            barFill.style.background = themeColor; barFill.style.boxShadow = `0 0 15px ${themeColor}`;
-            pctText.style.color = themeColor;
-            barFill.style.transition = 'none'; barFill.style.width = `${oldPct}%`; pctText.innerText = `${Math.round(oldPct)}%`;
-            setTimeout(() => {
-                barFill.style.transition = 'width 0.6s cubic-bezier(0.22, 1, 0.36, 1)';
-                barFill.style.width = `${newPct}%`; pctText.innerText = `${Math.round(newPct)}%`;
-            }, 50);
-
-            u.history.push(Math.round(u.speed));
-            u.resultsHistory.push({ correct, date: new Date().toISOString().split('T')[0] });
-            save(); updateUI();
-            
-            // Background Save
-            const startBtn = document.getElementById('start-btn');
-            startBtn.classList.add('locked-btn');
-            document.getElementById('main-overlay').classList.remove('hidden');
-            backgroundSync().then(() => setTimeout(() => startBtn.classList.remove('locked-btn'), 600));
-        }
-
-        // --- HELPER FUNCTIONS ---
-        function drawShape(type, x, y, size, color) {
-            ctx.beginPath(); ctx.fillStyle = color;
-            if (type === 'circle') ctx.arc(x, y, size, 0, Math.PI * 2);
-            else if (type === 'square') ctx.rect(x - size, y - size, size * 2, size * 2);
-            else if (type === 'triangle') { ctx.moveTo(x, y - size); ctx.lineTo(x + size, y + size); ctx.lineTo(x - size, y + size); ctx.closePath(); }
-            else if (type === 'diamond') { ctx.moveTo(x, y - size * 1.2); ctx.lineTo(x + size * 1.2, y); ctx.lineTo(x, y + size * 1.2); ctx.lineTo(x - size * 1.2, y); ctx.closePath(); }
-            else if (type === 'cross') { ctx.rect(x - size/3, y - size, size/1.5, size * 2); ctx.rect(x - size, y - size/3, size * 2, size/1.5); }
-            ctx.fill();
-        }
-
-        // --- DATA & SYNC ---
+        // --- 3. HELPER FUNCTIONS ---
         function generateHash(data) {
             const str = JSON.stringify(data) + SALT;
-            let hash = 0; for (let i = 0; i < str.length; i++) hash = ((hash << 5) - hash) + str.charCodeAt(i);
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                const char = str.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+            }
             return hash.toString();
         }
+
         function save() {
             if (honeyPotTriggered) return;
-            localStorage.setItem('neuroElite_v4_secure', JSON.stringify(appData));
-            localStorage.setItem('neuroElite_sig_v4', generateHash(appData));
+            const hash = generateHash(appData);
+            localStorage.setItem('neuroElite_v3_secure', JSON.stringify(appData));
+            localStorage.setItem('neuroElite_sig', hash);
         }
-        function load() {
-            const saved = localStorage.getItem('neuroElite_v4_secure');
-            const sig = localStorage.getItem('neuroElite_sig_v4');
-            if (saved && sig && generateHash(JSON.parse(saved)) === sig) appData = JSON.parse(saved);
-            else { localStorage.clear(); appData = { users: {}, currentUser: null }; }
-            
-            if (appData.currentUser) { checkDailyStreak(); updateUI(); initRealtimeSync(appData.currentUser); } 
-            else showUserMenu();
+
+        function hideOverlays() { document.querySelectorAll('.overlay').forEach(o => o.classList.add('hidden')); }
+
+        function triggerSystemMessage(text, type) {
+            const el = document.getElementById('system-message');
+            el.innerText = text; el.className = ''; 
+            if(type === 'upgrade') { el.classList.add('sys-upgrade'); AudioSys.playGame('levelUp'); }
+            else if(type === 'info') el.classList.add('sys-info');
+            else el.classList.add('sys-alert');
+            requestAnimationFrame(() => el.classList.remove('hidden'));
+            setTimeout(() => el.classList.add('hidden'), 3500);
         }
-        function checkDailyStreak() {
-            const u = appData.users[appData.currentUser];
-            const today = new Date().toISOString().split('T')[0];
-            if (!u.lastPlayDate) { u.lastPlayDate = today; u.dailyStreak = 1; }
-            else if (u.lastPlayDate !== today) {
-                const diff = (new Date(today) - new Date(u.lastPlayDate)) / 86400000;
-                if (diff >= 0.9 && diff < 2) u.dailyStreak++; else if (diff >= 2) u.dailyStreak = 1;
-                u.lastPlayDate = today;
-            }
-            save();
+
+        // --- 4. CORE LOGIC ---
+        function requestPin(title, reason) {
+            return new Promise((resolve) => {
+                hideOverlays();
+                const overlay = document.getElementById('pin-overlay');
+                const input = document.getElementById('pin-input-field');
+                document.getElementById('pin-title').innerText = title || "SECURITY CHECK";
+                document.getElementById('pin-reason').innerText = reason || "ENTER KEY";
+                input.value = "";
+                overlay.classList.remove('hidden');
+                setTimeout(() => input.focus(), 100);
+                pinResolver = resolve;
+            });
         }
+
         function initRealtimeSync(userId) {
             if (realtimeUnsubscribe) realtimeUnsubscribe();
             if (!db || !userId) return;
+            console.log(`Stream: ${userId}`);
             realtimeUnsubscribe = onSnapshot(doc(db, "leaderboard", userId), (docSnap) => {
-                if (docSnap.exists() && !docSnap.metadata.hasPendingWrites) {
-                    const c = docSnap.data(); const u = appData.users[userId];
-                    if (gameState.mode === 'IDLE' && u && (c.score !== u.score || c.speed !== u.speed)) {
-                        u.score = c.score || 0; u.speed = c.speed;
-                        u.level2 = (u.speed <= 400); u.level3 = (u.speed <= 300);
-                        if(c.pin && u.pin !== c.pin) u.pin = c.pin;
-                        save(); updateUI(); triggerSystemMessage("REMOTE SYNC DETECTED", "info");
+                if (docSnap.exists()) {
+                    if (docSnap.metadata.hasPendingWrites) return;
+                    const cloudData = docSnap.data();
+                    const u = appData.users[userId];
+                    if (state === 'IDLE' && u) {
+                        if (cloudData.score !== u.score || cloudData.speed !== u.speed) {
+                            u.score = cloudData.score || 0;
+                            u.speed = cloudData.speed;
+                            u.level2 = (u.speed <= 400);
+                            u.level3 = (u.speed <= 300);
+                            if(cloudData.pin && u.pin !== cloudData.pin) u.pin = cloudData.pin;
+                            save(); updateUI();
+                            triggerSystemMessage("REMOTE SYNC DETECTED", "info");
+                            const ind = document.getElementById('sync-indicator');
+                            ind.classList.add('syncing'); setTimeout(() => ind.classList.remove('syncing'), 1000);
+                        }
                     }
                 }
             });
         }
-        function backgroundSync() {
-            if (!appData.currentUser || honeyPotTriggered || appData.users[appData.currentUser].speed < 100) return Promise.resolve();
-            const u = appData.users[appData.currentUser];
-            const ind = document.getElementById('sync-indicator'); ind.classList.add('syncing');
-            const total = u.resultsHistory.length;
-            const correct = u.resultsHistory.filter(r => r.correct).length;
-            const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
-            return setDoc(doc(db, "leaderboard", appData.currentUser), {
-                name: appData.currentUser, score: Math.floor(u.score), speed: Math.round(u.speed),
-                accuracy: accuracy, tier: u.level3 ? "T3" : (u.level2 ? "T2" : "T1"),
-                timestamp: new Date(), pin: u.pin || null
-            }, { merge: true }).then(() => setTimeout(() => ind.classList.remove('syncing'), 500))
-            .catch(() => ind.classList.remove('syncing'));
-        }
 
-        // --- UI FUNCTIONS ---
         function updateUI() {
             const u = appData.users[appData.currentUser];
             if(!u) return;
-            if (!u.peakScore) u.peakScore = 0; if (u.score > u.peakScore) u.peakScore = u.score;
+            if (!u.peakScore) u.peakScore = 0;
+            if (u.score > u.peakScore) u.peakScore = u.score;
             document.getElementById('user-display').innerText = appData.currentUser;
             const currentDisplay = Math.floor(u.score || 0);
+            document.getElementById('score-val').innerText = currentDisplay.toLocaleString();
             const scoreEl = document.getElementById('score-val');
-            scoreEl.innerText = currentDisplay.toLocaleString();
             if (currentDisplay < u.peakScore * 0.5) scoreEl.style.color = 'var(--fail)';
             else if (currentDisplay > u.peakScore * 0.9) scoreEl.style.color = 'var(--success)';
             else scoreEl.style.color = 'var(--gold)';
             document.getElementById('speed-val').innerText = Math.round(u.speed) + 'ms';
             document.getElementById('daily-streak-badge').innerText = `🔥 ${u.dailyStreak || 0}`;
             document.getElementById('mode-indicator').innerText = u.level3 ? "T3" : (u.level2 ? "T2" : "T1");
-            
             const fill = document.getElementById('zone-fill');
             const label = document.getElementById('zone-label');
             const percentage = Math.min(sessionZone * 10, 100);
             fill.style.width = percentage + "%";
-            
             if (sessionZone >= 10) {
                 fill.style.background = "linear-gradient(90deg, #f59e0b, #ef4444)"; fill.classList.add('zone-gold');
                 label.innerText = "SINGULARITY: MAX"; canvas.classList.add('singularity-glow');
@@ -878,29 +537,325 @@
             }
         }
 
-        function triggerSystemMessage(text, type) {
-            const el = document.getElementById('system-message');
-            el.innerText = text; el.className = 'visible'; 
-            if(type === 'upgrade') el.classList.add('sys-upgrade'); 
-            else if(type === 'info') el.classList.add('sys-info');
-            else el.classList.add('sys-alert');
-            setTimeout(() => el.classList.remove('visible'), 3500);
+        function backgroundSync() {
+            if (!appData.currentUser || honeyPotTriggered || appData.users[appData.currentUser].speed < 100) return Promise.resolve();
+            const u = appData.users[appData.currentUser];
+            const ind = document.getElementById('sync-indicator'); 
+            ind.classList.add('syncing');
+            const total = u.resultsHistory.length;
+            const correct = u.resultsHistory.filter(r => r.correct).length;
+            const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
+            return setDoc(doc(db, "leaderboard", appData.currentUser), {
+                name: appData.currentUser, score: Math.floor(u.score), speed: Math.round(u.speed), 
+                accuracy: accuracy, tier: u.level3 ? "T3" : (u.level2 ? "T2" : "T1"), 
+                timestamp: new Date(), pin: u.pin || null 
+            }, { merge: true })
+            .then(() => setTimeout(() => ind.classList.remove('syncing'), 500))
+            .catch((e) => { console.log("Bg Sync Fail", e); ind.classList.remove('syncing'); });
         }
 
-        function requestPin(title, reason) {
-            return new Promise((resolve) => {
-                hideOverlays();
-                document.getElementById('pin-overlay').classList.remove('hidden');
-                document.getElementById('pin-title').innerText = title || "SECURITY CHECK";
-                document.getElementById('pin-reason').innerText = reason || "ENTER KEY";
-                const input = document.getElementById('pin-input-field'); input.value = "";
-                setTimeout(() => input.focus(), 100);
-                pinResolver = resolve;
-            });
+        function checkDailyStreak() {
+            const u = appData.users[appData.currentUser];
+            const today = new Date().toISOString().split('T')[0];
+            if (!u.lastPlayDate) { u.lastPlayDate = today; u.dailyStreak = 1; }
+            else if (u.lastPlayDate !== today) {
+                const diff = (new Date(today) - new Date(u.lastPlayDate)) / 86400000;
+                if (diff >= 0.9 && diff < 2) u.dailyStreak++; else if (diff >= 2) u.dailyStreak = 1;
+                u.lastPlayDate = today;
+            }
+            save();
         }
+
+        // --- 5. GAME LOOP FUNCTIONS ---
+        function drawShape(type, x, y, size, color) {
+            ctx.beginPath(); ctx.fillStyle = color;
+            if (type === 'circle') ctx.arc(x, y, size, 0, Math.PI * 2);
+            else if (type === 'square') ctx.rect(x - size, y - size, size * 2, size * 2);
+            else if (type === 'triangle') { ctx.moveTo(x, y - size); ctx.lineTo(x + size, y + size); ctx.lineTo(x - size, y + size); ctx.closePath(); }
+            else if (type === 'diamond') { ctx.moveTo(x, y - size * 1.2); ctx.lineTo(x + size * 1.2, y); ctx.lineTo(x, y + size * 1.2); ctx.lineTo(x - size * 1.2, y); ctx.closePath(); }
+            else if (type === 'cross') { ctx.rect(x - size/3, y - size, size/1.5, size * 2); ctx.rect(x - size, y - size/3, size * 2, size/1.5); }
+            ctx.fill();
+        }
+
+        function executeFlash() {
+            if (state !== 'IDLE') return;
+            document.getElementById('sync-vis-container').style.opacity = '0'; 
+            state = 'FLASHING'; isTimedOut = false;
+            const u = appData.users[appData.currentUser];
+            targetShape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+            satShape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+            satColorIdx = u.level2 ? Math.floor(Math.random() * L2_COLORS.length) : -1;
+            satDirIdx = Math.floor(Math.random() * 8); 
+            lastFlashRadius = minDim * 0.35;
+            const angle = u.level3 ? DIR_MAP[satDirIdx].angle : Math.random() * Math.PI * 2;
+            const satX = centerX + Math.cos(angle) * lastFlashRadius; 
+            const satY = centerY + Math.sin(angle) * lastFlashRadius;
+            activeDistractors = [];
+            const count = 12; const step = (Math.PI * 2) / count;
+            for (let i = 0; i < count; i++) {
+                const a = i * step;
+                if (Math.abs(Math.atan2(Math.sin(a - angle), Math.cos(a - angle))) > 0.6) {
+                    activeDistractors.push({
+                        x: centerX + Math.cos(a) * lastFlashRadius + (Math.random()-0.5)*20,
+                        y: centerY + Math.sin(a) * lastFlashRadius + (Math.random()-0.5)*20,
+                        shape: SHAPES[Math.floor(Math.random() * SHAPES.length)]
+                    });
+                }
+            }
+            AudioSys.playGame('flash'); 
+            let startTime = null;
+            function animate(now) {
+                if (!startTime) startTime = now;
+                const elapsed = now - startTime;
+                if (elapsed < u.speed) {
+                    ctx.clearRect(0,0,canvas.width,canvas.height);
+                    activeDistractors.forEach(d => drawShape(d.shape, d.x, d.y, minDim * 0.05, '#334155'));
+                    drawShape(targetShape, centerX, centerY, minDim * 0.06, '#fff');
+                    drawShape(satShape, satX, satY, minDim * 0.05, u.level2 ? L2_COLORS[satColorIdx] : '#8b5cf6');
+                    animFrameId = requestAnimationFrame(animate);
+                } else if (elapsed < u.speed + 100) {
+                    ctx.fillStyle = "#000"; ctx.fillRect(0,0,canvas.width, canvas.height);
+                    animFrameId = requestAnimationFrame(animate);
+                } else { state = 'QUESTIONING'; inputLocked = false; startQuestionLoop(); }
+            }
+            animFrameId = requestAnimationFrame(animate);
+        }
+
+        function startQuestionLoop() {
+            askTask('CENTER', SHAPES);
+            function loop(now) {
+                if (state === 'QUESTIONING') {
+                    if (!questionTimerStart) questionTimerStart = now;
+                    const elapsed = now - questionTimerStart;
+                    const remaining = QUESTION_TIMEOUT_MS - elapsed;
+                    if (remaining <= 0) {
+                        if(!isTimedOut) { isTimedOut = true; triggerSystemMessage("NEURAL LINK SEVERED (TIMEOUT)", "alert"); uShape = null; finalizeTrial(); }
+                        return; 
+                    }
+                    if (remaining < 5000) {
+                        if (now - lastTickTime > 1000) { AudioSys.playGame('timer'); lastTickTime = now; }
+                    }
+                    ctx.fillStyle = '#020617'; ctx.fillRect(0,0,canvas.width,canvas.height);
+                    const timePct = Math.max(0, remaining / QUESTION_TIMEOUT_MS);
+                    const barColor = timePct < 0.2 ? '#ef4444' : (timePct < 0.5 ? '#f59e0b' : '#0ea5e9');
+                    ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fillRect(0, 0, canvas.width, 6); 
+                    ctx.fillStyle = barColor; ctx.shadowColor = barColor; ctx.shadowBlur = 10;
+                    ctx.fillRect(0, 0, canvas.width * timePct, 6); ctx.shadowBlur = 0;
+                    if (timePct < 0.3) {
+                        ctx.fillStyle = "#ef4444"; ctx.font = `bold ${minDim * 0.03}px monospace`;
+                        ctx.textAlign = "right"; ctx.fillText((remaining/1000).toFixed(1) + "s", canvas.width - 10, 25);
+                    }
+                    let title = "", sub = "";
+                    if(currentTask === 'CENTER') { title = "CORE ID"; sub = "SELECT CENTER SHAPE"; }
+                    else if(currentTask === 'SATELLITE') { title = "PERIPHERAL ID"; sub = "SELECT SATELLITE SHAPE"; }
+                    else if(currentTask === 'COLOR') { title = "SPECTRUM ID"; sub = "MATCH SATELLITE COLOR"; }
+                    else { title = "VECTOR ID"; sub = "INDICATE ORIGIN"; }
+                    ctx.textAlign = "center"; ctx.fillStyle = "#fff";
+                    ctx.font = `900 ${minDim * 0.07}px 'Inter', system-ui`; ctx.fillText(title, centerX, centerY - minDim * 0.15);
+                    ctx.fillStyle = "#0ea5e9"; ctx.font = `700 ${minDim * 0.03}px monospace`; ctx.fillText(sub, centerX, centerY - minDim * 0.08);
+                    selectionBoxes = [];
+                    if (currentTask === 'DIRECTION') {
+                        const layoutRadius = minDim * 0.3; const btnSize = minDim * 0.07;
+                        DIR_MAP.forEach(dir => {
+                            const x = centerX + Math.cos(dir.angle) * layoutRadius;
+                            const y = centerY + Math.sin(dir.angle) * layoutRadius;
+                            const isSelected = (dir.id === lastSelectionIndex);
+                            ctx.beginPath();
+                            if (isSelected) { ctx.shadowBlur = 20; ctx.shadowColor = "rgba(14, 165, 233, 0.8)"; ctx.fillStyle = "rgba(14, 165, 233, 0.4)"; } 
+                            else { ctx.shadowBlur = 0; ctx.fillStyle = "rgba(255, 255, 255, 0.05)"; }
+                            ctx.strokeStyle = isSelected ? "var(--accent)" : "#334155"; ctx.lineWidth = 3;
+                            ctx.arc(x, y, btnSize, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.shadowBlur = 0;
+                            ctx.fillStyle = isSelected ? "#fff" : "#64748b"; ctx.font = `800 ${minDim * 0.05}px monospace`;
+                            ctx.textBaseline = "middle"; ctx.fillText(dir.label, x, y); ctx.textBaseline = "alphabetic";
+                            selectionBoxes.push({ key: dir.key, val: dir.id, x1: x - btnSize, x2: x + btnSize, y1: y - btnSize, y2: y + btnSize, cx: x, cy: y });
+                        });
+                    } else {
+                        const items = currentTask === 'CENTER' ? SHAPES : (currentTask === 'SATELLITE' ? SHAPES : L2_COLORS);        
+                        const rowWidth = canvas.width * 0.85; const spacing = rowWidth / (items.length - 1); const startX = (canvas.width - rowWidth) / 2;
+                        items.forEach((item, i) => {
+                            const x = startX + (i * spacing), y = centerY + 60;
+                            const isSelected = (i === lastSelectionIndex);
+                            if (isSelected) { ctx.save(); ctx.shadowBlur = 20; ctx.shadowColor = "rgba(14, 165, 233, 0.8)"; ctx.fillStyle = "rgba(14, 165, 233, 0.2)"; ctx.beginPath(); ctx.arc(x, y, minDim * 0.08, 0, Math.PI*2); ctx.fill(); ctx.restore(); }
+                            if (currentTask === 'COLOR') { ctx.fillStyle = item; ctx.beginPath(); ctx.arc(x, y, minDim * 0.06, 0, Math.PI*2); ctx.fill(); }
+                            else { drawShape(item, x, y, minDim * 0.05, '#fff'); }
+                            if (!isTouch) {
+                                ctx.fillStyle = isSelected ? "var(--accent)" : "rgba(255, 255, 255, 0.3)";
+                                ctx.font = `bold ${minDim * 0.02}px monospace`; ctx.fillText(`[${i + 1}]`, x, y + minDim * 0.15); 
+                            }
+                            selectionBoxes.push({ key: item, val: i, x1: x - spacing/2, x2: x + spacing/2, y1: y - 100, y2: y + 100, cx: x, cy: y });
+                        });
+                    }
+                    for (let i = ripples.length - 1; i >= 0; i--) {
+                        const r = ripples[i]; r.radius += 5; r.opacity -= 0.05;
+                        ctx.beginPath(); ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2); ctx.strokeStyle = `rgba(255, 255, 255, ${r.opacity})`; ctx.stroke();
+                        if (r.opacity <= 0) ripples.splice(i, 1);
+                    }
+                    animFrameId = requestAnimationFrame(loop);
+                }
+            }
+            animFrameId = requestAnimationFrame(loop);
+        }
+
+        function askTask(type, items) { currentTask = type; questionTimerStart = 0; }
         
-        function hideOverlays() { document.querySelectorAll('.overlay').forEach(o => o.classList.add('hidden')); }
+        function processHit(hit) {
+            lastSelectionIndex = hit.val; inputLocked = true; AudioSys.playUI('lock');
+            setTimeout(() => { 
+                inputLocked = false; lastSelectionIndex = -1;
+                const u = appData.users[appData.currentUser];
+                if (currentTask === 'CENTER') { uShape = hit.key; askTask('SATELLITE', SHAPES); }
+                else if (currentTask === 'SATELLITE') {
+                    uSat = hit.key;
+                    if (u.level2) askTask('COLOR', L2_COLORS); else if (u.level3) askTask('DIRECTION', null); else finalizeTrial();
+                } 
+                else if (currentTask === 'COLOR') { uColor = hit.val; if (u.level3) askTask('DIRECTION', null); else finalizeTrial(); }
+                else if (currentTask === 'DIRECTION') { uDir = hit.val; finalizeTrial(); }
+            }, 320);
+        }
+
+        async function finalizeTrial() {
+            if (honeyPotTriggered) { appData.users[appData.currentUser].score = 0; location.reload(); return; }
+            const u = appData.users[appData.currentUser];
+            let correct = (uShape === targetShape && uSat === satShape);
+            if (u.level2 && uColor !== satColorIdx) correct = false;
+            if (u.level3 && uDir !== satDirIdx) correct = false;
+            if (isTimedOut) correct = false;
+            state = 'IDLE'; cancelAnimationFrame(animFrameId);
+            const prevSpeed = u.speed;
+            if (correct) {
+                sessionZone++; AudioSys.playGame('success');
+                let performanceVal = Math.max(100, (1500 - u.speed)); 
+                let tierMult = u.level3 ? 2.5 : (u.level2 ? 1.5 : 1.0);
+                let zoneMult = sessionZone > 10 ? 1.5 : (sessionZone > 5 ? 1.2 : 1.0);
+                let roundTarget = performanceVal * tierMult * zoneMult * 10;
+                u.score = (u.score || 0) + ((roundTarget - (u.score || 0)) * 0.15);
+                u.streak = Math.max(0, u.streak) + 1;
+                if (u.streak >= 3) { 
+                    u.speed = Math.max(16, u.speed * 0.92); u.streak = 0; 
+                    if (!u.level2 && u.speed <= 350) { u.level2 = true; u.speed = 400; triggerSystemMessage("TIER 2 UNLOCKED", 'upgrade'); }
+                    else if (u.level2 && !u.level3 && u.speed <= 220) { u.level3 = true; u.speed = 300; triggerSystemMessage("TIER 3 UNLOCKED", 'upgrade'); }
+                }
+                document.getElementById('msg-title').innerText = "SYNC STABLE";
+                document.getElementById('msg-title').style.color = "#10b981";
+                document.getElementById('msg-body').innerText = `RATING: ${Math.floor(u.score)}`;
+            } else {
+                sessionZone = 0; AudioSys.playGame('fail');
+                let penalty = u.score * 0.20; u.score = Math.max(0, u.score - penalty); 
+                u.streak = Math.min(0, u.streak) - 1; u.speed = Math.min(1000, u.speed + 80); 
+                document.getElementById('msg-title').innerText = isTimedOut ? "SYNC TIMEOUT" : "SYNC LOST";
+                document.getElementById('msg-title').style.color = "#ef4444";
+                document.getElementById('msg-body').innerText = `RATING DROP: -${Math.floor(penalty)}`;
+                if (u.streak <= -3 && (u.level2 || u.level3)) {
+                    if (u.level3) { u.level3 = false; triggerSystemMessage("TIER 3 REVOKED", 'alert'); }
+                    else { u.level2 = false; triggerSystemMessage("TIER 2 REVOKED", 'alert'); }
+                    u.streak = 0; u.speed += 100;
+                }
+            }
+            const maxLatency = 1000;
+            const oldPct = Math.max(0, Math.min(100, ((maxLatency - prevSpeed) / maxLatency) * 100));
+            const newPct = Math.max(0, Math.min(100, ((maxLatency - u.speed) / maxLatency) * 100));
+            const barVis = document.getElementById('sync-vis-container');
+            const barFill = document.getElementById('sync-bar-fill');
+            const pctText = document.getElementById('sync-percentage');
+            barVis.style.opacity = '1';
+            const themeColor = correct ? 'var(--success)' : 'var(--fail)';
+            barFill.style.background = themeColor; barFill.style.boxShadow = `0 0 15px ${themeColor}`; pctText.style.color = themeColor;
+            barFill.style.transition = 'none'; barFill.style.width = `${oldPct}%`; pctText.innerText = `${Math.round(oldPct)}%`;
+            setTimeout(() => { barFill.style.transition = 'width 0.6s cubic-bezier(0.22, 1, 0.36, 1)'; barFill.style.width = `${newPct}%`; pctText.innerText = `${Math.round(newPct)}%`; }, 50);
+            u.history.push(Math.round(u.speed));
+            u.resultsHistory.push({ correct, date: new Date().toISOString().split('T')[0] });
+            save(); updateUI();
+            
+            const startBtn = document.getElementById('start-btn');
+            const lbBtn = document.getElementById('btn-lb-main');
+            startBtn.classList.add('locked-btn');
+            const oldLbText = lbBtn.innerText;
+            lbBtn.innerText = "SAVING DATA..."; lbBtn.classList.add('locked-btn');
+            document.getElementById('main-overlay').classList.remove('hidden');
+            await backgroundSync();
+            setTimeout(() => startBtn.classList.remove('locked-btn'), 600);
+            lbBtn.classList.remove('locked-btn'); lbBtn.innerText = oldLbText;
+        }
+
+        // --- 6. OVERLAY FUNCTIONS (MUST BE DEFINED BEFORE LISTENERS) ---
+        async function showLeaderboard() {
+            AudioSys.playUI('click');
+            console.log("Opening Leaderboard...");
+            hideOverlays(); document.getElementById('leaderboard-overlay').classList.remove('hidden');
+            const list = document.getElementById('lb-list'); list.innerHTML = "";
+            document.getElementById('lb-loading').style.display = 'block';
+            try {
+                const q = query(collection(db, "leaderboard"), orderBy("score", "desc"), limit(20));
+                const querySnapshot = await getDocs(q);
+                document.getElementById('lb-loading').style.display = 'none';
+                let rank = 1;
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const acc = data.accuracy !== undefined ? data.accuracy + "%" : "--";
+                    const isSecure = data.pin ? "🔒" : "";
+                    const row = document.createElement('div'); row.className = 'lb-row';
+                    row.innerHTML = `<div class="lb-rank">${rank++}</div><div class="lb-name"><span class="lb-tier">${data.tier}</span>${data.name} <span style="font-size:0.7em">${isSecure}</span></div><div class="lb-right"><span class="lb-score">${data.score.toLocaleString()}</span><div class="lb-sub"><span class="lb-stat peak">⚡${data.speed}ms</span><span class="lb-stat acc">🎯${acc}</span></div></div>`;
+                    list.appendChild(row);
+                });
+                if (querySnapshot.empty) list.innerHTML = "<div style='opacity:0.5; margin-top:20px'>NO DATA ON THE GRID</div>";
+            } catch (e) { console.error(e); document.getElementById('lb-loading').innerText = "CONNECTION FAILURE"; }
+        }
+
+        function showAnalytics() {
+            AudioSys.playUI('click');
+            hideOverlays(); document.getElementById('analytics-overlay').classList.remove('hidden');
+            const u = appData.users[appData.currentUser];
+            const cv = document.getElementById('chart-canvas'), cx = cv.getContext('2d');
+            cv.width = cv.offsetWidth * 2; cv.height = cv.offsetHeight * 2;
+            cx.strokeStyle = "#0ea5e9"; cx.lineWidth = 4; cx.beginPath();
+            const data = u.history.slice(-30);
+            data.forEach((v, i) => {
+                const x = (i / (data.length - 1 || 1)) * cv.width;
+                const y = cv.height - (v / 1000 * cv.height);
+                if (i === 0) cx.moveTo(x,y); else cx.lineTo(x,y);
+            });
+            cx.stroke();
+            const acc = Math.round((u.resultsHistory.filter(r => r.correct).length / u.resultsHistory.length * 100)) || 0;
+            document.getElementById('stat-peak').innerText = `${Math.min(...u.history)}ms`;
+            document.getElementById('stat-acc-total').innerText = `${acc}%`;
+            document.getElementById('stat-uptime').innerText = (u.totalTimeMs / 3600000).toFixed(1) + 'h';
+            document.getElementById('stat-grade').innerText = acc > 90 ? "S" : (acc > 75 ? "A" : "B");
+
+            const actionContainer = document.getElementById('analytics-actions');
+            actionContainer.innerHTML = ''; 
+            if (!u.pin) {
+                const btn = document.createElement('button');
+                btn.className = 'action-btn'; btn.style.background = '#0f172a'; btn.style.border = '1px solid var(--accent)';
+                btn.style.fontSize = '0.75rem'; btn.innerText = "🔒 LOCK PROTOCOL (SET PIN)";
+                btn.onclick = async () => {
+                    const newPin = await requestPin("SECURE AGENT", "SET 4-DIGIT PIN");
+                    if (newPin && newPin.length === 4) {
+                        u.pin = newPin; save(); backgroundSync(); triggerSystemMessage("PROTOCOL SECURED", "upgrade"); showAnalytics(); 
+                    } else if (newPin !== null) { alert("INVALID LENGTH"); showAnalytics(); } else { showAnalytics(); }
+                };
+                actionContainer.appendChild(btn);
+            } else {
+                 const lbl = document.createElement('div'); lbl.innerText = "PROTOCOL SECURED 🔒";
+                 lbl.style.color = "#94a3b8"; lbl.style.fontSize = "0.7rem"; lbl.style.marginTop = "10px";
+                 actionContainer.appendChild(lbl);
+            }
+            const dangerContainer = document.getElementById('analytics-danger-zone');
+            dangerContainer.innerHTML = '';
+            const unlinkBtn = document.createElement('button');
+            unlinkBtn.className = 'action-btn danger-btn'; unlinkBtn.innerText = "SEVER CONNECTION (UNLINK)";
+            unlinkBtn.style.fontSize = '0.75rem';
+            unlinkBtn.onclick = () => {
+                if(confirm("WARNING: THIS WILL REMOVE THIS AGENT FROM THIS DEVICE.\n\nData will remain on the Grid (Cloud) if synced.\nYou can relink later using the PIN.")) {
+                    if(realtimeUnsubscribe) { realtimeUnsubscribe(); realtimeUnsubscribe = null; }
+                    delete appData.users[appData.currentUser]; appData.currentUser = null;
+                    save(); location.reload(); 
+                }
+            };
+            dangerContainer.appendChild(unlinkBtn);
+        }
+
         function showUserMenu() {
+            AudioSys.playUI('click');
             if(realtimeUnsubscribe) { realtimeUnsubscribe(); realtimeUnsubscribe = null; }
             hideOverlays(); document.getElementById('user-overlay').classList.remove('hidden');
             const list = document.getElementById('user-list'); list.innerHTML = '';
@@ -911,99 +866,148 @@
                 btn.innerHTML = `<span class="l">${name}</span><span class="v" style="color:var(--gold)">${s} Rating</span>`;
                 btn.onclick = () => { 
                     appData.currentUser = name; sessionZone = 0; checkDailyStreak(); updateUI(); hideOverlays(); 
-                    document.getElementById('main-overlay').classList.remove('hidden'); initRealtimeSync(name);
+                    document.getElementById('main-overlay').classList.remove('hidden');
+                    initRealtimeSync(name);
                 };
                 list.appendChild(btn);
             });
         }
 
-        // --- EVENTS ---
-        document.getElementById('start-btn').onclick = () => { hideOverlays(); setTimeout(executeFlash, 300); };
-        document.getElementById('btn-user').onclick = showUserMenu;
-        document.getElementById('btn-close-user').onclick = () => { if(appData.currentUser) { hideOverlays(); document.getElementById('main-overlay').classList.remove('hidden'); } };
-        document.getElementById('btn-new-user').onclick = () => { hideOverlays(); document.getElementById('new-link-overlay').classList.remove('hidden'); document.getElementById('new-agent-name').value = ''; };
-        document.getElementById('btn-cancel-link').onclick = () => { hideOverlays(); if(appData.currentUser) document.getElementById('main-overlay').classList.remove('hidden'); else showUserMenu(); };
-        document.getElementById('btn-leaderboard').onclick = async () => {
-            hideOverlays(); document.getElementById('leaderboard-overlay').classList.remove('hidden');
-            const list = document.getElementById('lb-list'); list.innerHTML = "";
-            document.getElementById('lb-loading').style.display = 'block';
+        async function handleNewLinkAttempt() {
+            const input = document.getElementById('new-agent-name');
+            const btn = document.getElementById('btn-create-link');
+            const n = input.value.trim().toUpperCase();
+            if (!n || n.length === 0) return;
+            if (appData.users[n]) { alert("DESIGNATION ALREADY ACTIVE ON DEVICE."); return; }
+            btn.innerText = "SCANNING GRID...";
             try {
-                const q = query(collection(db, "leaderboard"), orderBy("score", "desc"), limit(20));
-                const snap = await getDocs(q);
-                document.getElementById('lb-loading').style.display = 'none';
-                let rank = 1;
-                snap.forEach((doc) => {
-                    const d = doc.data();
-                    const acc = d.accuracy !== undefined ? d.accuracy + "%" : "--";
-                    const isSecure = d.pin ? "🔒" : "";
-                    const row = document.createElement('div'); row.className = 'lb-row';
-                    row.innerHTML = `<div class="lb-rank">${rank++}</div><div class="lb-name"><span class="lb-tier">${d.tier}</span>${d.name} <span style="font-size:0.7em">${isSecure}</span></div><div class="lb-right"><span class="lb-score">${d.score.toLocaleString()}</span><div class="lb-sub"><span class="lb-stat peak">⚡${d.speed}ms</span><span class="lb-stat acc">🎯${acc}</span></div></div>`;
-                    list.appendChild(row);
-                });
-            } catch(e) { document.getElementById('lb-loading').innerText = "CONNECTION FAILURE"; }
-        };
-        document.getElementById('btn-close-lb').onclick = () => { hideOverlays(); document.getElementById('main-overlay').classList.remove('hidden'); };
+                const docRef = doc(db, "leaderboard", n);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const cloudData = docSnap.data();
+                    let authenticated = false;
+                    if (cloudData.pin) {
+                        const enteredPin = await requestPin("RECOVERY MODE", `AGENT ${n} DETECTED. ENTER KEY.`);
+                        if (enteredPin === cloudData.pin) authenticated = true;
+                        else if (enteredPin !== null) alert("INVALID KEY. RECOVERY ABORTED.");
+                    } else authenticated = true; 
+                    if (authenticated) {
+                        appData.users[n] = { 
+                            speed: cloudData.speed || 450, score: cloudData.score || 0, peakScore: cloudData.score || 0, 
+                            streak: 0, history: [cloudData.speed || 450], resultsHistory: [], 
+                            level2: cloudData.tier === 'T2' || cloudData.tier === 'T3', level3: cloudData.tier === 'T3', 
+                            totalTimeMs: 0, dailyStreak: 0, lastPlayDate: null, pin: cloudData.pin
+                        };
+                        appData.currentUser = n; sessionZone = 0; save(); updateUI(); hideOverlays();
+                        document.getElementById('main-overlay').classList.remove('hidden');
+                        triggerSystemMessage("NEURAL LINK RESTORED", "upgrade");
+                        initRealtimeSync(n); return; 
+                    } else { btn.innerText = "INITIALIZE"; return; }
+                }
+            } catch (e) { console.error("Grid Scan Error", e); }
+            let pin = await requestPin("SECURE NEW LINK", "SET OPTIONAL 4-DIGIT PIN (OR LEAVE BLANK)");
+            if (pin === "") pin = null;
+            appData.users[n] = { 
+                speed: 450, score: 0, peakScore: 0, streak: 0, history: [450], resultsHistory: [], 
+                level2: false, level3: false, totalTimeMs: 0, dailyStreak: 0, lastPlayDate: null, pin: pin
+            };
+            appData.currentUser = n; sessionZone = 0; save(); updateUI(); hideOverlays(); 
+            document.getElementById('main-overlay').classList.remove('hidden');
+            initRealtimeSync(n); backgroundSync();
+        }
+
+        function load() {
+            const saved = localStorage.getItem('neuroElite_v3_secure');
+            const sig = localStorage.getItem('neuroElite_sig');
+            if (saved && sig) {
+                const check = generateHash(JSON.parse(saved));
+                if (check === sig) { appData = JSON.parse(saved); } 
+                else { localStorage.clear(); appData = { users: {}, currentUser: null }; }
+            }
+            if (appData.currentUser) { checkDailyStreak(); updateUI(); initRealtimeSync(appData.currentUser); } 
+            else showUserMenu();
+        }
+
+        function resize() { 
+            canvas.width = window.innerWidth; canvas.height = window.innerHeight - 96; 
+            centerX = canvas.width / 2; centerY = canvas.height / 2; minDim = Math.min(canvas.width, canvas.height); 
+        }
+
+        function handleInput(e) {
+            if (state !== 'QUESTIONING' || inputLocked) return;
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.clientX || (e.touches && e.touches.length > 0 ? e.touches[0].clientX : 0);
+            const clientY = e.clientY || (e.touches && e.touches.length > 0 ? e.touches[0].clientY : 0);
+            const x = clientX - rect.left; const y = clientY - rect.top;
+            ripples.push({ x: x, y: y, radius: 0, opacity: 1 });
+            const hit = selectionBoxes.find(b => x > b.x1 && x < b.x2 && y > b.y1 && y < b.y2);
+            if (!hit) return;
+            const dist = Math.sqrt(Math.pow(hit.cx - x, 2) + Math.pow(hit.cy - y, 2));
+            clickHistory.push(dist); if (clickHistory.length > 10) clickHistory.shift();
+            const variance = clickHistory.reduce((a, b) => a + b, 0) / clickHistory.length;
+            if (clickHistory.length >= 5 && variance < 2.0) { console.warn("Automated input detected."); honeyPotTriggered = true; }
+            processHit(hit);
+        }
+
+        // --- 7. EVENT LISTENERS (ASSIGNED LAST) ---
+        document.getElementById('start-btn').onclick = () => { AudioSys.init(); AudioSys.playUI('click'); hideOverlays(); setTimeout(executeFlash, 300); };
         
-        // Pin Events
+        document.getElementById('btn-audio').onclick = () => {
+             const enabled = AudioSys.toggle();
+             const btn = document.getElementById('btn-audio');
+             const lbl = document.getElementById('audio-icon');
+             if(enabled) { btn.classList.add('active'); lbl.innerText = "ON"; AudioSys.playUI('click'); } 
+             else { btn.classList.remove('active'); lbl.innerText = "OFF"; }
+        };
+
+        // UI Buttons
+        document.getElementById('btn-user').onclick = showUserMenu;
+        document.getElementById('btn-analytics').onclick = showAnalytics;
+        document.getElementById('btn-analytics-2').onclick = showAnalytics;
+        
+        // Leaderboard - Fixed Assignment
+        document.getElementById('btn-leaderboard').onclick = showLeaderboard;
+        document.getElementById('btn-lb-main').onclick = showLeaderboard;
+        
+        // Closers
+        document.getElementById('btn-close-analytics').onclick = () => { AudioSys.playUI('click'); hideOverlays(); document.getElementById('main-overlay').classList.remove('hidden'); };
+        document.getElementById('btn-close-lb').onclick = () => { AudioSys.playUI('click'); hideOverlays(); document.getElementById('main-overlay').classList.remove('hidden'); };
+        document.getElementById('btn-close-user').onclick = () => { AudioSys.playUI('click'); if(appData.currentUser) { hideOverlays(); document.getElementById('main-overlay').classList.remove('hidden'); } };
+        
+        // Pin & Link Handlers
         document.getElementById('btn-pin-confirm').onclick = () => { if (pinResolver) { pinResolver(document.getElementById('pin-input-field').value); pinResolver = null; } hideOverlays(); };
         document.getElementById('btn-pin-cancel').onclick = () => { if (pinResolver) { pinResolver(null); pinResolver = null; } hideOverlays(); };
-
-        // Create/Recover User
-        document.getElementById('btn-create-link').onclick = async () => {
-            const n = document.getElementById('new-agent-name').value.trim().toUpperCase();
-            if (!n) return;
-            if (appData.users[n]) { alert("EXISTS"); return; }
-            const btn = document.getElementById('btn-create-link'); btn.innerText = "SCANNING...";
-            try {
-                const snap = await getDoc(doc(db, "leaderboard", n));
-                if (snap.exists()) {
-                    const d = snap.data();
-                    if (d.pin) {
-                        const entered = await requestPin("RECOVERY MODE", `AGENT ${n} DETECTED.`);
-                        if (entered !== d.pin) { alert("INVALID"); return; }
-                    }
-                    appData.users[n] = { speed: d.speed || 450, score: d.score || 0, peakScore: d.score || 0, streak: 0, history: [d.speed], resultsHistory: [], level2: d.tier === 'T2', level3: d.tier === 'T3', totalTimeMs: 0, dailyStreak: 0, lastPlayDate: null, pin: d.pin };
-                    triggerSystemMessage("LINK RESTORED", "upgrade");
-                } else {
-                    let pin = await requestPin("NEW LINK", "SET PIN (OPTIONAL)");
-                    appData.users[n] = { speed: 450, score: 0, peakScore: 0, streak: 0, history: [450], resultsHistory: [], level2: false, level3: false, totalTimeMs: 0, dailyStreak: 0, lastPlayDate: null, pin: pin === "" ? null : pin };
-                }
-                appData.currentUser = n; sessionZone = 0; save(); updateUI(); hideOverlays(); 
-                document.getElementById('main-overlay').classList.remove('hidden'); initRealtimeSync(n); backgroundSync();
-            } catch(e) { console.error(e); }
+        document.getElementById('pin-input-field').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('btn-pin-confirm').click(); });
+        document.getElementById('btn-new-user').onclick = () => {
+             hideOverlays(); const overlay = document.getElementById('new-link-overlay'); const input = document.getElementById('new-agent-name');
+             overlay.classList.remove('hidden'); input.value = ''; document.getElementById('btn-create-link').innerText = "INITIALIZE"; setTimeout(() => input.focus(), 100);
         };
+        document.getElementById('btn-create-link').onclick = handleNewLinkAttempt;
+        document.getElementById('new-agent-name').addEventListener('keydown', (e) => { if (e.key === 'Enter') handleNewLinkAttempt(); });
+        document.getElementById('btn-cancel-link').onclick = () => { hideOverlays(); if (appData.currentUser) { document.getElementById('main-overlay').classList.remove('hidden'); } else { showUserMenu(); } };
 
-        // Inputs
-        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight - 96; centerX = canvas.width/2; centerY = canvas.height/2; minDim = Math.min(canvas.width, canvas.height); });
-        canvas.addEventListener('mousedown', handleInput);
-        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleInput(e); }, {passive: false});
+        // Global Keydown
         window.addEventListener('keydown', (e) => {
-            if (gameState.mode !== 'QUESTIONING' || gameState.selectionLock > 0) return;
-            if (gameState.task === 'DIRECTION') {
-                const k = parseInt(e.key);
-                if (!isNaN(k)) {
-                    const h = gameObjects.buttons.find(b => b.key === k);
-                    if(h) { gameObjects.ripples.push({x:h.cx,y:h.cy,radius:0,opacity:1}); gameObjects.buttons.forEach(b => { if(b===h) handleInput({clientX: h.cx, clientY: h.cy + canvas.getBoundingClientRect().top}); }); }
-                }
-            } else {
-                const i = parseInt(e.key) - 1;
-                if (i >= 0 && i < gameObjects.buttons.length) {
-                   const h = gameObjects.buttons[i];
-                   gameObjects.ripples.push({x:h.cx,y:h.cy,radius:0,opacity:1});
-                   handleInput({clientX: h.cx, clientY: h.cy + canvas.getBoundingClientRect().top});
-                }
+            if (state !== 'QUESTIONING' || inputLocked) return;
+            if (currentTask === 'DIRECTION') {
+                 const keyVal = parseInt(e.key);
+                 if (!isNaN(keyVal)) {
+                     const hit = selectionBoxes.find(b => b.key === keyVal);
+                     if (hit) { ripples.push({ x: hit.cx, y: hit.cy, radius: 0, opacity: 1 }); processHit(hit); return; }
+                 }
+            }
+            const index = parseInt(e.key) - 1;
+            if (index >= 0 && index < selectionBoxes.length && currentTask !== 'DIRECTION') {
+                const hit = selectionBoxes[index]; ripples.push({ x: hit.cx, y: hit.cy, radius: 0, opacity: 1 }); processHit(hit);
             }
         });
 
-        // INIT
-        window.dispatchEvent(new Event('resize'));
-        load();
-        
-        // Init Starfield
-        for(let i=0; i<60; i++) starfield.push(new Star());
-        
-        // Start Loop
-        requestAnimationFrame(gameLoop);
+        // Init
+        window.addEventListener('resize', resize);
+        canvas.addEventListener('mousedown', handleInput);
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleInput(e); }, {passive: false});
+        resize(); load();
+        setInterval(() => { if (appData.currentUser) appData.users[appData.currentUser].totalTimeMs += 2000; }, 2000);
 
     })();
 </script>
