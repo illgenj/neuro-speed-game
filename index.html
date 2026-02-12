@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neuro-Speed Elite 4.1</title>
+    <title>Neuro-Speed Elite 4.2</title>
     <style>
         :root { 
             --bg: #020617; --panel: #0f172a; --accent: #0ea5e9; --text: #f8fafc; 
@@ -322,10 +322,12 @@
 
 <script type="module">
     /* ----------------------------------------------------
-       NEURO-SPEED ELITE 4.1 [STABILITY PATCH]
+       NEURO-SPEED ELITE 4.2 [STABILITY PATCH]
        - Fixed: Leaderboard button unresponsiveness
        - Fixed: Event listener execution order
        - Added: Visual touch feedback on Grid button
+       - CRITICAL FIX: Score clamping (no drop on correct answer)
+       - CRITICAL FIX: Session Zone persistence (streak saving)
        ----------------------------------------------------
     */
 
@@ -511,6 +513,13 @@
                             u.level2 = (u.speed <= 400);
                             u.level3 = (u.speed <= 300);
                             if(cloudData.pin && u.pin !== cloudData.pin) u.pin = cloudData.pin;
+                            
+                            // Try to sync sessionZone from cloud if available, though typically local
+                            if(cloudData.sessionZone !== undefined) {
+                                u.sessionZone = cloudData.sessionZone;
+                                sessionZone = u.sessionZone;
+                            }
+
                             save(); updateUI();
                             triggerSystemMessage("REMOTE SYNC DETECTED", "info");
                             const ind = document.getElementById('sync-indicator');
@@ -563,7 +572,8 @@
             return setDoc(doc(db, "leaderboard", appData.currentUser), {
                 name: appData.currentUser, score: Math.floor(u.score), speed: Math.round(u.speed), 
                 accuracy: accuracy, tier: u.level3 ? "T3" : (u.level2 ? "T2" : "T1"), 
-                timestamp: new Date(), pin: u.pin || null 
+                timestamp: new Date(), pin: u.pin || null,
+                sessionZone: u.sessionZone || 0 // Sync streak state
             }, { merge: true })
             .then(() => setTimeout(() => ind.classList.remove('syncing'), 500))
             .catch((e) => { console.log("Bg Sync Fail", e); ind.classList.remove('syncing'); });
@@ -737,13 +747,22 @@
             if (isTimedOut) correct = false;
             state = 'IDLE'; cancelAnimationFrame(animFrameId);
             const prevSpeed = u.speed;
+            
             if (correct) {
                 sessionZone++; AudioSys.playGame('success');
                 let performanceVal = Math.max(100, (1500 - u.speed)); 
                 let tierMult = u.level3 ? 2.5 : (u.level2 ? 1.5 : 1.0);
                 let zoneMult = sessionZone > 10 ? 1.5 : (sessionZone > 5 ? 1.2 : 1.0);
                 let roundTarget = performanceVal * tierMult * zoneMult * 10;
-                u.score = (u.score || 0) + ((roundTarget - (u.score || 0)) * 0.15);
+                
+                // --- FIX: Clamp score delta so correct answers never reduce score ---
+                let delta = (roundTarget - (u.score || 0)) * 0.15;
+                if (delta < 0) delta = 0; // Prevent score drop on correct answer
+                u.score = (u.score || 0) + delta;
+                
+                // --- FIX: Save session streak state ---
+                u.sessionZone = sessionZone;
+
                 u.streak = Math.max(0, u.streak) + 1;
                 if (u.streak >= 3) { 
                     u.speed = Math.max(16, u.speed * 0.92); u.streak = 0; 
@@ -754,7 +773,9 @@
                 document.getElementById('msg-title').style.color = "#10b981";
                 document.getElementById('msg-body').innerText = `RATING: ${Math.floor(u.score)}`;
             } else {
-                sessionZone = 0; AudioSys.playGame('fail');
+                sessionZone = 0; 
+                u.sessionZone = 0; // Reset saved state on failure
+                AudioSys.playGame('fail');
                 let penalty = u.score * 0.20; u.score = Math.max(0, u.score - penalty); 
                 u.streak = Math.min(0, u.streak) - 1; u.speed = Math.min(1000, u.speed + 80); 
                 document.getElementById('msg-title').innerText = isTimedOut ? "SYNC TIMEOUT" : "SYNC LOST";
@@ -880,7 +901,11 @@
                 const s = appData.users[name].score ? Math.floor(appData.users[name].score) : 0;
                 btn.innerHTML = `<span class="l">${name}</span><span class="v" style="color:var(--gold)">${s} Rating</span>`;
                 btn.onclick = () => { 
-                    appData.currentUser = name; sessionZone = 0; checkDailyStreak(); updateUI(); hideOverlays(); 
+                    appData.currentUser = name; 
+                    // --- FIX: RESTORE SAVED SESSION ZONE ---
+                    sessionZone = appData.users[name].sessionZone || 0; 
+                    
+                    checkDailyStreak(); updateUI(); hideOverlays(); 
                     document.getElementById('main-overlay').classList.remove('hidden');
                     initRealtimeSync(name);
                 };
@@ -911,9 +936,12 @@
                             speed: cloudData.speed || 450, score: cloudData.score || 0, peakScore: cloudData.score || 0, 
                             streak: 0, history: [cloudData.speed || 450], resultsHistory: [], 
                             level2: cloudData.tier === 'T2' || cloudData.tier === 'T3', level3: cloudData.tier === 'T3', 
-                            totalTimeMs: 0, dailyStreak: 0, lastPlayDate: null, pin: cloudData.pin
+                            totalTimeMs: 0, dailyStreak: 0, lastPlayDate: null, pin: cloudData.pin,
+                            sessionZone: cloudData.sessionZone || 0 // Restore state from cloud if possible
                         };
-                        appData.currentUser = n; sessionZone = 0; save(); updateUI(); hideOverlays();
+                        appData.currentUser = n; 
+                        sessionZone = appData.users[n].sessionZone; 
+                        save(); updateUI(); hideOverlays();
                         document.getElementById('main-overlay').classList.remove('hidden');
                         triggerSystemMessage("NEURAL LINK RESTORED", "upgrade");
                         initRealtimeSync(n); return; 
@@ -924,7 +952,8 @@
             if (pin === "") pin = null;
             appData.users[n] = { 
                 speed: 450, score: 0, peakScore: 0, streak: 0, history: [450], resultsHistory: [], 
-                level2: false, level3: false, totalTimeMs: 0, dailyStreak: 0, lastPlayDate: null, pin: pin
+                level2: false, level3: false, totalTimeMs: 0, dailyStreak: 0, lastPlayDate: null, pin: pin,
+                sessionZone: 0 // Initialize streak
             };
             appData.currentUser = n; sessionZone = 0; save(); updateUI(); hideOverlays(); 
             document.getElementById('main-overlay').classList.remove('hidden');
@@ -939,7 +968,11 @@
                 if (check === sig) { appData = JSON.parse(saved); } 
                 else { localStorage.clear(); appData = { users: {}, currentUser: null }; }
             }
-            if (appData.currentUser) { checkDailyStreak(); updateUI(); initRealtimeSync(appData.currentUser); } 
+            if (appData.currentUser) { 
+                // --- FIX: Restore session zone on auto-load ---
+                sessionZone = appData.users[appData.currentUser].sessionZone || 0;
+                checkDailyStreak(); updateUI(); initRealtimeSync(appData.currentUser); 
+            } 
             else showUserMenu();
         }
 
