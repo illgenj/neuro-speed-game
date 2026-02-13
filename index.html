@@ -594,7 +594,7 @@ async function executeFlash() {
                 console.log("SENDING TO SERVER:", payloadId);
 
                 // We pass 'payloadId' which we GUARANTEED above
-                const result = await getGameRoundFunc({ userId: payloadId });
+                const result = await getGameRoundFunc({ userId: appData.currentUser });
                 const serverData = result.data;
 
                 targetShape = serverData.targetShape;
@@ -1062,5 +1062,6 @@ async function executeFlash() {
 </script>
 </body>
 </html>
+
 
 
