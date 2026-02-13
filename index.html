@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neuro-Speed Elite 5.2</title>
+    <title>Neuro-Speed Elite 5.3</title>
     <style>
         :root { 
             --bg: #020617; --panel: #0f172a; --accent: #0ea5e9; --text: #f8fafc; 
@@ -747,21 +747,16 @@ async function executeFlash() {
             const u = appData.users[appData.currentUser];
             state = 'IDLE'; cancelAnimationFrame(animFrameId);
             
-            // Show Loading State
             document.getElementById('msg-title').innerText = "VALIDATING...";
-            document.getElementById('msg-title').style.color = "#fff";
-            document.getElementById('msg-body').innerText = "UPLOADING TO CORE...";
             document.getElementById('main-overlay').classList.remove('hidden');
-            document.getElementById('start-btn').classList.add('locked-btn'); // Prevent Spam
 
-            // --- SERVER CALL START ---
             try {
                 const result = await submitRoundFunc({
                     userId: appData.currentUser,
                     answer: {
                         uShape: uShape,
                         uSat: uSat,
-                        uColor: uColor,
+                        uColor: uColor, // Make sure these variables aren't null!
                         uDir: uDir
                     },
                     speed: u.speed
@@ -1067,4 +1062,5 @@ async function executeFlash() {
 </script>
 </body>
 </html>
+
 
