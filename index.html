@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neuro-Speed Elite 5.3 [Agent ID]</title>
+    <title>Neuro-Speed Elite 5.3</title>
     <style>
         :root { 
             --bg: #020617; --panel: #0f172a; --accent: #0ea5e9; --text: #f8fafc; 
@@ -313,7 +313,7 @@
 
 <script type="module">
     /* ----------------------------------------------------
-       NEURO-SPEED ELITE 5.3 [SERVER AUTHORITY]
+       NEURO-SPEED ELITE 5.3 [BLIND VERIFICATION]
        ----------------------------------------------------
     */
 
@@ -339,18 +339,16 @@
             functions = getFunctions(app);
             getGameRoundFunc = httpsCallable(functions, 'getGameRound');
             submitRoundFunc = httpsCallable(functions, 'submitRound');
-            console.log("Neuro-Link Secured (Cloud Native).");
+            console.log("Neuro-Link Secured (Blind Auth).");
         } catch(e) { console.error("Link Error:", e); }
 
         const SALT = "NEURO_SECURE_SALT_9283"; 
         let appData = { users: {}, currentUser: null };
-        let clickHistory = [];
         let pinResolver = null; 
         let realtimeUnsubscribe = null;
 
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        const isTouch = ('ontouchstart' in window || navigator.maxTouchPoints > 0) && window.innerWidth < 1024;
 
         // Game Config
         const SHAPES = ['circle', 'square', 'triangle', 'diamond', 'cross'];
@@ -373,7 +371,7 @@
 
         let state = 'IDLE', currentTask = null, selectionBoxes = [];
         let centerX, centerY, minDim;
-        let targetShape, satShape, satColorIdx, satDirIdx;
+        let currentManifest = null; // HOLDS LOCAL GENERATION DATA
         let uShape, uSat, uColor, uDir;
         let sessionZone = 0;
         let activeDistractors = [], lastFlashRadius = 0;
@@ -557,10 +555,7 @@
             // RESET ANSWERS
             uShape = null; uSat = null; uColor = null; uDir = null;
 
-            if (!appData.currentUser) {
-                showUserMenu();
-                return;
-            }
+            if (!appData.currentUser) { showUserMenu(); return; }
             
             const payloadId = appData.currentUser;
             document.getElementById('sync-vis-container').style.opacity = '0'; 
@@ -568,12 +563,16 @@
             
             try {
                 const result = await getGameRoundFunc({ userId: payloadId });
-                const serverData = result.data;
+                const { sessionSalt } = result.data;
 
-                targetShape = serverData.targetShape;
-                satShape = serverData.satShape;
-                satColorIdx = serverData.satColorIdx;
-                satDirIdx = serverData.satDirIdx;
+                // SECURE LOCAL GENERATION (BLIND AUTH)
+                currentManifest = {
+                    targetShape: SHAPES[Math.floor(Math.random() * SHAPES.length)],
+                    satShape: SHAPES[Math.floor(Math.random() * SHAPES.length)],
+                    satColorIdx: Math.floor(Math.random() * L2_COLORS.length),
+                    satDirIdx: Math.floor(Math.random() * 8),
+                    salt: sessionSalt
+                };
 
             } catch (error) {
                 console.error("Server Link Failed", error);
@@ -585,7 +584,7 @@
             const u = appData.users[appData.currentUser];
             
             lastFlashRadius = minDim * 0.35;
-            const angle = u.level3 ? DIR_MAP[satDirIdx].angle : Math.random() * Math.PI * 2;
+            const angle = currentManifest.satDirIdx * Math.PI * 0.25;
             const satX = centerX + Math.cos(angle) * lastFlashRadius; 
             const satY = centerY + Math.sin(angle) * lastFlashRadius;
             
@@ -610,8 +609,8 @@
                 if (elapsed < u.speed) {
                     ctx.clearRect(0,0,canvas.width,canvas.height);
                     activeDistractors.forEach(d => drawShape(d.shape, d.x, d.y, minDim * 0.05, '#334155'));
-                    drawShape(targetShape, centerX, centerY, minDim * 0.06, '#fff');
-                    drawShape(satShape, satX, satY, minDim * 0.05, u.level2 ? L2_COLORS[satColorIdx] : '#8b5cf6');
+                    drawShape(currentManifest.targetShape, centerX, centerY, minDim * 0.06, '#fff');
+                    drawShape(currentManifest.satShape, satX, satY, minDim * 0.05, u.level2 ? L2_COLORS[currentManifest.satColorIdx] : '#8b5cf6');
                     animFrameId = requestAnimationFrame(animate);
                 } else if (elapsed < u.speed + 100) {
                     ctx.fillStyle = "#000"; ctx.fillRect(0,0,canvas.width, canvas.height);
@@ -718,6 +717,7 @@
             try {
                 const result = await submitRoundFunc({
                     userId: appData.currentUser,
+                    manifest: currentManifest, // SENDS LOCALLY GENERATED SHAPES FOR SERVER AUTH
                     answer: {
                         uShape: uShape,
                         uSat: uSat,
@@ -750,7 +750,7 @@
                 } else {
                     sessionZone = 0; AudioSys.playGame('fail');
                     u.streak = Math.min(0, u.streak) - 1; u.speed = Math.min(1000, u.speed + 80); 
-                    document.getElementById('msg-title').innerText = isTimedOut ? "SYNC TIMEOUT" : "SYNC LOST";
+                    document.getElementById('msg-title').innerText = (isTimedOut || serverData.reason === "TEMPORAL_ANOMALY") ? "SYNC TIMEOUT" : "SYNC LOST";
                     document.getElementById('msg-title').style.color = "#ef4444";
                     document.getElementById('msg-body').innerText = `RATING DROPPED`;
                 }
