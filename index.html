@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neuro-Speed Elite 5.7</title>
+    <title>Neuro-Speed Elite 6.1: Clarity Update</title>
     <style>
         :root { 
             --bg: #020617; --panel: #0f172a; --accent: #0ea5e9; --text: #f8fafc; 
@@ -179,10 +179,11 @@
         /* --- UPDATED SYSTEM MESSAGE HUD --- */
         #system-message {
             position: absolute; 
-            top: 130px; /* Moved out of field of play */
+            /* CHANGED: Moved from top:130px to bottom:15% to avoid covering shapes */
+            bottom: 15%; 
             left: 50%; transform: translateX(-50%);
             background: rgba(15, 23, 42, 0.95); border: 1px solid #334155;
-            padding: 12px 24px; /* Reduced padding */
+            padding: 12px 24px; 
             border-radius: 12px; z-index: 200;
             text-align: center; font-weight: 900; letter-spacing: 1px; font-size: 0.8rem;
             box-shadow: 0 10px 40px rgba(0,0,0,0.8); pointer-events: none; 
@@ -366,7 +367,9 @@
 
 <script type="module">
     /* ----------------------------------------------------
-       NEURO-SPEED ELITE 5.5 [DE-LINK & VISUAL UPDATE]
+       NEURO-SPEED ELITE 6.1 [SINGULARITY UPDATE]
+       - Fixed UI layering issues (System Messages)
+       - Improved Flash Visiblity
        ----------------------------------------------------
     */
 
@@ -411,6 +414,10 @@
         let isTimedOut = false;
         let lastTickTime = 0; 
         let screenShake = 0; // Visual glitch effect intensity
+        
+        // --- Particle System Array ---
+        let particles = [];
+        let ripples = [];
 
         const DIR_MAP = [
             { id: 0, key: 6, label: '6', angle: 0 },            
@@ -429,7 +436,7 @@
         let uShape, uSat, uColor, uDir;
         let sessionZone = 0;
         let activeDistractors = [], lastFlashRadius = 0;
-        let inputLocked = false, lastSelectionIndex = -1, ripples = [];
+        let inputLocked = false, lastSelectionIndex = -1;
         let animFrameId;
 
         const AudioSys = {
@@ -543,6 +550,23 @@
                 pinResolver = resolve;
             });
         }
+
+        // --- PARTICLE SYSTEM HELPER ---
+        function spawnParticles(x, y, color) {
+            const count = 12; // Number of particles
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 4 + 2;
+                particles.push({
+                    x: x, y: y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    life: 1.0,
+                    color: color,
+                    size: Math.random() * 3 + 2
+                });
+            }
+        }
         
         // --- DE-LINK LOGIC ---
         function initiateDeLink() {
@@ -640,42 +664,70 @@
             ctx.fill();
         }
 
+        // --- VISUAL UPGRADE: Singularity Reticle ---
         function drawReticle() {
             if (state !== 'IDLE') return;
             
-            // Subtle "breathing" animation for IDLE
-            const breath = Math.sin(Date.now() / 800) * 2;
-            const rot = Date.now() / 2000;
+            // Intensity based on streak (0 to 10)
+            const intensity = Math.min(sessionZone, 10) / 10;
             
+            // Speed up rotation based on intensity
+            const rot = (Date.now() / 2000) * (1 + intensity * 4);
+            
+            // "Nervous" shake effect at high levels
+            const jitter = intensity > 0.8 ? (Math.random() - 0.5) * 4 : 0;
+
             ctx.save();
-            ctx.translate(centerX, centerY);
+            ctx.translate(centerX + jitter, centerY + jitter);
             ctx.rotate(rot);
             
+            // Dynamic Size (Breathing gets faster/shallower)
+            const breathSpeed = 800 - (intensity * 600);
+            const breath = Math.sin(Date.now() / breathSpeed) * (2 + intensity * 5);
             const size = 15 + breath;
-            ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
-            ctx.lineWidth = 1;
+
+            // Color shifts from Blue -> Purple -> Gold -> Red
+            let color = `255, 255, 255`;
+            if(intensity > 0.3) color = `168, 85, 247`; // Quantum
+            if(intensity > 0.6) color = `245, 158, 11`; // Gold
+            if(intensity > 0.9) color = `244, 63, 94`;  // Hyper
+
+            ctx.strokeStyle = `rgba(${color}, ${0.15 + (intensity * 0.5)})`;
+            ctx.lineWidth = 1 + (intensity * 2);
+            
             ctx.beginPath();
-            ctx.moveTo(-size, 0); ctx.lineTo(size, 0);
-            ctx.moveTo(0, -size); ctx.lineTo(0, size);
+            // Change shape based on intensity
+            if(intensity > 0.8) {
+                // Draw Triangle Reticle at max level
+                ctx.moveTo(-size, size); ctx.lineTo(0, -size); ctx.lineTo(size, size); ctx.closePath();
+            } else {
+                // Standard Crosshair
+                ctx.moveTo(-size, 0); ctx.lineTo(size, 0);
+                ctx.moveTo(0, -size); ctx.lineTo(0, size);
+            }
             ctx.stroke();
             
-            // Inner circle
+            // Inner Circle Glow
             ctx.beginPath();
-            ctx.arc(0, 0, 8, 0, Math.PI*2);
-            ctx.strokeStyle = "rgba(14, 165, 233, 0.3)";
+            ctx.arc(0, 0, 8 + (intensity*4), 0, Math.PI*2);
+            ctx.strokeStyle = `rgba(${color}, ${0.3 + intensity})`;
             ctx.stroke();
 
             ctx.restore();
-
+            
             // Pulse center
             const time = Date.now() / 1000;
             const alpha = 0.1 + Math.sin(time * 3) * 0.05;
-            ctx.fillStyle = `rgba(14, 165, 233, ${alpha})`;
+            ctx.fillStyle = `rgba(${color}, ${alpha})`; // Dynamic color fill
             ctx.beginPath(); ctx.arc(centerX, centerY, 3, 0, Math.PI*2); ctx.fill();
         }
 
         async function executeFlash() {
             if (state !== 'IDLE') return;
+            
+            // --- CRITICAL FIX: Hide messages immediately so shapes aren't covered ---
+            document.getElementById('system-message').classList.add('hidden');
+            hideMiniStatus();
             
             // RESET ANSWERS
             uShape = null; uSat = null; uColor = null; uDir = null;
@@ -685,7 +737,6 @@
             const payloadId = appData.currentUser;
             document.getElementById('sync-vis-container').style.opacity = '0'; 
             
-            // CHANGED: Use mini status instead of intrusive alert
             showMiniStatus("ESTABLISHING UPLINK...");
             
             try {
@@ -709,6 +760,9 @@
             }
 
             state = 'FLASHING'; isTimedOut = false; hideMiniStatus();
+            // DOUBLE CHECK: Ensure no messages lingered after async
+            document.getElementById('system-message').classList.add('hidden'); 
+            
             const u = appData.users[appData.currentUser];
             
             lastFlashRadius = minDim * 0.35;
@@ -826,6 +880,29 @@
                             }
                         });
                     }
+                    
+                    // --- PARTICLE RENDERER ---
+                    for (let i = particles.length - 1; i >= 0; i--) {
+                        const p = particles[i];
+                        p.x += p.vx;
+                        p.y += p.vy;
+                        p.life -= 0.03;
+                        p.size *= 0.95; // Shrink over time
+
+                        if (p.life <= 0) {
+                            particles.splice(i, 1);
+                        } else {
+                            ctx.globalCompositeOperation = 'lighter'; // Additive blending for "glow"
+                            ctx.fillStyle = p.color;
+                            ctx.globalAlpha = p.life;
+                            ctx.beginPath();
+                            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                            ctx.fill();
+                            ctx.globalAlpha = 1.0;
+                            ctx.globalCompositeOperation = 'source-over';
+                        }
+                    }
+
                     for (let i = ripples.length - 1; i >= 0; i--) {
                         const r = ripples[i]; r.radius += 5; r.opacity -= 0.05;
                         ctx.beginPath(); ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2); ctx.strokeStyle = `rgba(255, 255, 255, ${r.opacity})`; ctx.stroke();
@@ -836,6 +913,18 @@
                     // IDLE LOOP for Reticle
                     ctx.clearRect(0,0,canvas.width,canvas.height);
                     drawReticle();
+                    
+                    // Render leftover particles during Idle as well
+                    for (let i = particles.length - 1; i >= 0; i--) {
+                        const p = particles[i]; p.x += p.vx; p.y += p.vy; p.life -= 0.03; p.size *= 0.95;
+                        if (p.life <= 0) particles.splice(i, 1);
+                        else {
+                            ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = p.color; ctx.globalAlpha = p.life;
+                            ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+                            ctx.globalAlpha = 1.0; ctx.globalCompositeOperation = 'source-over';
+                        }
+                    }
+
                     animFrameId = requestAnimationFrame(loop);
                 }
 
@@ -844,10 +933,17 @@
             animFrameId = requestAnimationFrame(loop);
         }
 
-        function askTask(type, items) { currentTask = type; questionTimerStart = 0; }
+        function askTask(type, items) { 
+            currentTask = type; 
+            questionTimerStart = Date.now(); // Ensure we capture exact start time for Heat Logic
+        }
         
         function processHit(hit) {
             lastSelectionIndex = hit.val; inputLocked = true; AudioSys.playUI('lock');
+            
+            // Trigger Particle Reward
+            spawnParticles(hit.cx, hit.cy, 'var(--accent)'); 
+
             setTimeout(() => { 
                 inputLocked = false; lastSelectionIndex = -1;
                 const u = appData.users[appData.currentUser];
@@ -900,9 +996,24 @@
                         triggerSystemMessage(`PROMOTION: ${serverData.newTier} UNLOCKED`, "upgrade");
                     }
 
-                    if (u.streak >= 3) { 
-                        u.speed = Math.max(16, u.speed * 0.92); u.streak = 0; 
+                    // --- ADAPTIVE HEAT LOGIC ---
+                    // Calculate how much of the "Question Timeout" was used. 
+                    const reactionTime = Date.now() - questionTimerStart; 
+                    const heatMultiplier = Math.max(0.1, reactionTime / 3000); // 3000ms reference point
+
+                    if (u.streak > 1) {
+                        // If player is "Hot" (fast reaction), cut latency aggressively
+                        if (heatMultiplier < 0.5) {
+                            u.speed = Math.max(16, u.speed * 0.85); // 15% faster
+                            showMiniStatus(">>> VELOCITY SURGE <<<");
+                            screenShake = 5; // Slight shake on speed up
+                        } 
+                        // If player is cautious, reduce speed gently
+                        else {
+                            u.speed = Math.max(16, u.speed * 0.95); // 5% faster
+                        }
                     }
+
                 } else {
                     // FAIL STATE - TRIGGER SHAKE
                     screenShake = 15; 
