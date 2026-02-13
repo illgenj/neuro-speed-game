@@ -8,23 +8,29 @@ const db = admin.firestore();
 const SHAPES = ['circle', 'square', 'triangle', 'diamond', 'cross'];
 const L2_COLORS = ['#22d3ee', '#4ade80', '#f472b6', '#fbbf24'];
 
-// --- 1. THE DEALER ---
+// --- 1. THE DEALER (DEBUG VERSION) ---
 exports.getGameRound = functions.https.onCall(async (data, context) => {
-    // SECURITY: Ensure we have a user ID
-    const userId = data.userId;
-    console.log(`[SERVER] getGameRound called by: ${userId}`);
+    // 1. DEBUG LOGGING
+    console.log("FULL DATA RECEIVED:", JSON.stringify(data));
+    console.log("USER ID:", data ? data.userId : "undefined");
 
-    if (!userId) {
-        throw new functions.https.HttpsError('invalid-argument', 'Missing User ID');
+    // 2. CHECK FOR MISSING ID
+    if (!data || !data.userId) {
+        // THROW ERROR WITH THE DATA WE SEE
+        // This will show up in your browser console!
+        const seen = JSON.stringify(data);
+        throw new functions.https.HttpsError('invalid-argument', `SERVER SAW: ${seen}`);
     }
 
-    // Generate Randomness
+    const userId = data.userId;
+
+    // 3. Generate Randomness
     const targetShape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
     const satShape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
     const satColorIdx = Math.floor(Math.random() * L2_COLORS.length);
     const satDirIdx = Math.floor(Math.random() * 8);
 
-    // Save to Private Vault
+    // 4. Save to Private Vault
     await db.collection('private_sessions').doc(userId).set({
         targetShape, satShape, satColorIdx, satDirIdx,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -42,9 +48,6 @@ exports.submitRound = functions.https.onCall(async (data, context) => {
     const clientAns = data.answer; 
     const clientSpeed = data.speed;
 
-    console.log(`[SERVER] submitRound called by: ${userId}`);
-
-    // Fetch Key
     const sessionRef = db.collection('private_sessions').doc(userId);
     const sessionSnap = await sessionRef.get();
 
@@ -53,7 +56,6 @@ exports.submitRound = functions.https.onCall(async (data, context) => {
     }
     const key = sessionSnap.data();
 
-    // Fetch User
     const userRef = db.collection('leaderboard').doc(userId);
     const userSnap = await userRef.get();
     const userData = userSnap.exists ? userSnap.data() : { score: 0, tier: 'T1' };
@@ -61,14 +63,12 @@ exports.submitRound = functions.https.onCall(async (data, context) => {
     const isT2 = userData.tier === 'T2' || userData.tier === 'T3';
     const isT3 = userData.tier === 'T3';
 
-    // Validate
     let isCorrect = true;
     if (clientAns.uShape !== key.targetShape) isCorrect = false;
     if (clientAns.uSat !== key.satShape) isCorrect = false;
     if (isT2 && clientAns.uColor !== key.satColorIdx) isCorrect = false;
     if (isT3 && clientAns.uDir !== key.satDirIdx) isCorrect = false;
 
-    // Score
     let newScore = userData.score || 0;
     let newTier = userData.tier || "T1";
     let speed = clientSpeed; 
@@ -79,7 +79,6 @@ exports.submitRound = functions.https.onCall(async (data, context) => {
         const rawPoints = performanceVal * tierMult * 10; 
         const delta = (rawPoints - newScore) * 0.15;
         if (delta > 0) newScore += delta;
-
         if (speed <= 400 && !isT2) newTier = "T2";
         if (speed <= 300 && isT2) newTier = "T3";
     } else {
@@ -87,7 +86,6 @@ exports.submitRound = functions.https.onCall(async (data, context) => {
         if (userData.tier === 'T3' && speed > 500) newTier = 'T2';
     }
 
-    // Save
     await userRef.set({
         name: userId,
         score: Math.floor(newScore),
