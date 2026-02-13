@@ -574,12 +574,23 @@
 
         async function executeFlash() {
             if (state !== 'IDLE') return;
+
+            // --- USER SAFETY CHECK ---
+            // If no user is selected, STOP immediately and ask for one.
+            if (!appData.currentUser) {
+                triggerSystemMessage("NO AGENT SELECTED", "alert");
+                showUserMenu();
+                return;
+            }
             
             // --- SERVER CALL START ---
             document.getElementById('sync-vis-container').style.opacity = '0'; 
             triggerSystemMessage("ESTABLISHING LINK...", "info");
             
             try {
+                // Log what we are sending for debugging
+                console.log("Sending Request to Cloud. User:", appData.currentUser);
+
                 // Fetch random shapes from SERVER (No local cheating)
                 const result = await getGameRoundFunc({ userId: appData.currentUser });
                 const serverData = result.data;
@@ -766,6 +777,16 @@
                     document.getElementById('msg-title').innerText = "SYNC STABLE";
                     document.getElementById('msg-title').style.color = "#10b981";
                     document.getElementById('msg-body').innerText = `RATING: ${serverData.newScore}`;
+
+                    // --- RACE CONDITION FIX ---
+                    // We update the local tier immediately from the function return
+                    // instead of waiting for the Firestore snapshot.
+                    if (serverData.newTier) {
+                        u.level2 = (serverData.newTier === 'T2' || serverData.newTier === 'T3');
+                        u.level3 = (serverData.newTier === 'T3');
+                        document.getElementById('mode-indicator').innerText = serverData.newTier;
+                    }
+                    // --------------------------
 
                     if (u.streak >= 3) { 
                         u.speed = Math.max(16, u.speed * 0.92); u.streak = 0; 
