@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neuro-Speed Elite 6.1: Clarity Update</title>
+    <title>Neuro-Speed Elite 6.2: Clarity Update</title>
     <style>
         :root { 
             --bg: #020617; --panel: #0f172a; --accent: #0ea5e9; --text: #f8fafc; 
@@ -962,6 +962,9 @@
             state = 'IDLE'; // Loop will now draw reticle
             hideMiniStatus();
             
+            // Capture Current Tier BEFORE update for comparison
+            const prevTier = u.level3 ? "T3" : (u.level2 ? "T2" : "T1");
+
             document.getElementById('msg-title').innerText = "VALIDATING...";
             document.getElementById('main-overlay').classList.remove('hidden');
 
@@ -989,7 +992,7 @@
                     document.getElementById('msg-title').style.color = "#10b981";
                     document.getElementById('msg-body').innerText = `RATING: ${serverData.newScore}`;
 
-                    if (serverData.newTier) {
+                    if (serverData.newTier && serverData.newTier !== prevTier) {
                         u.level2 = (serverData.newTier === 'T2' || serverData.newTier === 'T3');
                         u.level3 = (serverData.newTier === 'T3');
                         document.getElementById('mode-indicator').innerText = serverData.newTier;
