@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neuro-Speed Elite 5.3</title>
+    <title>Neuro-Speed Elite 5.4</title>
     <style>
         :root { 
             --bg: #020617; --panel: #0f172a; --accent: #0ea5e9; --text: #f8fafc; 
@@ -156,7 +156,9 @@
 
         /* --- SYSTEM MESSAGE HUD --- */
         #system-message {
-            position: absolute; top: 120px; left: 50%; transform: translateX(-50%);
+            position: absolute; 
+            bottom: 15%; 
+            left: 50%; transform: translateX(-50%);
             background: rgba(15, 23, 42, 0.95); border: 1px solid #334155;
             padding: 20px 30px; border-radius: 12px; z-index: 200;
             text-align: center; font-weight: 900; letter-spacing: 1px; font-size: 0.9rem;
@@ -677,6 +679,12 @@
                             if (currentTask === 'COLOR') { ctx.fillStyle = item; ctx.beginPath(); ctx.arc(x, y, minDim * 0.06, 0, Math.PI*2); ctx.fill(); }
                             else { drawShape(item, x, y, minDim * 0.05, '#fff'); }
                             selectionBoxes.push({ key: item, val: i, x1: x - spacing/2, x2: x + spacing/2, y1: y - 100, y2: y + 100, cx: x, cy: y });
+
+                            if (!('ontouchstart' in window)) {
+                                ctx.fillStyle = "rgba(255,255,255,0.3)";
+                                ctx.font = `600 ${minDim * 0.025}px monospace`;
+                                ctx.fillText(`[${i+1}]`, x, y + minDim * 0.09);
+                            }
                         });
                     }
                     for (let i = ripples.length - 1; i >= 0; i--) {
@@ -793,10 +801,11 @@
                 let rank = 1;
                 querySnapshot.forEach((doc) => {
                     const data = doc.data();
-                    const acc = data.accuracy !== undefined ? data.accuracy + "%" : "--";
+                    const acc = data.accuracy !== undefined ? Math.round(data.accuracy) + "%" : "--";
                     const isSecure = data.pin ? "🔒" : "";
                     const row = document.createElement('div'); row.className = 'lb-row';
-                    row.innerHTML = `<div class="lb-rank">${rank++}</div><div class="lb-name"><span class="lb-tier">${data.tier}</span>${data.name} <span style="font-size:0.7em">${isSecure}</span></div><div class="lb-right"><span class="lb-score">${data.score.toLocaleString()}</span><div class="lb-sub"><span class="lb-stat peak">⚡${data.speed}ms</span></div></div>`;
+                    // FIX: Re-added accuracy display to the leaderboard
+                    row.innerHTML = `<div class="lb-rank">${rank++}</div><div class="lb-name"><span class="lb-tier">${data.tier}</span>${data.name} <span style="font-size:0.7em">${isSecure}</span></div><div class="lb-right"><span class="lb-score">${data.score.toLocaleString()}</span><div class="lb-sub"><span class="lb-stat peak">⚡${Math.round(data.speed)}ms</span> <span class="lb-stat acc">🎯${acc}</span></div></div>`;
                     list.appendChild(row);
                 });
             } catch (e) { console.error(e); }
@@ -817,7 +826,7 @@
             });
             cx.stroke();
             const acc = Math.round((u.resultsHistory.filter(r => r.correct).length / u.resultsHistory.length * 100)) || 0;
-            document.getElementById('stat-peak').innerText = `${Math.min(...u.history)}ms`;
+            document.getElementById('stat-peak').innerText = `${Math.round(Math.min(...u.history))}ms`;
             document.getElementById('stat-acc-total').innerText = `${acc}%`;
             document.getElementById('stat-uptime').innerText = (u.totalTimeMs / 3600000).toFixed(1) + 'h';
             document.getElementById('stat-grade').innerText = acc > 90 ? "S" : (acc > 75 ? "A" : "B");
@@ -914,6 +923,25 @@
             const hit = selectionBoxes.find(b => x > b.x1 && x < b.x2 && y > b.y1 && y < b.y2);
             if (hit) processHit(hit);
         }
+
+        window.addEventListener('keydown', (e) => {
+            if (state !== 'QUESTIONING' || inputLocked) return;
+            const key = e.key;
+            // Handle 1-5 for shapes/colors
+            if (currentTask !== 'DIRECTION' && /^[1-9]$/.test(key)) {
+                const idx = parseInt(key) - 1;
+                const hit = selectionBoxes.find(b => b.val === idx); 
+                if(hit) processHit(hit);
+            }
+            // Handle Numpad for directions
+            if (currentTask === 'DIRECTION') {
+                const dir = DIR_MAP.find(d => d.label === key);
+                if(dir) {
+                     const hit = selectionBoxes.find(b => b.val === dir.id);
+                     if(hit) processHit(hit);
+                }
+            }
+        });
 
         document.getElementById('start-btn').onclick = () => { AudioSys.init(); AudioSys.playUI('click'); hideOverlays(); setTimeout(executeFlash, 300); };
         document.getElementById('btn-audio').onclick = () => {
