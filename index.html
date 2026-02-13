@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neuro-Speed Elite 5.4</title>
+    <title>Neuro-Speed Elite 5.6</title>
     <style>
         :root { 
             --bg: #020617; --panel: #0f172a; --accent: #0ea5e9; --text: #f8fafc; 
@@ -20,11 +20,33 @@
             height: 100vh; overflow: hidden; touch-action: none; 
         }
 
+        /* QoL: Animated Background Grid */
+        @keyframes grid-scroll {
+            0% { background-position: 0 0; }
+            100% { background-position: 40px 40px; }
+        }
+
+        body::before {
+            content: ""; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background-image: 
+                linear-gradient(rgba(14, 165, 233, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(14, 165, 233, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px; pointer-events: none; z-index: 0;
+            animation: grid-scroll 20s linear infinite;
+        }
+
+        /* Scanline Effect */
+        body::after {
+            content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            z-index: 2; background-size: 100% 2px, 3px 100%; pointer-events: none;
+        }
+
         /* --- Header & Interactive Stats --- */
         .header { 
             height: 90px; width: 100%; display: flex; align-items: center; 
             background: var(--panel); border-bottom: 2px solid #1e293b; 
-            z-index: 50; flex-shrink: 0;
+            z-index: 50; flex-shrink: 0; position: relative;
         }
         .stat-group { display: flex; flex-grow: 1; justify-content: space-around; height: 100%; }
         
@@ -46,7 +68,7 @@
             width: 90%; height: 24px; background: #0f172a; 
             margin: 10px auto 5px auto; position: relative; 
             overflow: hidden; border-radius: 12px; border: 2px solid #1e293b;
-            box-shadow: inset 0 2px 6px rgba(0,0,0,0.6);
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.6); z-index: 50;
         }
         #zone-fill {
             height: 100%; width: 0%; 
@@ -74,7 +96,7 @@
         .zone-gold { animation: bar-pulse-gold 1.5s infinite; }
 
         /* --- Game Area --- */
-        #game-container { flex-grow: 1; position: relative; width: 100%; overflow: hidden; }
+        #game-container { flex-grow: 1; position: relative; width: 100%; overflow: hidden; z-index: 10; }
         canvas { display: block; width: 100%; height: 100%; transition: filter 0.3s; }
 
         /* --- UI Overlays --- */
@@ -154,21 +176,34 @@
 
         .singularity-glow { filter: saturate(1.5) contrast(1.1); }
 
-        /* --- SYSTEM MESSAGE HUD --- */
+        /* --- UPDATED SYSTEM MESSAGE HUD --- */
         #system-message {
             position: absolute; 
-            bottom: 15%; 
+            top: 130px; /* Moved out of field of play */
             left: 50%; transform: translateX(-50%);
             background: rgba(15, 23, 42, 0.95); border: 1px solid #334155;
-            padding: 20px 30px; border-radius: 12px; z-index: 200;
-            text-align: center; font-weight: 900; letter-spacing: 1px; font-size: 0.9rem;
+            padding: 12px 24px; /* Reduced padding */
+            border-radius: 12px; z-index: 200;
+            text-align: center; font-weight: 900; letter-spacing: 1px; font-size: 0.8rem;
             box-shadow: 0 10px 40px rgba(0,0,0,0.8); pointer-events: none; 
             transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            width: 85%; max-width: 450px;
+            width: auto; max-width: 90%;
         }
         .sys-upgrade { border-color: var(--success) !important; color: var(--success); box-shadow: 0 0 30px rgba(16, 185, 129, 0.3) !important; }
         .sys-alert { border-color: var(--fail) !important; color: var(--fail); box-shadow: 0 0 30px rgba(239, 68, 68, 0.3) !important; }
         .sys-info { border-color: var(--accent) !important; color: var(--accent); box-shadow: 0 0 30px rgba(14, 165, 233, 0.3) !important; }
+
+        /* --- NEW MINI STATUS (Bottom Right) --- */
+        #mini-status {
+            position: absolute; bottom: 20px; right: 20px;
+            font-family: monospace; font-size: 0.7rem; letter-spacing: 2px;
+            color: var(--accent); opacity: 0; transition: opacity 0.3s;
+            pointer-events: none; z-index: 50;
+            display: flex; align-items: center; gap: 8px;
+            background: rgba(15, 23, 42, 0.8); padding: 5px 10px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1);
+        }
+        .blink { animation: blinker 1s linear infinite; }
+        @keyframes blinker { 50% { opacity: 0.3; } }
 
         /* --- INPUT STYLING --- */
         #new-agent-name, #pin-input-field {
@@ -242,6 +277,7 @@
         <div id="sync-indicator"></div>
 
         <div id="system-message" class="hidden">SYSTEM READY</div>
+        <div id="mini-status"><span class="blink">●</span> ESTABLISHING UPLINK...</div>
 
         <div id="main-overlay" class="overlay">
             <h2 id="msg-title">NEURAL READY</h2>
@@ -269,7 +305,13 @@
                 <div class="a-card"><span class="l">Uptime</span><span class="v" id="stat-uptime">0.0h</span></div>
             </div>
             <div id="analytics-actions"></div>
-            <div id="analytics-danger-zone" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;"></div>
+            
+            <div id="analytics-danger-zone" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+                <button id="btn-unlink-account" class="action-btn danger-btn" style="font-size: 0.7rem; padding: 12px;">
+                    🔒 SEVER LINK
+                </button>
+            </div>
+
             <button class="action-btn secondary-btn" id="btn-close-analytics" style="margin-top:10px">RETURN</button>
         </div>
 
@@ -303,19 +345,28 @@
             <h3 id="pin-title" style="color: var(--hyper); letter-spacing: 2px;">SECURITY CHECK</h3>
             <p id="pin-reason" class="pin-subtitle">AUTHORIZATION REQUIRED</p>
             
-            <input type="password" inputmode="numeric" pattern="[0-9]*" id="pin-input-field" maxlength="4" placeholder="****" autocomplete="off">
+            <div id="pin-input-container">
+                <input type="password" inputmode="numeric" pattern="[0-9]*" id="pin-input-field" maxlength="4" placeholder="****" autocomplete="off">
+            </div>
             
             <div style="display: flex; gap: 10px; margin-top: 20px;">
                 <button id="btn-pin-confirm" class="action-btn">AUTHENTICATE</button>
                 <button id="btn-pin-cancel" class="action-btn secondary-btn">CANCEL</button>
             </div>
         </div>
+        
+        <div id="confirm-overlay" class="overlay hidden">
+             <h3 style="color: var(--fail); letter-spacing: 2px;">WARNING</h3>
+             <p style="margin-bottom:20px; font-size: 0.9rem;">LOCAL NEURAL PATTERN WILL BE DELETED.</p>
+             <button id="btn-confirm-yes" class="action-btn danger-btn">CONFIRM DELETION</button>
+             <button id="btn-confirm-no" class="action-btn secondary-btn">CANCEL</button>
+        </div>
 
     </div>
 
 <script type="module">
     /* ----------------------------------------------------
-       NEURO-SPEED ELITE 5.3 [BLIND VERIFICATION]
+       NEURO-SPEED ELITE 5.5 [DE-LINK & VISUAL UPDATE]
        ----------------------------------------------------
     */
 
@@ -359,6 +410,7 @@
         let questionTimerStart = 0;
         let isTimedOut = false;
         let lastTickTime = 0; 
+        let screenShake = 0; // Visual glitch effect intensity
 
         const DIR_MAP = [
             { id: 0, key: 6, label: '6', angle: 0 },            
@@ -451,6 +503,16 @@
 
         function hideOverlays() { document.querySelectorAll('.overlay').forEach(o => o.classList.add('hidden')); }
 
+        function showMiniStatus(text) {
+            const el = document.getElementById('mini-status');
+            el.innerHTML = `<span class="blink">●</span> ${text}`;
+            el.style.opacity = '1';
+        }
+
+        function hideMiniStatus() {
+            document.getElementById('mini-status').style.opacity = '0';
+        }
+
         function triggerSystemMessage(text, type) {
             const el = document.getElementById('system-message');
             el.innerText = text; el.className = ''; 
@@ -461,18 +523,45 @@
             setTimeout(() => el.classList.add('hidden'), 3500);
         }
 
-        function requestPin(title, reason) {
+        function requestPin(title, reason, isAuth = true) {
             return new Promise((resolve) => {
                 hideOverlays();
                 const overlay = document.getElementById('pin-overlay');
                 const input = document.getElementById('pin-input-field');
+                const container = document.getElementById('pin-input-container');
+                
                 document.getElementById('pin-title').innerText = title || "SECURITY CHECK";
                 document.getElementById('pin-reason').innerText = reason || "ENTER KEY";
+                
+                // Show input only if needed
+                if(isAuth) container.style.display = 'block';
+                else container.style.display = 'none';
+
                 input.value = "";
                 overlay.classList.remove('hidden');
-                setTimeout(() => input.focus(), 100);
+                if(isAuth) setTimeout(() => input.focus(), 100);
                 pinResolver = resolve;
             });
+        }
+        
+        // --- DE-LINK LOGIC ---
+        function initiateDeLink() {
+            const uName = appData.currentUser;
+            if(!uName) return;
+            hideOverlays();
+            document.getElementById('confirm-overlay').classList.remove('hidden');
+        }
+
+        function confirmDeLink() {
+             const uName = appData.currentUser;
+             if(appData.users[uName]) {
+                 delete appData.users[uName];
+                 appData.currentUser = null;
+                 save();
+                 hideOverlays();
+                 triggerSystemMessage("NEURAL PATTERN PURGED", "alert");
+                 setTimeout(showUserMenu, 1000);
+             }
         }
 
         function initRealtimeSync(userId) {
@@ -551,6 +640,40 @@
             ctx.fill();
         }
 
+        function drawReticle() {
+            if (state !== 'IDLE') return;
+            
+            // Subtle "breathing" animation for IDLE
+            const breath = Math.sin(Date.now() / 800) * 2;
+            const rot = Date.now() / 2000;
+            
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.rotate(rot);
+            
+            const size = 15 + breath;
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(-size, 0); ctx.lineTo(size, 0);
+            ctx.moveTo(0, -size); ctx.lineTo(0, size);
+            ctx.stroke();
+            
+            // Inner circle
+            ctx.beginPath();
+            ctx.arc(0, 0, 8, 0, Math.PI*2);
+            ctx.strokeStyle = "rgba(14, 165, 233, 0.3)";
+            ctx.stroke();
+
+            ctx.restore();
+
+            // Pulse center
+            const time = Date.now() / 1000;
+            const alpha = 0.1 + Math.sin(time * 3) * 0.05;
+            ctx.fillStyle = `rgba(14, 165, 233, ${alpha})`;
+            ctx.beginPath(); ctx.arc(centerX, centerY, 3, 0, Math.PI*2); ctx.fill();
+        }
+
         async function executeFlash() {
             if (state !== 'IDLE') return;
             
@@ -561,7 +684,9 @@
             
             const payloadId = appData.currentUser;
             document.getElementById('sync-vis-container').style.opacity = '0'; 
-            triggerSystemMessage("ESTABLISHING LINK...", "info");
+            
+            // CHANGED: Use mini status instead of intrusive alert
+            showMiniStatus("ESTABLISHING UPLINK...");
             
             try {
                 const result = await getGameRoundFunc({ userId: payloadId });
@@ -579,10 +704,11 @@
             } catch (error) {
                 console.error("Server Link Failed", error);
                 triggerSystemMessage("SERVER LINK LOST", "alert");
+                hideMiniStatus();
                 return; 
             }
 
-            state = 'FLASHING'; isTimedOut = false;
+            state = 'FLASHING'; isTimedOut = false; hideMiniStatus();
             const u = appData.users[appData.currentUser];
             
             lastFlashRadius = minDim * 0.35;
@@ -625,18 +751,31 @@
         function startQuestionLoop() {
             askTask('CENTER', SHAPES);
             function loop(now) {
+                // Apply Screen Shake if needed
+                if(screenShake > 0.5) {
+                    ctx.save();
+                    const dx = (Math.random() - 0.5) * screenShake;
+                    const dy = (Math.random() - 0.5) * screenShake;
+                    ctx.translate(dx, dy);
+                    // Chromatic Aberration Simulation (Red/Cyan Offset)
+                    ctx.globalCompositeOperation = "lighter";
+                    screenShake *= 0.9; // Decay
+                }
+
                 if (state === 'QUESTIONING') {
                     if (!questionTimerStart) questionTimerStart = now;
                     const elapsed = now - questionTimerStart;
                     const remaining = QUESTION_TIMEOUT_MS - elapsed;
                     if (remaining <= 0) {
                         if(!isTimedOut) { isTimedOut = true; triggerSystemMessage("NEURAL LINK SEVERED (TIMEOUT)", "alert"); uShape = null; finalizeTrial(); }
+                        if(screenShake > 0.5) ctx.restore(); // Safety restore
                         return; 
                     }
                     if (remaining < 5000) {
                         if (now - lastTickTime > 1000) { AudioSys.playGame('timer'); lastTickTime = now; }
                     }
-                    ctx.fillStyle = '#020617'; ctx.fillRect(0,0,canvas.width,canvas.height);
+                    ctx.clearRect(0,0,canvas.width,canvas.height); // Use clearRect to show grid bg
+                    
                     const timePct = Math.max(0, remaining / QUESTION_TIMEOUT_MS);
                     const barColor = timePct < 0.2 ? '#ef4444' : (timePct < 0.5 ? '#f59e0b' : '#0ea5e9');
                     ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fillRect(0, 0, canvas.width, 6); 
@@ -647,7 +786,7 @@
                     if(currentTask === 'CENTER') { title = "CORE ID"; sub = "SELECT CENTER SHAPE"; }
                     else if(currentTask === 'SATELLITE') { title = "PERIPHERAL ID"; sub = "SELECT SATELLITE SHAPE"; }
                     else if(currentTask === 'COLOR') { title = "SPECTRUM ID"; sub = "MATCH SATELLITE COLOR"; }
-                    else { title = "VECTOR ID"; sub = "INDICATE ORIGIN"; }
+                    else { title = "VECTOR ID"; sub = "INDICATE ORIGIN (NUMPAD OR ARROWS)"; }
                     
                     ctx.textAlign = "center"; ctx.fillStyle = "#fff";
                     ctx.font = `900 ${minDim * 0.07}px 'Inter', system-ui`; ctx.fillText(title, centerX, centerY - minDim * 0.15);
@@ -693,7 +832,14 @@
                         if (r.opacity <= 0) ripples.splice(i, 1);
                     }
                     animFrameId = requestAnimationFrame(loop);
+                } else if (state === 'IDLE') {
+                    // IDLE LOOP for Reticle
+                    ctx.clearRect(0,0,canvas.width,canvas.height);
+                    drawReticle();
+                    animFrameId = requestAnimationFrame(loop);
                 }
+
+                if(screenShake > 0.5) ctx.restore(); // Restore context after shake
             }
             animFrameId = requestAnimationFrame(loop);
         }
@@ -717,7 +863,8 @@
 
         async function finalizeTrial() {
             const u = appData.users[appData.currentUser];
-            state = 'IDLE'; cancelAnimationFrame(animFrameId);
+            state = 'IDLE'; // Loop will now draw reticle
+            hideMiniStatus();
             
             document.getElementById('msg-title').innerText = "VALIDATING...";
             document.getElementById('main-overlay').classList.remove('hidden');
@@ -750,12 +897,15 @@
                         u.level2 = (serverData.newTier === 'T2' || serverData.newTier === 'T3');
                         u.level3 = (serverData.newTier === 'T3');
                         document.getElementById('mode-indicator').innerText = serverData.newTier;
+                        triggerSystemMessage(`PROMOTION: ${serverData.newTier} UNLOCKED`, "upgrade");
                     }
 
                     if (u.streak >= 3) { 
                         u.speed = Math.max(16, u.speed * 0.92); u.streak = 0; 
                     }
                 } else {
+                    // FAIL STATE - TRIGGER SHAKE
+                    screenShake = 15; 
                     sessionZone = 0; AudioSys.playGame('fail');
                     u.streak = Math.min(0, u.streak) - 1; u.speed = Math.min(1000, u.speed + 80); 
                     document.getElementById('msg-title').innerText = (isTimedOut || serverData.reason === "TEMPORAL_ANOMALY") ? "SYNC TIMEOUT" : "SYNC LOST";
@@ -804,7 +954,6 @@
                     const acc = data.accuracy !== undefined ? Math.round(data.accuracy) + "%" : "--";
                     const isSecure = data.pin ? "🔒" : "";
                     const row = document.createElement('div'); row.className = 'lb-row';
-                    // FIX: Re-added accuracy display to the leaderboard
                     row.innerHTML = `<div class="lb-rank">${rank++}</div><div class="lb-name"><span class="lb-tier">${data.tier}</span>${data.name} <span style="font-size:0.7em">${isSecure}</span></div><div class="lb-right"><span class="lb-score">${data.score.toLocaleString()}</span><div class="lb-sub"><span class="lb-stat peak">⚡${Math.round(data.speed)}ms</span> <span class="lb-stat acc">🎯${acc}</span></div></div>`;
                     list.appendChild(row);
                 });
@@ -935,10 +1084,20 @@
             }
             // Handle Numpad for directions
             if (currentTask === 'DIRECTION') {
+                let dirId = -1;
+                // Numpad support
                 const dir = DIR_MAP.find(d => d.label === key);
-                if(dir) {
-                     const hit = selectionBoxes.find(b => b.val === dir.id);
-                     if(hit) processHit(hit);
+                if(dir) dirId = dir.id;
+                
+                // QoL: Arrow Key Support
+                if (key === "ArrowRight") dirId = 0; // 6
+                else if (key === "ArrowDown") dirId = 2; // 2
+                else if (key === "ArrowLeft") dirId = 4; // 4
+                else if (key === "ArrowUp") dirId = 6; // 8
+
+                if (dirId !== -1) {
+                    const hit = selectionBoxes.find(b => b.val === dirId);
+                    if(hit) processHit(hit);
                 }
             }
         });
@@ -968,11 +1127,18 @@
              hideOverlays(); document.getElementById('new-link-overlay').classList.remove('hidden');
         };
         document.getElementById('btn-create-link').onclick = handleNewLinkAttempt;
+        document.getElementById('btn-cancel-link').onclick = () => { hideOverlays(); showUserMenu(); };
+        
+        // NEW DE-LINK EVENT LISTENERS
+        document.getElementById('btn-unlink-account').onclick = initiateDeLink;
+        document.getElementById('btn-confirm-yes').onclick = confirmDeLink;
+        document.getElementById('btn-confirm-no').onclick = () => { hideOverlays(); document.getElementById('analytics-overlay').classList.remove('hidden'); };
 
         window.addEventListener('resize', resize);
         canvas.addEventListener('mousedown', handleInput);
         canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleInput(e); }, {passive: false});
         resize(); load();
+        startQuestionLoop(); // Starts the IDLE loop
         setInterval(() => { if (appData.currentUser) appData.users[appData.currentUser].totalTimeMs += 2000; }, 2000);
 
     })();
