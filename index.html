@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neuro-Speed Elite 5.3</title>
+    <title>Neuro-Speed Elite 5.3 [Agent ID]</title>
     <style>
         :root { 
             --bg: #020617; --panel: #0f172a; --accent: #0ea5e9; --text: #f8fafc; 
@@ -38,7 +38,6 @@
         .val { font-size: 0.85rem; font-weight: 800; color: var(--accent); font-family: monospace; }
         .xp-val { color: var(--gold); transition: color 0.3s; }
 
-        /* Audio Toggle */
         #btn-audio { opacity: 0.5; }
         #btn-audio.active { opacity: 1; color: var(--success); }
 
@@ -106,7 +105,7 @@
         .a-card .v { display: block; font-weight: 800; color: var(--accent); font-size: 1rem; }
         .a-card .l { font-size: 0.5rem; opacity: 0.4; text-transform: uppercase; font-weight: 700; }
 
-        /* --- NEW SYNC BAR UI --- */
+        /* --- SYNC BAR UI --- */
         #sync-vis-container {
             margin: 15px 0 20px 0;
             text-align: center;
@@ -146,7 +145,6 @@
         .lb-stat.peak { color: var(--hyper); }
         .lb-stat.acc { color: var(--success); }
         
-        /* Auto-save indicator */
         #sync-indicator {
             position: absolute; top: 15px; left: 15px; width: 8px; height: 8px; 
             background: var(--success); border-radius: 50%; opacity: 0; transition: opacity 0.5s;
@@ -193,7 +191,6 @@
         }
         #new-agent-name::placeholder { color: rgba(255,255,255,0.2); }
 
-        /* --- SECURE PIN UI --- */
         #pin-input-field {
             letter-spacing: 10px;
             font-size: 2rem;
@@ -316,11 +313,7 @@
 
 <script type="module">
     /* ----------------------------------------------------
-       NEURO-SPEED ELITE 5.0 [SERVER AUTHORITY]
-       - Architecture: Server-Side Validation
-       - RNG: Cloud Generated (No Client Manipulation)
-       - Scoring: Cloud Calculated (No Client Manipulation)
-       - Database: Firestore + Cloud Functions
+       NEURO-SPEED ELITE 5.3 [SERVER AUTHORITY]
        ----------------------------------------------------
     */
 
@@ -338,19 +331,14 @@
     };
 
     (function() {
-        // --- 1. INITIALIZATION & VARIABLES ---
-        let db, functions;
-        let getGameRoundFunc, submitRoundFunc;
+        let db, functions, getGameRoundFunc, submitRoundFunc;
 
         try {
             const app = initializeApp(firebaseConfig);
             db = getFirestore(app);
-            functions = getFunctions(app); // Connects to Cloud Functions
-            
-            // Define Callable Functions
+            functions = getFunctions(app);
             getGameRoundFunc = httpsCallable(functions, 'getGameRound');
             submitRoundFunc = httpsCallable(functions, 'submitRound');
-
             console.log("Neuro-Link Secured (Cloud Native).");
         } catch(e) { console.error("Link Error:", e); }
 
@@ -372,7 +360,6 @@
         let isTimedOut = false;
         let lastTickTime = 0; 
 
-        // Directions
         const DIR_MAP = [
             { id: 0, key: 6, label: '6', angle: 0 },            
             { id: 1, key: 3, label: '3', angle: Math.PI*0.25 },
@@ -384,7 +371,6 @@
             { id: 7, key: 9, label: '9', angle: Math.PI*1.75 } 
         ];
 
-        // State
         let state = 'IDLE', currentTask = null, selectionBoxes = [];
         let centerX, centerY, minDim;
         let targetShape, satShape, satColorIdx, satDirIdx;
@@ -394,7 +380,6 @@
         let inputLocked = false, lastSelectionIndex = -1, ripples = [];
         let animFrameId;
 
-        // --- 2. AUDIO SYSTEM ---
         const AudioSys = {
             ctx: null, enabled: false,
             init: function() {
@@ -447,7 +432,6 @@
             }
         };
 
-        // --- 3. HELPER FUNCTIONS ---
         function generateHash(data) {
             const str = JSON.stringify(data) + SALT;
             let hash = 0;
@@ -477,7 +461,6 @@
             setTimeout(() => el.classList.add('hidden'), 3500);
         }
 
-        // --- 4. CORE LOGIC ---
         function requestPin(title, reason) {
             return new Promise((resolve) => {
                 hideOverlays();
@@ -495,15 +478,12 @@
         function initRealtimeSync(userId) {
             if (realtimeUnsubscribe) realtimeUnsubscribe();
             if (!db || !userId) return;
-            console.log(`Stream: ${userId}`);
             
-            // Listen for changes from SERVER (which is now the only one writing score)
             realtimeUnsubscribe = onSnapshot(doc(db, "leaderboard", userId), (docSnap) => {
                 if (docSnap.exists()) {
                     const cloudData = docSnap.data();
                     const u = appData.users[userId];
                     if (u) {
-                         // Always accept server truth for Score/Tier
                         u.score = cloudData.score || 0;
                         u.speed = cloudData.speed;
                         u.level2 = (cloudData.tier === 'T2' || cloudData.tier === 'T3');
@@ -561,7 +541,6 @@
             save();
         }
 
-        // --- 5. GAME LOOP FUNCTIONS ---
         function drawShape(type, x, y, size, color) {
             ctx.beginPath(); ctx.fillStyle = color;
             if (type === 'circle') ctx.arc(x, y, size, 0, Math.PI * 2);
@@ -572,29 +551,23 @@
             ctx.fill();
         }
 
-async function executeFlash() {
+        async function executeFlash() {
             if (state !== 'IDLE') return;
             
-            // --- 1. FORCE THE ID (The Nuclear Option) ---
-            // This guarantees a value exists, no matter what.
-            if (!appData.currentUser) {
-                appData.currentUser = "AGENT_007"; // Hardcoded backup
-                console.log("Forcing ID to AGENT_007");
-                save(); updateUI();
-            }
-            const payloadId = appData.currentUser;
-            // --------------------------------------------
+            // RESET ANSWERS
+            uShape = null; uSat = null; uColor = null; uDir = null;
 
-            // --- SERVER CALL START ---
+            if (!appData.currentUser) {
+                showUserMenu();
+                return;
+            }
+            
+            const payloadId = appData.currentUser;
             document.getElementById('sync-vis-container').style.opacity = '0'; 
             triggerSystemMessage("ESTABLISHING LINK...", "info");
             
             try {
-                // Debug Log: Check your browser console to see this!
-                console.log("SENDING TO SERVER:", payloadId);
-
-                // We pass 'payloadId' which we GUARANTEED above
-                const result = await getGameRoundFunc({ userId: appData.currentUser });
+                const result = await getGameRoundFunc({ userId: payloadId });
                 const serverData = result.data;
 
                 targetShape = serverData.targetShape;
@@ -604,12 +577,9 @@ async function executeFlash() {
 
             } catch (error) {
                 console.error("Server Link Failed", error);
-                // This alerts the exact error to your screen
-                alert(`SERVER ERROR:\n${error.message}\n\nCheck Console for details.`);
                 triggerSystemMessage("SERVER LINK LOST", "alert");
                 return; 
             }
-            // --- SERVER CALL END ---
 
             state = 'FLASHING'; isTimedOut = false;
             const u = appData.users[appData.currentUser];
@@ -671,18 +641,17 @@ async function executeFlash() {
                     ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fillRect(0, 0, canvas.width, 6); 
                     ctx.fillStyle = barColor; ctx.shadowColor = barColor; ctx.shadowBlur = 10;
                     ctx.fillRect(0, 0, canvas.width * timePct, 6); ctx.shadowBlur = 0;
-                    if (timePct < 0.3) {
-                        ctx.fillStyle = "#ef4444"; ctx.font = `bold ${minDim * 0.03}px monospace`;
-                        ctx.textAlign = "right"; ctx.fillText((remaining/1000).toFixed(1) + "s", canvas.width - 10, 25);
-                    }
+                    
                     let title = "", sub = "";
                     if(currentTask === 'CENTER') { title = "CORE ID"; sub = "SELECT CENTER SHAPE"; }
                     else if(currentTask === 'SATELLITE') { title = "PERIPHERAL ID"; sub = "SELECT SATELLITE SHAPE"; }
                     else if(currentTask === 'COLOR') { title = "SPECTRUM ID"; sub = "MATCH SATELLITE COLOR"; }
                     else { title = "VECTOR ID"; sub = "INDICATE ORIGIN"; }
+                    
                     ctx.textAlign = "center"; ctx.fillStyle = "#fff";
                     ctx.font = `900 ${minDim * 0.07}px 'Inter', system-ui`; ctx.fillText(title, centerX, centerY - minDim * 0.15);
                     ctx.fillStyle = "#0ea5e9"; ctx.font = `700 ${minDim * 0.03}px monospace`; ctx.fillText(sub, centerX, centerY - minDim * 0.08);
+                    
                     selectionBoxes = [];
                     if (currentTask === 'DIRECTION') {
                         const layoutRadius = minDim * 0.3; const btnSize = minDim * 0.07;
@@ -697,7 +666,7 @@ async function executeFlash() {
                             ctx.arc(x, y, btnSize, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.shadowBlur = 0;
                             ctx.fillStyle = isSelected ? "#fff" : "#64748b"; ctx.font = `800 ${minDim * 0.05}px monospace`;
                             ctx.textBaseline = "middle"; ctx.fillText(dir.label, x, y); ctx.textBaseline = "alphabetic";
-                            selectionBoxes.push({ key: dir.key, val: dir.id, x1: x - btnSize, x2: x + btnSize, y1: y - btnSize, y2: y + btnSize, cx: x, cy: y });
+                            selectionBoxes.push({ key: dir.id, val: dir.id, x1: x - btnSize, x2: x + btnSize, y1: y - btnSize, y2: y + btnSize, cx: x, cy: y });
                         });
                     } else {
                         const items = currentTask === 'CENTER' ? SHAPES : (currentTask === 'SATELLITE' ? SHAPES : L2_COLORS);        
@@ -708,10 +677,6 @@ async function executeFlash() {
                             if (isSelected) { ctx.save(); ctx.shadowBlur = 20; ctx.shadowColor = "rgba(14, 165, 233, 0.8)"; ctx.fillStyle = "rgba(14, 165, 233, 0.2)"; ctx.beginPath(); ctx.arc(x, y, minDim * 0.08, 0, Math.PI*2); ctx.fill(); ctx.restore(); }
                             if (currentTask === 'COLOR') { ctx.fillStyle = item; ctx.beginPath(); ctx.arc(x, y, minDim * 0.06, 0, Math.PI*2); ctx.fill(); }
                             else { drawShape(item, x, y, minDim * 0.05, '#fff'); }
-                            if (!isTouch) {
-                                ctx.fillStyle = isSelected ? "var(--accent)" : "rgba(255, 255, 255, 0.3)";
-                                ctx.font = `bold ${minDim * 0.02}px monospace`; ctx.fillText(`[${i + 1}]`, x, y + minDim * 0.15); 
-                            }
                             selectionBoxes.push({ key: item, val: i, x1: x - spacing/2, x2: x + spacing/2, y1: y - 100, y2: y + 100, cx: x, cy: y });
                         });
                     }
@@ -756,8 +721,8 @@ async function executeFlash() {
                     answer: {
                         uShape: uShape,
                         uSat: uSat,
-                        uColor: uColor, // Make sure these variables aren't null!
-                        uDir: uDir
+                        uColor: (uColor !== null) ? uColor : undefined,
+                        uDir: (uDir !== null) ? uDir : undefined
                     },
                     speed: u.speed
                 });
@@ -769,21 +734,15 @@ async function executeFlash() {
                 if (correct) {
                     sessionZone++; AudioSys.playGame('success');
                     u.streak = Math.max(0, u.streak) + 1;
-                    
-                    // Server has already updated the score in DB, but we get the visual feedback here
                     document.getElementById('msg-title').innerText = "SYNC STABLE";
                     document.getElementById('msg-title').style.color = "#10b981";
                     document.getElementById('msg-body').innerText = `RATING: ${serverData.newScore}`;
 
-                    // --- RACE CONDITION FIX ---
-                    // We update the local tier immediately from the function return
-                    // instead of waiting for the Firestore snapshot.
                     if (serverData.newTier) {
                         u.level2 = (serverData.newTier === 'T2' || serverData.newTier === 'T3');
                         u.level3 = (serverData.newTier === 'T3');
                         document.getElementById('mode-indicator').innerText = serverData.newTier;
                     }
-                    // --------------------------
 
                     if (u.streak >= 3) { 
                         u.speed = Math.max(16, u.speed * 0.92); u.streak = 0; 
@@ -794,10 +753,9 @@ async function executeFlash() {
                     document.getElementById('msg-title').innerText = isTimedOut ? "SYNC TIMEOUT" : "SYNC LOST";
                     document.getElementById('msg-title').style.color = "#ef4444";
                     document.getElementById('msg-body').innerText = `RATING DROPPED`;
-                    if (u.streak <= -3) { u.streak = 0; u.speed += 100; }
                 }
 
-                // Visual Feedback
+                // Update Visual Bar
                 const maxLatency = 1000;
                 const oldPct = Math.max(0, Math.min(100, ((maxLatency - prevSpeed) / maxLatency) * 100));
                 const newPct = Math.max(0, Math.min(100, ((maxLatency - u.speed) / maxLatency) * 100));
@@ -813,21 +771,16 @@ async function executeFlash() {
                 u.history.push(Math.round(u.speed));
                 u.resultsHistory.push({ correct, date: new Date().toISOString().split('T')[0] });
                 
-                // We keep saving local state for Speed/History/Streak preference
-                // But score is strictly from Server
                 save(); updateUI();
 
             } catch (e) {
                 console.error("Validation Error", e);
                 document.getElementById('msg-title').innerText = "NETWORK ERROR";
-                document.getElementById('msg-body').innerText = "RESULT NOT SAVED";
             }
-            // --- SERVER CALL END ---
 
             setTimeout(() => document.getElementById('start-btn').classList.remove('locked-btn'), 500);
         }
 
-        // --- 6. OVERLAY FUNCTIONS ---
         async function showLeaderboard() {
             AudioSys.playUI('click');
             hideOverlays(); document.getElementById('leaderboard-overlay').classList.remove('hidden');
@@ -843,11 +796,10 @@ async function executeFlash() {
                     const acc = data.accuracy !== undefined ? data.accuracy + "%" : "--";
                     const isSecure = data.pin ? "🔒" : "";
                     const row = document.createElement('div'); row.className = 'lb-row';
-                    row.innerHTML = `<div class="lb-rank">${rank++}</div><div class="lb-name"><span class="lb-tier">${data.tier}</span>${data.name} <span style="font-size:0.7em">${isSecure}</span></div><div class="lb-right"><span class="lb-score">${data.score.toLocaleString()}</span><div class="lb-sub"><span class="lb-stat peak">⚡${data.speed}ms</span><span class="lb-stat acc">🎯${acc}</span></div></div>`;
+                    row.innerHTML = `<div class="lb-rank">${rank++}</div><div class="lb-name"><span class="lb-tier">${data.tier}</span>${data.name} <span style="font-size:0.7em">${isSecure}</span></div><div class="lb-right"><span class="lb-score">${data.score.toLocaleString()}</span><div class="lb-sub"><span class="lb-stat peak">⚡${data.speed}ms</span></div></div>`;
                     list.appendChild(row);
                 });
-                if (querySnapshot.empty) list.innerHTML = "<div style='opacity:0.5; margin-top:20px'>NO DATA ON THE GRID</div>";
-            } catch (e) { console.error(e); document.getElementById('lb-loading').innerText = "CONNECTION FAILURE"; }
+            } catch (e) { console.error(e); }
         }
 
         function showAnalytics() {
@@ -869,38 +821,6 @@ async function executeFlash() {
             document.getElementById('stat-acc-total').innerText = `${acc}%`;
             document.getElementById('stat-uptime').innerText = (u.totalTimeMs / 3600000).toFixed(1) + 'h';
             document.getElementById('stat-grade').innerText = acc > 90 ? "S" : (acc > 75 ? "A" : "B");
-
-            const actionContainer = document.getElementById('analytics-actions');
-            actionContainer.innerHTML = ''; 
-            if (!u.pin) {
-                const btn = document.createElement('button');
-                btn.className = 'action-btn'; btn.style.background = '#0f172a'; btn.style.border = '1px solid var(--accent)';
-                btn.style.fontSize = '0.75rem'; btn.innerText = "🔒 LOCK PROTOCOL (SET PIN)";
-                btn.onclick = async () => {
-                    const newPin = await requestPin("SECURE AGENT", "SET 4-DIGIT PIN");
-                    if (newPin && newPin.length === 4) {
-                        u.pin = newPin; save(); triggerSystemMessage("PROTOCOL SECURED", "upgrade"); showAnalytics(); 
-                    } else if (newPin !== null) { alert("INVALID LENGTH"); showAnalytics(); } else { showAnalytics(); }
-                };
-                actionContainer.appendChild(btn);
-            } else {
-                 const lbl = document.createElement('div'); lbl.innerText = "PROTOCOL SECURED 🔒";
-                 lbl.style.color = "#94a3b8"; lbl.style.fontSize = "0.7rem"; lbl.style.marginTop = "10px";
-                 actionContainer.appendChild(lbl);
-            }
-            const dangerContainer = document.getElementById('analytics-danger-zone');
-            dangerContainer.innerHTML = '';
-            const unlinkBtn = document.createElement('button');
-            unlinkBtn.className = 'action-btn danger-btn'; unlinkBtn.innerText = "SEVER CONNECTION (UNLINK)";
-            unlinkBtn.style.fontSize = '0.75rem';
-            unlinkBtn.onclick = () => {
-                if(confirm("WARNING: THIS WILL REMOVE THIS AGENT FROM THIS DEVICE.\n\nData will remain on the Grid (Cloud) if synced.\nYou can relink later using the PIN.")) {
-                    if(realtimeUnsubscribe) { realtimeUnsubscribe(); realtimeUnsubscribe = null; }
-                    delete appData.users[appData.currentUser]; appData.currentUser = null;
-                    save(); location.reload(); 
-                }
-            };
-            dangerContainer.appendChild(unlinkBtn);
         }
 
         function showUserMenu() {
@@ -928,45 +848,39 @@ async function executeFlash() {
             const input = document.getElementById('new-agent-name');
             const btn = document.getElementById('btn-create-link');
             const n = input.value.trim().toUpperCase();
-            if (!n || n.length === 0) return;
-            if (appData.users[n]) { alert("DESIGNATION ALREADY ACTIVE ON DEVICE."); return; }
+            if (!n) return;
             btn.innerText = "SCANNING GRID...";
             try {
-                const docRef = doc(db, "leaderboard", n);
-                const docSnap = await getDoc(docRef);
+                const docSnap = await getDoc(doc(db, "leaderboard", n));
                 if (docSnap.exists()) {
                     const cloudData = docSnap.data();
-                    let authenticated = false;
+                    let authenticated = true;
                     if (cloudData.pin) {
                         const enteredPin = await requestPin("RECOVERY MODE", `AGENT ${n} DETECTED. ENTER KEY.`);
-                        if (enteredPin === cloudData.pin) authenticated = true;
-                        else if (enteredPin !== null) alert("INVALID KEY. RECOVERY ABORTED.");
-                    } else authenticated = true; 
+                        authenticated = (enteredPin === cloudData.pin);
+                    }
                     if (authenticated) {
                         appData.users[n] = { 
                             speed: cloudData.speed || 450, score: cloudData.score || 0, peakScore: cloudData.score || 0, 
                             streak: 0, history: [cloudData.speed || 450], resultsHistory: [], 
                             level2: cloudData.tier === 'T2' || cloudData.tier === 'T3', level3: cloudData.tier === 'T3', 
                             totalTimeMs: 0, dailyStreak: 0, lastPlayDate: null, pin: cloudData.pin,
-                            sessionZone: cloudData.sessionZone || 0
+                            sessionZone: 0
                         };
-                        appData.currentUser = n; 
-                        sessionZone = appData.users[n].sessionZone; 
-                        save(); updateUI(); hideOverlays();
+                        appData.currentUser = n; save(); updateUI(); hideOverlays();
                         document.getElementById('main-overlay').classList.remove('hidden');
-                        triggerSystemMessage("NEURAL LINK RESTORED", "upgrade");
                         initRealtimeSync(n); return; 
-                    } else { btn.innerText = "INITIALIZE"; return; }
+                    }
                 }
-            } catch (e) { console.error("Grid Scan Error", e); }
+            } catch (e) { console.error(e); }
+            
             let pin = await requestPin("SECURE NEW LINK", "SET OPTIONAL 4-DIGIT PIN (OR LEAVE BLANK)");
-            if (pin === "") pin = null;
             appData.users[n] = { 
                 speed: 450, score: 0, peakScore: 0, streak: 0, history: [450], resultsHistory: [], 
-                level2: false, level3: false, totalTimeMs: 0, dailyStreak: 0, lastPlayDate: null, pin: pin,
+                level2: false, level3: false, totalTimeMs: 0, dailyStreak: 0, lastPlayDate: null, pin: pin || null,
                 sessionZone: 0
             };
-            appData.currentUser = n; sessionZone = 0; save(); updateUI(); hideOverlays(); 
+            appData.currentUser = n; save(); updateUI(); hideOverlays(); 
             document.getElementById('main-overlay').classList.remove('hidden');
             initRealtimeSync(n); 
         }
@@ -977,7 +891,6 @@ async function executeFlash() {
             if (saved && sig) {
                 const check = generateHash(JSON.parse(saved));
                 if (check === sig) { appData = JSON.parse(saved); } 
-                else { localStorage.clear(); appData = { users: {}, currentUser: null }; }
             }
             if (appData.currentUser) { 
                 sessionZone = appData.users[appData.currentUser].sessionZone || 0;
@@ -999,15 +912,10 @@ async function executeFlash() {
             const x = clientX - rect.left; const y = clientY - rect.top;
             ripples.push({ x: x, y: y, radius: 0, opacity: 1 });
             const hit = selectionBoxes.find(b => x > b.x1 && x < b.x2 && y > b.y1 && y < b.y2);
-            if (!hit) return;
-            const dist = Math.sqrt(Math.pow(hit.cx - x, 2) + Math.pow(hit.cy - y, 2));
-            clickHistory.push(dist); if (clickHistory.length > 10) clickHistory.shift();
-            processHit(hit);
+            if (hit) processHit(hit);
         }
 
-        // --- 7. EVENT LISTENERS ---
         document.getElementById('start-btn').onclick = () => { AudioSys.init(); AudioSys.playUI('click'); hideOverlays(); setTimeout(executeFlash, 300); };
-        
         document.getElementById('btn-audio').onclick = () => {
              const enabled = AudioSys.toggle();
              const btn = document.getElementById('btn-audio');
@@ -1022,35 +930,16 @@ async function executeFlash() {
         document.getElementById('btn-leaderboard').onclick = showLeaderboard;
         document.getElementById('btn-lb-main').onclick = showLeaderboard;
         
-        document.getElementById('btn-close-analytics').onclick = () => { AudioSys.playUI('click'); hideOverlays(); document.getElementById('main-overlay').classList.remove('hidden'); };
-        document.getElementById('btn-close-lb').onclick = () => { AudioSys.playUI('click'); hideOverlays(); document.getElementById('main-overlay').classList.remove('hidden'); };
-        document.getElementById('btn-close-user').onclick = () => { AudioSys.playUI('click'); if(appData.currentUser) { hideOverlays(); document.getElementById('main-overlay').classList.remove('hidden'); } };
+        document.getElementById('btn-close-analytics').onclick = () => { hideOverlays(); document.getElementById('main-overlay').classList.remove('hidden'); };
+        document.getElementById('btn-close-lb').onclick = () => { hideOverlays(); document.getElementById('main-overlay').classList.remove('hidden'); };
+        document.getElementById('btn-close-user').onclick = () => { if(appData.currentUser) { hideOverlays(); document.getElementById('main-overlay').classList.remove('hidden'); } };
         
         document.getElementById('btn-pin-confirm').onclick = () => { if (pinResolver) { pinResolver(document.getElementById('pin-input-field').value); pinResolver = null; } hideOverlays(); };
         document.getElementById('btn-pin-cancel').onclick = () => { if (pinResolver) { pinResolver(null); pinResolver = null; } hideOverlays(); };
-        document.getElementById('pin-input-field').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('btn-pin-confirm').click(); });
         document.getElementById('btn-new-user').onclick = () => {
-             hideOverlays(); const overlay = document.getElementById('new-link-overlay'); const input = document.getElementById('new-agent-name');
-             overlay.classList.remove('hidden'); input.value = ''; document.getElementById('btn-create-link').innerText = "INITIALIZE"; setTimeout(() => input.focus(), 100);
+             hideOverlays(); document.getElementById('new-link-overlay').classList.remove('hidden');
         };
         document.getElementById('btn-create-link').onclick = handleNewLinkAttempt;
-        document.getElementById('new-agent-name').addEventListener('keydown', (e) => { if (e.key === 'Enter') handleNewLinkAttempt(); });
-        document.getElementById('btn-cancel-link').onclick = () => { hideOverlays(); if (appData.currentUser) { document.getElementById('main-overlay').classList.remove('hidden'); } else { showUserMenu(); } };
-
-        window.addEventListener('keydown', (e) => {
-            if (state !== 'QUESTIONING' || inputLocked) return;
-            if (currentTask === 'DIRECTION') {
-                 const keyVal = parseInt(e.key);
-                 if (!isNaN(keyVal)) {
-                     const hit = selectionBoxes.find(b => b.key === keyVal);
-                     if (hit) { ripples.push({ x: hit.cx, y: hit.cy, radius: 0, opacity: 1 }); processHit(hit); return; }
-                 }
-            }
-            const index = parseInt(e.key) - 1;
-            if (index >= 0 && index < selectionBoxes.length && currentTask !== 'DIRECTION') {
-                const hit = selectionBoxes[index]; ripples.push({ x: hit.cx, y: hit.cy, radius: 0, opacity: 1 }); processHit(hit);
-            }
-        });
 
         window.addEventListener('resize', resize);
         canvas.addEventListener('mousedown', handleInput);
@@ -1062,6 +951,3 @@ async function executeFlash() {
 </script>
 </body>
 </html>
-
-
-
