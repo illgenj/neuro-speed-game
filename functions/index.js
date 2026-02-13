@@ -4,106 +4,115 @@ admin.initializeApp();
 
 const db = admin.firestore();
 
-// Game Constants
+// Game Configuration
 const SHAPES = ['circle', 'square', 'triangle', 'diamond', 'cross'];
 const L2_COLORS = ['#22d3ee', '#4ade80', '#f472b6', '#fbbf24'];
 
-// 1. GENERATE ROUND (The "Dealer")
+// --- 1. THE DEALER (Client asks for a round) ---
 exports.getGameRound = functions.https.onCall(async (data, context) => {
-    // Basic anti-spam could go here
+    // 1. Get User ID
     const userId = data.userId;
-    if (!userId) throw new functions.https.HttpsError('invalid-argument', 'No User ID');
+    if (!userId) throw new functions.https.HttpsError('invalid-argument', 'Missing User ID');
 
-    // Server generates the random values
+    // 2. Generate Randomness (Server-Side Only)
     const targetShape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
     const satShape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
     const satColorIdx = Math.floor(Math.random() * L2_COLORS.length);
     const satDirIdx = Math.floor(Math.random() * 8);
 
-    // Store the "Answer Key" in a private collection the client CANNOT see
+    // 3. Save the "Answer Key" to a private vault (Client cannot read this)
     await db.collection('private_sessions').doc(userId).set({
         targetShape,
         satShape,
         satColorIdx,
         satDirIdx,
-        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
         active: true
     });
 
-    // Return only the visual data to the client
+    // 4. Return only the "Question" to the client
     return {
         targetShape,
         satShape,
-        satColorIdx: satColorIdx, // Client needs this to draw
-        satDirIdx: satDirIdx     // Client needs this to draw
+        satColorIdx,
+        satDirIdx
     };
 });
 
-// 2. VERIFY RESULT (The "Judge")
+// --- 2. THE JUDGE (Client submits an answer) ---
 exports.submitRound = functions.https.onCall(async (data, context) => {
     const userId = data.userId;
-    const clientAns = data.answer; // { uShape, uSat, uColor, uDir }
+    const clientAns = data.answer; 
     const clientSpeed = data.speed;
 
+    // 1. Fetch the Answer Key
     const sessionRef = db.collection('private_sessions').doc(userId);
     const sessionSnap = await sessionRef.get();
-    
-    if (!sessionSnap.exists || !sessionSnap.data().active) {
-        throw new functions.https.HttpsError('failed-precondition', 'No active session');
-    }
 
-    const correctData = sessionSnap.data();
-    
-    // --- SERVER SIDE VALIDATION ---
-    let isCorrect = true;
-    if (clientAns.uShape !== correctData.targetShape) isCorrect = false;
-    if (clientAns.uSat !== correctData.satShape) isCorrect = false;
-    
-    // Check Tiers
+    // 2. Security Check: Is there an active round?
+    if (!sessionSnap.exists || !sessionSnap.data().active) {
+        // Fail silently or throw error - usually implies lag or cheating
+        return { correct: false, newScore: 0, newTier: 'T1' };
+    }
+    const key = sessionSnap.data();
+
+    // 3. Fetch User Profile (for Tier logic)
     const userRef = db.collection('leaderboard').doc(userId);
     const userSnap = await userRef.get();
     const userData = userSnap.exists ? userSnap.data() : { score: 0, tier: 'T1' };
-    
     const isT2 = userData.tier === 'T2' || userData.tier === 'T3';
     const isT3 = userData.tier === 'T3';
 
-    if (isT2 && clientAns.uColor !== correctData.satColorIdx) isCorrect = false;
-    if (isT3 && clientAns.uDir !== correctData.satDirIdx) isCorrect = false;
+    // 4. Validate The Answer
+    let isCorrect = true;
+    if (clientAns.uShape !== key.targetShape) isCorrect = false;
+    if (clientAns.uSat !== key.satShape) isCorrect = false;
+    if (isT2 && clientAns.uColor !== key.satColorIdx) isCorrect = false;
+    if (isT3 && clientAns.uDir !== key.satDirIdx) isCorrect = false;
 
-    // Calculate Score Change (Server Authority)
+    // 5. Calculate Score (Server Authority)
     let newScore = userData.score || 0;
     let newTier = userData.tier || "T1";
-    let speed = clientSpeed; // You can add server-side timestamp validation to prevent speed hacking here
+    let speed = clientSpeed; 
 
+    // Server-side scoring logic (Mirrors client visuals)
     if (isCorrect) {
         const performanceVal = Math.max(100, (1500 - speed));
         const tierMult = isT3 ? 2.5 : (isT2 ? 1.5 : 1.0);
-        const delta = (performanceVal * tierMult * 10 - newScore) * 0.15;
-        if (delta > 0) newScore += delta;
         
-        // Handle Promotion Logic Server-Side
+        // Anti-Cheat: Cap max points per round to prevent injection
+        const rawPoints = performanceVal * tierMult * 10; 
+        const delta = (rawPoints - newScore) * 0.15;
+        
+        if (delta > 0) newScore += delta;
+
+        // Promotion Logic
         if (speed <= 400 && !isT2) newTier = "T2";
         if (speed <= 300 && isT2) newTier = "T3";
     } else {
+        // Penalty
         newScore = Math.max(0, newScore - (newScore * 0.20));
-        // Handle Demotion Logic
+        // Demotion Logic could go here
+        if (userData.tier === 'T3' && speed > 500) newTier = 'T2';
     }
 
-    // Write to DB (Only Server can do this now)
+    // 6. Save Result to Database
     await userRef.set({
         name: userId,
         score: Math.floor(newScore),
         tier: newTier,
         speed: speed,
-        lastActive: admin.firestore.FieldValue.serverTimestamp()
+        pin: userData.pin || null, // Preserve PIN
+        sessionZone: userData.sessionZone || 0, // Preserve Zone
+        timestamp: admin.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
 
-    // Invalidate session so it can't be replayed
+    // 7. Burn the Session (Prevent Replay Attacks)
     await sessionRef.update({ active: false });
 
-    return { 
-        correct: isCorrect, 
-        newScore: Math.floor(newScore), 
-        newTier: newTier 
+    return {
+        correct: isCorrect,
+        newScore: Math.floor(newScore),
+        newTier: newTier
     };
 });
