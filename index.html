@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neuro-Speed Elite 5.0</title>
+    <title>Neuro-Speed Elite 5.1</title>
     <style>
         :root { 
             --bg: #020617; --panel: #0f172a; --accent: #0ea5e9; --text: #f8fafc; 
@@ -575,12 +575,19 @@
         async function executeFlash() {
             if (state !== 'IDLE') return;
 
-            // --- USER SAFETY CHECK ---
-            // If no user is selected, STOP immediately and ask for one.
+            // --- AUTO-USER INIT (The Fix) ---
+            // If the user clicks "INITIATE" but hasn't picked a name, give them one.
             if (!appData.currentUser) {
-                triggerSystemMessage("NO AGENT SELECTED", "alert");
-                showUserMenu();
-                return;
+                const randomId = "GUEST_" + Math.floor(Math.random() * 9999);
+                console.log("No user found. Auto-creating:", randomId);
+                
+                appData.users[randomId] = { 
+                    speed: 450, score: 0, peakScore: 0, streak: 0, history: [450], resultsHistory: [], 
+                    level2: false, level3: false, totalTimeMs: 0, dailyStreak: 0, lastPlayDate: null, pin: null,
+                    sessionZone: 0
+                };
+                appData.currentUser = randomId;
+                save(); updateUI(); initRealtimeSync(randomId);
             }
             
             // --- SERVER CALL START ---
@@ -588,10 +595,6 @@
             triggerSystemMessage("ESTABLISHING LINK...", "info");
             
             try {
-                // Log what we are sending for debugging
-                console.log("Sending Request to Cloud. User:", appData.currentUser);
-
-                // Fetch random shapes from SERVER (No local cheating)
                 const result = await getGameRoundFunc({ userId: appData.currentUser });
                 const serverData = result.data;
 
