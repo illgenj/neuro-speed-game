@@ -10,11 +10,9 @@ const L2_COLORS = ['#22d3ee', '#4ade80', '#f472b6', '#fbbf24'];
 
 // --- 1. THE DEALER ---
 exports.getGameRound = functions.https.onCall(async (data, context) => {
-    // onCall automatically "unwraps" the data for us
+    // SECURITY: Ensure we have a user ID
     const userId = data.userId;
-    
-    // Debug log to Cloud Console if it's still missing
-    console.log("Received call from user:", userId);
+    console.log(`[SERVER] getGameRound called by: ${userId}`);
 
     if (!userId) {
         throw new functions.https.HttpsError('invalid-argument', 'Missing User ID');
@@ -33,7 +31,6 @@ exports.getGameRound = functions.https.onCall(async (data, context) => {
         active: true
     });
 
-    // Return to Client
     return {
         targetShape, satShape, satColorIdx, satDirIdx
     };
@@ -44,6 +41,8 @@ exports.submitRound = functions.https.onCall(async (data, context) => {
     const userId = data.userId;
     const clientAns = data.answer; 
     const clientSpeed = data.speed;
+
+    console.log(`[SERVER] submitRound called by: ${userId}`);
 
     // Fetch Key
     const sessionRef = db.collection('private_sessions').doc(userId);
