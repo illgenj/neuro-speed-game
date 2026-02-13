@@ -51,7 +51,6 @@ exports.submitRound = functions.https.onCall(async (data, context) => {
 
     // 2. Security Check: Is there an active round?
     if (!sessionSnap.exists || !sessionSnap.data().active) {
-        // Fail silently or throw error - usually implies lag or cheating
         return { correct: false, newScore: 0, newTier: 'T1' };
     }
     const key = sessionSnap.data();
@@ -67,6 +66,7 @@ exports.submitRound = functions.https.onCall(async (data, context) => {
     let isCorrect = true;
     if (clientAns.uShape !== key.targetShape) isCorrect = false;
     if (clientAns.uSat !== key.satShape) isCorrect = false;
+    // CRITICAL: Server checks Tier requirement here. Client must be in sync!
     if (isT2 && clientAns.uColor !== key.satColorIdx) isCorrect = false;
     if (isT3 && clientAns.uDir !== key.satDirIdx) isCorrect = false;
 
@@ -75,12 +75,10 @@ exports.submitRound = functions.https.onCall(async (data, context) => {
     let newTier = userData.tier || "T1";
     let speed = clientSpeed; 
 
-    // Server-side scoring logic (Mirrors client visuals)
     if (isCorrect) {
         const performanceVal = Math.max(100, (1500 - speed));
         const tierMult = isT3 ? 2.5 : (isT2 ? 1.5 : 1.0);
         
-        // Anti-Cheat: Cap max points per round to prevent injection
         const rawPoints = performanceVal * tierMult * 10; 
         const delta = (rawPoints - newScore) * 0.15;
         
@@ -90,9 +88,8 @@ exports.submitRound = functions.https.onCall(async (data, context) => {
         if (speed <= 400 && !isT2) newTier = "T2";
         if (speed <= 300 && isT2) newTier = "T3";
     } else {
-        // Penalty
         newScore = Math.max(0, newScore - (newScore * 0.20));
-        // Demotion Logic could go here
+        // Demotion Logic
         if (userData.tier === 'T3' && speed > 500) newTier = 'T2';
     }
 
@@ -102,17 +99,17 @@ exports.submitRound = functions.https.onCall(async (data, context) => {
         score: Math.floor(newScore),
         tier: newTier,
         speed: speed,
-        pin: userData.pin || null, // Preserve PIN
-        sessionZone: userData.sessionZone || 0, // Preserve Zone
+        pin: userData.pin || null, 
+        sessionZone: userData.sessionZone || 0,
         timestamp: admin.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
 
-    // 7. Burn the Session (Prevent Replay Attacks)
+    // 7. Burn the Session
     await sessionRef.update({ active: false });
 
     return {
         correct: isCorrect,
         newScore: Math.floor(newScore),
-        newTier: newTier
+        newTier: newTier // Client MUST use this immediately
     };
 });
