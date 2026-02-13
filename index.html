@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neuro-Speed Elite 6.2: Clarity Update</title>
+    <title>Neuro-Speed Elite 7.0: Static Drift</title>
     <style>
         :root { 
             --bg: #020617; --panel: #0f172a; --accent: #0ea5e9; --text: #f8fafc; 
@@ -120,6 +120,7 @@
         .action-btn:active { transform: scale(0.97); }
         .secondary-btn { background: #334155; }
         .danger-btn { background: rgba(239, 68, 68, 0.1); border: 1px solid var(--fail); color: var(--fail); }
+        .secure-btn { background: rgba(16, 185, 129, 0.1); border: 1px solid var(--success); color: var(--success); }
         .locked-btn { opacity: 0.5; pointer-events: none; filter: grayscale(1); }
 
         .analytics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 15px 0; }
@@ -179,7 +180,6 @@
         /* --- UPDATED SYSTEM MESSAGE HUD --- */
         #system-message {
             position: absolute; 
-            /* CHANGED: Moved from top:130px to bottom:15% to avoid covering shapes */
             bottom: 15%; 
             left: 50%; transform: translateX(-50%);
             background: rgba(15, 23, 42, 0.95); border: 1px solid #334155;
@@ -307,6 +307,9 @@
             </div>
             <div id="analytics-actions"></div>
             
+            <div id="security-zone">
+                </div>
+
             <div id="analytics-danger-zone" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
                 <button id="btn-unlink-account" class="action-btn danger-btn" style="font-size: 0.7rem; padding: 12px;">
                     🔒 SEVER LINK
@@ -367,9 +370,10 @@
 
 <script type="module">
     /* ----------------------------------------------------
-       NEURO-SPEED ELITE 6.1 [SINGULARITY UPDATE]
-       - Fixed UI layering issues (System Messages)
-       - Improved Flash Visiblity
+       NEURO-SPEED ELITE 7.0 [STATIC DRIFT]
+       - Added 'drawStatic' for anti-retina burn
+       - Added 'Neural Echoes' (Progressive background shapes)
+       - Added Set PIN capability for unsecured accounts
        ----------------------------------------------------
     */
 
@@ -387,7 +391,7 @@
     };
 
     (function() {
-        let db, functions, getGameRoundFunc, submitRoundFunc;
+        let db, functions, getGameRoundFunc, submitRoundFunc, setPinFunc;
 
         try {
             const app = initializeApp(firebaseConfig);
@@ -395,6 +399,7 @@
             functions = getFunctions(app);
             getGameRoundFunc = httpsCallable(functions, 'getGameRound');
             submitRoundFunc = httpsCallable(functions, 'submitRound');
+            setPinFunc = httpsCallable(functions, 'setPin');
             console.log("Neuro-Link Secured (Blind Auth).");
         } catch(e) { console.error("Link Error:", e); }
 
@@ -418,6 +423,9 @@
         // --- Particle System Array ---
         let particles = [];
         let ripples = [];
+        
+        // --- Neural Echoes System ---
+        let backgroundEchoes = [];
 
         const DIR_MAP = [
             { id: 0, key: 6, label: '6', angle: 0 },            
@@ -470,6 +478,7 @@
             playGame: function(type) {
                 if(!this.enabled) return;
                 if (type === 'flash') this.playTone(200, 'triangle', 0.15, 0.1, 800);
+                else if (type === 'static') this.playTone(100, 'sawtooth', 0.1, 0.05); // Static sound
                 else if (type === 'success') {
                     const root = 440 * (1 + (sessionZone * 0.05));
                     this.playTone(root, 'sine', 0.3, 0.1);
@@ -551,6 +560,33 @@
             });
         }
 
+        // --- NEW: Static Noise Generator ---
+        function drawStatic(intensity = 0.5) {
+            const imageData = ctx.createImageData(canvas.width, canvas.height);
+            const data = imageData.data;
+            for (let i = 0; i < data.length; i += 4) {
+                const val = Math.random() * 255 * intensity;
+                data[i] = val;     // R
+                data[i + 1] = val; // G
+                data[i + 2] = val; // B
+                data[i + 3] = 255; // A (Full Opacity)
+            }
+            ctx.putImageData(imageData, 0, 0);
+        }
+        
+        // --- NEW: Draw Background Echoes ---
+        function drawEchoes() {
+            // Draw previous shapes with very low opacity
+            if(backgroundEchoes.length === 0) return;
+            
+            ctx.save();
+            ctx.globalAlpha = 0.06; // faint ghost
+            backgroundEchoes.forEach(echo => {
+                drawShape(echo.type, echo.x, echo.y, echo.size, echo.color);
+            });
+            ctx.restore();
+        }
+
         // --- PARTICLE SYSTEM HELPER ---
         function spawnParticles(x, y, color) {
             const count = 12; // Number of particles
@@ -586,6 +622,27 @@
                  triggerSystemMessage("NEURAL PATTERN PURGED", "alert");
                  setTimeout(showUserMenu, 1000);
              }
+        }
+        
+        // --- NEW: SET PIN LOGIC ---
+        async function handleSetPin() {
+             const uName = appData.currentUser;
+             const pin = await requestPin("LOCK ACCOUNT", "ENTER A NEW 4-DIGIT PIN");
+             if (pin && pin.length === 4) {
+                 try {
+                     triggerSystemMessage("ENCRYPTING...", "info");
+                     await setPinFunc({ userId: uName, pin: pin });
+                     appData.users[uName].pin = pin;
+                     save();
+                     triggerSystemMessage("ACCOUNT SECURED", "upgrade");
+                 } catch (e) {
+                     console.error(e);
+                     triggerSystemMessage("ENCRYPTION FAILED", "alert");
+                 }
+             } else {
+                 triggerSystemMessage("INVALID PIN", "alert");
+             }
+             hideOverlays(); document.getElementById('analytics-overlay').classList.remove('hidden');
         }
 
         function initRealtimeSync(userId) {
@@ -725,11 +782,9 @@
         async function executeFlash() {
             if (state !== 'IDLE') return;
             
-            // --- CRITICAL FIX: Hide messages immediately so shapes aren't covered ---
             document.getElementById('system-message').classList.add('hidden');
             hideMiniStatus();
             
-            // RESET ANSWERS
             uShape = null; uSat = null; uColor = null; uDir = null;
 
             if (!appData.currentUser) { showUserMenu(); return; }
@@ -760,7 +815,6 @@
             }
 
             state = 'FLASHING'; isTimedOut = false; hideMiniStatus();
-            // DOUBLE CHECK: Ensure no messages lingered after async
             document.getElementById('system-message').classList.add('hidden'); 
             
             const u = appData.users[appData.currentUser];
@@ -785,19 +839,34 @@
 
             AudioSys.playGame('flash'); 
             let startTime = null;
+            let staticPlayed = false;
+
             function animate(now) {
                 if (!startTime) startTime = now;
                 const elapsed = now - startTime;
+
                 if (elapsed < u.speed) {
+                    // PHASE 1: SHOW SHAPES
                     ctx.clearRect(0,0,canvas.width,canvas.height);
+                    
+                    // Render "Ghost" Echoes in background
+                    drawEchoes();
+
                     activeDistractors.forEach(d => drawShape(d.shape, d.x, d.y, minDim * 0.05, '#334155'));
                     drawShape(currentManifest.targetShape, centerX, centerY, minDim * 0.06, '#fff');
                     drawShape(currentManifest.satShape, satX, satY, minDim * 0.05, u.level2 ? L2_COLORS[currentManifest.satColorIdx] : '#8b5cf6');
                     animFrameId = requestAnimationFrame(animate);
-                } else if (elapsed < u.speed + 100) {
-                    ctx.fillStyle = "#000"; ctx.fillRect(0,0,canvas.width, canvas.height);
+
+                } else if (elapsed < u.speed + 60) { 
+                    // PHASE 2: STATIC BURST (Retina Scrub)
+                    if(!staticPlayed) { AudioSys.playGame('static'); staticPlayed = true; }
+                    drawStatic(0.15); // Light static
                     animFrameId = requestAnimationFrame(animate);
-                } else { state = 'QUESTIONING'; inputLocked = false; startQuestionLoop(); }
+
+                } else { 
+                    // PHASE 3: QUESTION
+                    state = 'QUESTIONING'; inputLocked = false; startQuestionLoop(); 
+                }
             }
             animFrameId = requestAnimationFrame(animate);
         }
@@ -811,7 +880,6 @@
                     const dx = (Math.random() - 0.5) * screenShake;
                     const dy = (Math.random() - 0.5) * screenShake;
                     ctx.translate(dx, dy);
-                    // Chromatic Aberration Simulation (Red/Cyan Offset)
                     ctx.globalCompositeOperation = "lighter";
                     screenShake *= 0.9; // Decay
                 }
@@ -828,8 +896,13 @@
                     if (remaining < 5000) {
                         if (now - lastTickTime > 1000) { AudioSys.playGame('timer'); lastTickTime = now; }
                     }
-                    ctx.clearRect(0,0,canvas.width,canvas.height); // Use clearRect to show grid bg
                     
+                    ctx.clearRect(0,0,canvas.width,canvas.height); 
+                    
+                    // Render "Ghost" Echoes
+                    drawEchoes();
+
+                    // Timer Bar
                     const timePct = Math.max(0, remaining / QUESTION_TIMEOUT_MS);
                     const barColor = timePct < 0.2 ? '#ef4444' : (timePct < 0.5 ? '#f59e0b' : '#0ea5e9');
                     ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fillRect(0, 0, canvas.width, 6); 
@@ -887,12 +960,12 @@
                         p.x += p.vx;
                         p.y += p.vy;
                         p.life -= 0.03;
-                        p.size *= 0.95; // Shrink over time
+                        p.size *= 0.95; 
 
                         if (p.life <= 0) {
                             particles.splice(i, 1);
                         } else {
-                            ctx.globalCompositeOperation = 'lighter'; // Additive blending for "glow"
+                            ctx.globalCompositeOperation = 'lighter'; 
                             ctx.fillStyle = p.color;
                             ctx.globalAlpha = p.life;
                             ctx.beginPath();
@@ -910,11 +983,14 @@
                     }
                     animFrameId = requestAnimationFrame(loop);
                 } else if (state === 'IDLE') {
-                    // IDLE LOOP for Reticle
+                    // IDLE LOOP
                     ctx.clearRect(0,0,canvas.width,canvas.height);
+                    
+                    // Render "Ghost" Echoes in IDLE too
+                    drawEchoes();
                     drawReticle();
                     
-                    // Render leftover particles during Idle as well
+                    // Render leftover particles
                     for (let i = particles.length - 1; i >= 0; i--) {
                         const p = particles[i]; p.x += p.vx; p.y += p.vy; p.life -= 0.03; p.size *= 0.95;
                         if (p.life <= 0) particles.splice(i, 1);
@@ -935,13 +1011,12 @@
 
         function askTask(type, items) { 
             currentTask = type; 
-            questionTimerStart = Date.now(); // Ensure we capture exact start time for Heat Logic
+            questionTimerStart = Date.now(); 
         }
         
         function processHit(hit) {
             lastSelectionIndex = hit.val; inputLocked = true; AudioSys.playUI('lock');
             
-            // Trigger Particle Reward
             spawnParticles(hit.cx, hit.cy, 'var(--accent)'); 
 
             setTimeout(() => { 
@@ -959,10 +1034,9 @@
 
         async function finalizeTrial() {
             const u = appData.users[appData.currentUser];
-            state = 'IDLE'; // Loop will now draw reticle
+            state = 'IDLE'; 
             hideMiniStatus();
             
-            // Capture Current Tier BEFORE update for comparison
             const prevTier = u.level3 ? "T3" : (u.level2 ? "T2" : "T1");
 
             document.getElementById('msg-title').innerText = "VALIDATING...";
@@ -971,7 +1045,7 @@
             try {
                 const result = await submitRoundFunc({
                     userId: appData.currentUser,
-                    manifest: currentManifest, // SENDS LOCALLY GENERATED SHAPES FOR SERVER AUTH
+                    manifest: currentManifest, 
                     answer: {
                         uShape: uShape,
                         uSat: uSat,
@@ -999,32 +1073,44 @@
                         triggerSystemMessage(`PROMOTION: ${serverData.newTier} UNLOCKED`, "upgrade");
                     }
 
+                    // --- ADD ECHOES ---
+                    const angle = currentManifest.satDirIdx * Math.PI * 0.25;
+                    const satX = centerX + Math.cos(angle) * lastFlashRadius; 
+                    const satY = centerY + Math.sin(angle) * lastFlashRadius;
+
+                    // Add current shapes to persistent "echo" array
+                    backgroundEchoes.push({ type: currentManifest.targetShape, x: centerX, y: centerY, size: minDim * 0.06, color: '#fff' });
+                    backgroundEchoes.push({ type: currentManifest.satShape, x: satX, y: satY, size: minDim * 0.05, color: u.level2 ? L2_COLORS[currentManifest.satColorIdx] : '#8b5cf6' });
+                    
+                    // Keep echo buffer manageable (Max 20 shapes)
+                    if(backgroundEchoes.length > 20) backgroundEchoes.splice(0, 2);
+
+
                     // --- ADAPTIVE HEAT LOGIC ---
-                    // Calculate how much of the "Question Timeout" was used. 
                     const reactionTime = Date.now() - questionTimerStart; 
-                    const heatMultiplier = Math.max(0.1, reactionTime / 3000); // 3000ms reference point
+                    const heatMultiplier = Math.max(0.1, reactionTime / 3000); 
 
                     if (u.streak > 1) {
-                        // If player is "Hot" (fast reaction), cut latency aggressively
                         if (heatMultiplier < 0.5) {
-                            u.speed = Math.max(16, u.speed * 0.85); // 15% faster
+                            u.speed = Math.max(16, u.speed * 0.85); 
                             showMiniStatus(">>> VELOCITY SURGE <<<");
-                            screenShake = 5; // Slight shake on speed up
+                            screenShake = 5; 
                         } 
-                        // If player is cautious, reduce speed gently
                         else {
-                            u.speed = Math.max(16, u.speed * 0.95); // 5% faster
+                            u.speed = Math.max(16, u.speed * 0.95); 
                         }
                     }
 
                 } else {
-                    // FAIL STATE - TRIGGER SHAKE
+                    // FAIL STATE - PURGE ECHOES
                     screenShake = 15; 
                     sessionZone = 0; AudioSys.playGame('fail');
                     u.streak = Math.min(0, u.streak) - 1; u.speed = Math.min(1000, u.speed + 80); 
                     document.getElementById('msg-title').innerText = (isTimedOut || serverData.reason === "TEMPORAL_ANOMALY") ? "SYNC TIMEOUT" : "SYNC LOST";
                     document.getElementById('msg-title').style.color = "#ef4444";
                     document.getElementById('msg-body').innerText = `RATING DROPPED`;
+                    
+                    backgroundEchoes = []; // CLEAR VISUAL NOISE ON FAIL
                 }
 
                 // Update Visual Bar
@@ -1093,6 +1179,19 @@
             document.getElementById('stat-acc-total').innerText = `${acc}%`;
             document.getElementById('stat-uptime').innerText = (u.totalTimeMs / 3600000).toFixed(1) + 'h';
             document.getElementById('stat-grade').innerText = acc > 90 ? "S" : (acc > 75 ? "A" : "B");
+            
+            // --- NEW: Security Button Injection ---
+            const secZone = document.getElementById('security-zone');
+            secZone.innerHTML = '';
+            if(!u.pin) {
+                const btn = document.createElement('button');
+                btn.className = "action-btn secure-btn";
+                btn.style.fontSize = "0.7rem";
+                btn.style.padding = "12px";
+                btn.innerHTML = "🛡️ LOCK ACCOUNT (ADD PIN)";
+                btn.onclick = handleSetPin;
+                secZone.appendChild(btn);
+            }
         }
 
         function showUserMenu() {
@@ -1190,24 +1289,20 @@
         window.addEventListener('keydown', (e) => {
             if (state !== 'QUESTIONING' || inputLocked) return;
             const key = e.key;
-            // Handle 1-5 for shapes/colors
             if (currentTask !== 'DIRECTION' && /^[1-9]$/.test(key)) {
                 const idx = parseInt(key) - 1;
                 const hit = selectionBoxes.find(b => b.val === idx); 
                 if(hit) processHit(hit);
             }
-            // Handle Numpad for directions
             if (currentTask === 'DIRECTION') {
                 let dirId = -1;
-                // Numpad support
                 const dir = DIR_MAP.find(d => d.label === key);
                 if(dir) dirId = dir.id;
                 
-                // QoL: Arrow Key Support
-                if (key === "ArrowRight") dirId = 0; // 6
-                else if (key === "ArrowDown") dirId = 2; // 2
-                else if (key === "ArrowLeft") dirId = 4; // 4
-                else if (key === "ArrowUp") dirId = 6; // 8
+                if (key === "ArrowRight") dirId = 0; 
+                else if (key === "ArrowDown") dirId = 2; 
+                else if (key === "ArrowLeft") dirId = 4; 
+                else if (key === "ArrowUp") dirId = 6; 
 
                 if (dirId !== -1) {
                     const hit = selectionBoxes.find(b => b.val === dirId);
@@ -1243,7 +1338,6 @@
         document.getElementById('btn-create-link').onclick = handleNewLinkAttempt;
         document.getElementById('btn-cancel-link').onclick = () => { hideOverlays(); showUserMenu(); };
         
-        // NEW DE-LINK EVENT LISTENERS
         document.getElementById('btn-unlink-account').onclick = initiateDeLink;
         document.getElementById('btn-confirm-yes').onclick = confirmDeLink;
         document.getElementById('btn-confirm-no').onclick = () => { hideOverlays(); document.getElementById('analytics-overlay').classList.remove('hidden'); };
@@ -1252,7 +1346,7 @@
         canvas.addEventListener('mousedown', handleInput);
         canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleInput(e); }, {passive: false});
         resize(); load();
-        startQuestionLoop(); // Starts the IDLE loop
+        startQuestionLoop(); 
         setInterval(() => { if (appData.currentUser) appData.users[appData.currentUser].totalTimeMs += 2000; }, 2000);
 
     })();
