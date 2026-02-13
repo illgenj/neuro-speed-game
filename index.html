@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neuro-Speed Elite 5.1</title>
+    <title>Neuro-Speed Elite 5.2</title>
     <style>
         :root { 
             --bg: #020617; --panel: #0f172a; --accent: #0ea5e9; --text: #f8fafc; 
@@ -572,33 +572,31 @@
             ctx.fill();
         }
 
-        async function executeFlash() {
+async function executeFlash() {
             if (state !== 'IDLE') return;
-
-            // --- AUTO-USER INIT (The Fix) ---
-            // If the user clicks "INITIATE" but hasn't picked a name, give them one.
-            if (!appData.currentUser) {
-                const randomId = "GUEST_" + Math.floor(Math.random() * 9999);
-                console.log("No user found. Auto-creating:", randomId);
-                
-                appData.users[randomId] = { 
-                    speed: 450, score: 0, peakScore: 0, streak: 0, history: [450], resultsHistory: [], 
-                    level2: false, level3: false, totalTimeMs: 0, dailyStreak: 0, lastPlayDate: null, pin: null,
-                    sessionZone: 0
-                };
-                appData.currentUser = randomId;
-                save(); updateUI(); initRealtimeSync(randomId);
-            }
             
+            // --- 1. FORCE THE ID (The Nuclear Option) ---
+            // This guarantees a value exists, no matter what.
+            if (!appData.currentUser) {
+                appData.currentUser = "AGENT_007"; // Hardcoded backup
+                console.log("Forcing ID to AGENT_007");
+                save(); updateUI();
+            }
+            const payloadId = appData.currentUser;
+            // --------------------------------------------
+
             // --- SERVER CALL START ---
             document.getElementById('sync-vis-container').style.opacity = '0'; 
             triggerSystemMessage("ESTABLISHING LINK...", "info");
             
             try {
-                const result = await getGameRoundFunc({ userId: appData.currentUser });
+                // Debug Log: Check your browser console to see this!
+                console.log("SENDING TO SERVER:", payloadId);
+
+                // We pass 'payloadId' which we GUARANTEED above
+                const result = await getGameRoundFunc({ userId: payloadId });
                 const serverData = result.data;
 
-                // Set local variables based on Server Data
                 targetShape = serverData.targetShape;
                 satShape = serverData.satShape;
                 satColorIdx = serverData.satColorIdx;
@@ -606,8 +604,10 @@
 
             } catch (error) {
                 console.error("Server Link Failed", error);
+                // This alerts the exact error to your screen
+                alert(`SERVER ERROR:\n${error.message}\n\nCheck Console for details.`);
                 triggerSystemMessage("SERVER LINK LOST", "alert");
-                return; // Stop game
+                return; 
             }
             // --- SERVER CALL END ---
 
@@ -619,7 +619,6 @@
             const satX = centerX + Math.cos(angle) * lastFlashRadius; 
             const satY = centerY + Math.sin(angle) * lastFlashRadius;
             
-            // Distractors can still be local as they don't affect logic, only visuals
             activeDistractors = [];
             const count = 12; const step = (Math.PI * 2) / count;
             for (let i = 0; i < count; i++) {
@@ -1068,3 +1067,4 @@
 </script>
 </body>
 </html>
+
