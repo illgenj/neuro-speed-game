@@ -105,8 +105,10 @@ const uiCallbacks = {
                 "NHI BIOMETRIC PROFILE UPDATED",
                 "LOCATING CRITICAL VULNERABILITIES"
             ];
-            if (userSessions > 10) anomalies.push("GIMBAL ROTATION DETECTED");
-            if (userSessions > 20) anomalies.push("GOFAST INTERCEPT FAILED");
+            if (userSessions > 8) anomalies.push("GIMBAL ROTATION IN PROGRESS");
+            if (userSessions > 15) anomalies.push("GOFAST INTERCEPT FAILED");
+            if (userSessions > 25) anomalies.push("LOOK AT THAT THING, DUDE!");
+            if (userSessions > 30) anomalies.push("IT'S ROTATING...");
 
             display = anomalies[Math.floor(Math.random() * anomalies.length)];
             setTimeout(() => { if (!els.systemMessage.classList.contains('hidden')) els.systemMessage.innerText = text; }, Math.max(200, 800 - (userSessions * 15)));

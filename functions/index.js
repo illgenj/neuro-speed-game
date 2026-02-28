@@ -45,7 +45,7 @@ exports.getGameRound = functions.https.onCall(async (data, context) => {
 // --- 2. THE JUDGE ---
 exports.submitRound = functions.https.onCall(async (data, context) => {
     const userId = data.userId;
-    const clientAns = data.answer; 
+    const clientAns = data.answer;
     const clientSpeed = data.speed;
 
     const sessionRef = db.collection('private_sessions').doc(userId);
@@ -59,7 +59,7 @@ exports.submitRound = functions.https.onCall(async (data, context) => {
     const userRef = db.collection('leaderboard').doc(userId);
     const userSnap = await userRef.get();
     const userData = userSnap.exists ? userSnap.data() : { score: 0, tier: 'T1' };
-    
+
     const isT2 = userData.tier === 'T2' || userData.tier === 'T3';
     const isT3 = userData.tier === 'T3';
 
@@ -71,12 +71,12 @@ exports.submitRound = functions.https.onCall(async (data, context) => {
 
     let newScore = userData.score || 0;
     let newTier = userData.tier || "T1";
-    let speed = clientSpeed; 
+    let speed = clientSpeed;
 
     if (isCorrect) {
         const performanceVal = Math.max(100, (1500 - speed));
         const tierMult = isT3 ? 2.5 : (isT2 ? 1.5 : 1.0);
-        const rawPoints = performanceVal * tierMult * 10; 
+        const rawPoints = performanceVal * tierMult * 10;
         const delta = (rawPoints - newScore) * 0.15;
         if (delta > 0) newScore += delta;
         if (speed <= 400 && !isT2) newTier = "T2";
@@ -91,7 +91,7 @@ exports.submitRound = functions.https.onCall(async (data, context) => {
         score: Math.floor(newScore),
         tier: newTier,
         speed: speed,
-        pin: userData.pin || null, 
+        pin: userData.pin || null,
         sessionZone: userData.sessionZone || 0,
         timestamp: admin.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
@@ -103,4 +103,14 @@ exports.submitRound = functions.https.onCall(async (data, context) => {
         newScore: Math.floor(newScore),
         newTier: newTier
     };
+});
+
+exports.setPin = functions.https.onCall(async (data, context) => {
+    const { userId, pin } = data;
+    if (!userId || !pin) {
+        throw new functions.https.HttpsError('invalid-argument', 'Missing userId or pin');
+    }
+    const userRef = db.collection('leaderboard').doc(userId);
+    await userRef.set({ pin }, { merge: true });
+    return { success: true };
 });

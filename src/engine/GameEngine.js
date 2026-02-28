@@ -83,7 +83,7 @@ export class GameEngine {
         }
 
         this.ui.hideSyncVis();
-        this.ui.showMiniStatus("ESTABLISHING UPLINK...");
+        this.ui.showMiniStatus("ESTABLISHING UPLINK...", this.user.sessions ? this.user.sessions.length : 0);
 
         try {
             const result = await getGameRound({ userId: this.currentUser });
@@ -402,7 +402,7 @@ export class GameEngine {
 
                 // Velocity surge feedback at high streaks
                 if (u.streak > 3 && reactionTimeMs < 2000) {
-                    this.ui.showMiniStatus(">>> VELOCITY SURGE <<<");
+                    this.ui.showMiniStatus(">>> VELOCITY SURGE <<<", u.sessions ? u.sessions.length : 0);
                     this.screenShake = 5;
                 }
             } else {
