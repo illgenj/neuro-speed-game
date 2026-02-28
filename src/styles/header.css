@@ -1,0 +1,228 @@
+/* ═══════════════════════════════════════════════════════════════
+   Header & Stats Bar — Premium Redesign
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── Header ──────────────────────────────────────────────── */
+.header {
+    height: 80px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    background: linear-gradient(180deg, var(--panel) 0%, rgba(15, 23, 42, 0.8) 100%);
+    border-bottom: 1px solid var(--border-light);
+    z-index: 50;
+    flex-shrink: 0;
+    position: relative;
+    backdrop-filter: blur(12px);
+}
+
+/* Subtle header glow line */
+.header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 10%;
+    right: 10%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent-dim), transparent);
+}
+
+.stat-group {
+    display: flex;
+    flex-grow: 1;
+    justify-content: space-around;
+    height: 100%;
+    padding: 0 8px;
+}
+
+.stat {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 0 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 64px;
+    position: relative;
+    border-radius: var(--radius-sm);
+}
+
+.stat:hover {
+    background: var(--glass-highlight);
+}
+
+.stat:active {
+    transform: scale(0.96);
+}
+
+.label {
+    font-family: var(--font-mono);
+    font-size: 0.55rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    letter-spacing: 1.5px;
+    margin-bottom: 3px;
+    font-weight: 600;
+}
+
+.val {
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: var(--accent);
+    font-family: var(--font-mono);
+    letter-spacing: 0.5px;
+    transition: color 0.3s, text-shadow 0.3s;
+}
+
+.xp-val {
+    color: var(--gold);
+    text-shadow: 0 0 12px var(--gold-glow);
+}
+
+#btn-audio {
+    opacity: 0.45;
+    transition: opacity 0.3s, color 0.3s;
+}
+
+#btn-audio.active {
+    opacity: 1;
+}
+
+#btn-audio.active .val {
+    color: var(--success);
+    text-shadow: 0 0 10px var(--success-glow);
+}
+
+/* ─── Zone Thermometer ────────────────────────────────────── */
+#zone-container {
+    width: 92%;
+    height: 22px;
+    background: var(--panel);
+    margin: 8px auto 4px auto;
+    position: relative;
+    overflow: hidden;
+    border-radius: 11px;
+    border: 1px solid var(--border-light);
+    box-shadow:
+        inset 0 2px 6px rgba(0, 0, 0, 0.5),
+        var(--shadow-sm);
+    z-index: 50;
+}
+
+#zone-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--accent), var(--accent-light));
+    transition:
+        width 0.5s var(--ease-out),
+        background 0.4s ease;
+    position: relative;
+    z-index: 1;
+    border-radius: 10px;
+}
+
+/* Glass highlight on fill bar */
+#zone-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 100%);
+    border-radius: 10px 10px 0 0;
+}
+
+/* Subtle glow behind fill */
+#zone-fill::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 12px;
+    background: inherit;
+    filter: blur(8px);
+    opacity: 0.4;
+    z-index: -1;
+}
+
+#zone-label {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: 2.5px;
+    z-index: 2;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+    white-space: nowrap;
+}
+
+/* Zone pulse animation */
+@keyframes zone-pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 8px var(--gold-glow);
+    }
+
+    50% {
+        box-shadow: 0 0 20px var(--gold-glow), inset 0 0 8px var(--gold-glow);
+    }
+}
+
+.zone-gold {
+    animation: zone-pulse 1.5s ease-in-out infinite;
+}
+
+/* ─── Mobile Responsive ──────────────────────────────────── */
+@media (max-width: 600px) {
+    .header {
+        height: 60px;
+    }
+
+    .stat {
+        padding: 0 4px;
+        min-width: 48px;
+    }
+
+    .label {
+        font-size: 0.45rem;
+        letter-spacing: 1px;
+    }
+
+    .val {
+        font-size: 0.75rem;
+    }
+
+    #zone-container {
+        width: 96%;
+        height: 18px;
+        margin: 6px auto 3px auto;
+    }
+
+    #zone-label {
+        font-size: 0.55rem;
+        letter-spacing: 1.5px;
+    }
+}
+
+/* Landscape phone */
+@media (max-height: 500px) and (orientation: landscape) {
+    .header {
+        height: 48px;
+    }
+
+    .label {
+        font-size: 0.4rem;
+        margin-bottom: 1px;
+    }
+
+    .val {
+        font-size: 0.7rem;
+    }
+}
