@@ -87,15 +87,15 @@ export class GameEngine {
 
         try {
             const result = await getGameRound({ userId: this.currentUser });
-            const { sessionSalt } = result.data;
+            const serverData = result.data;
 
-            // Secure local generation (Blind Auth)
+            // Use server-provided seed/shapes for consistent validation
             this.currentManifest = {
-                targetShape: SHAPES[Math.floor(Math.random() * SHAPES.length)],
-                satShape: SHAPES[Math.floor(Math.random() * SHAPES.length)],
-                satColorIdx: Math.floor(Math.random() * L2_COLORS.length),
-                satDirIdx: Math.floor(Math.random() * 8),
-                salt: sessionSalt,
+                targetShape: serverData.targetShape,
+                satShape: serverData.satShape,
+                satColorIdx: serverData.satColorIdx,
+                satDirIdx: serverData.satDirIdx,
+                salt: serverData.sessionSalt,
             };
         } catch (error) {
             console.error("Server Link Failed", error);

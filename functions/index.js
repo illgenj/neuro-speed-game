@@ -9,17 +9,16 @@ const SHAPES = ['circle', 'square', 'triangle', 'diamond', 'cross'];
 const L2_COLORS = ['#22d3ee', '#4ade80', '#f472b6', '#fbbf24'];
 
 // --- 1. THE DEALER (DEBUG VERSION) ---
-exports.getGameRound = functions.https.onCall(async (data, context) => {
-    // 1. DEBUG LOGGING
-    console.log("FULL DATA RECEIVED:", JSON.stringify(data));
+exports.getGameRound = functions.https.onCall(async (request, context) => {
+    // Determine if we are receiving v1 (data, context) or v2 (request)
+    const data = request.data || request;
+
+    // 1. DEBUG LOGGING (Safe)
     console.log("USER ID:", data ? data.userId : "undefined");
 
     // 2. CHECK FOR MISSING ID
     if (!data || !data.userId) {
-        // THROW ERROR WITH THE DATA WE SEE
-        // This will show up in your browser console!
-        const seen = JSON.stringify(data);
-        throw new functions.https.HttpsError('invalid-argument', `SERVER SAW: ${seen}`);
+        throw new functions.https.HttpsError('invalid-argument', 'Missing userId');
     }
 
     const userId = data.userId;
@@ -29,21 +28,26 @@ exports.getGameRound = functions.https.onCall(async (data, context) => {
     const satShape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
     const satColorIdx = Math.floor(Math.random() * L2_COLORS.length);
     const satDirIdx = Math.floor(Math.random() * 8);
+    const sessionSalt = Math.random().toString(36).substring(2, 10);
 
     // 4. Save to Private Vault
     await db.collection('private_sessions').doc(userId).set({
         targetShape, satShape, satColorIdx, satDirIdx,
+        sessionSalt,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         active: true
     });
 
     return {
+        sessionSalt,
+        // We also send the shapes for the client to use in the manifest
         targetShape, satShape, satColorIdx, satDirIdx
     };
 });
 
 // --- 2. THE JUDGE ---
-exports.submitRound = functions.https.onCall(async (data, context) => {
+exports.submitRound = functions.https.onCall(async (request, context) => {
+    const data = request.data || request;
     const userId = data.userId;
     const clientAns = data.answer;
     const clientSpeed = data.speed;
@@ -105,7 +109,8 @@ exports.submitRound = functions.https.onCall(async (data, context) => {
     };
 });
 
-exports.setPin = functions.https.onCall(async (data, context) => {
+exports.setPin = functions.https.onCall(async (request, context) => {
+    const data = request.data || request;
     const { userId, pin } = data;
     if (!userId || !pin) {
         throw new functions.https.HttpsError('invalid-argument', 'Missing userId or pin');
