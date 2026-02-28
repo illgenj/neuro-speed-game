@@ -67,6 +67,7 @@ export class GameEngine {
     async executeFlash() {
         if (this.state !== 'IDLE') return;
 
+        this.state = 'FETCHING';
         this.ui.hideSystemMessage();
         this.ui.hideMiniStatus();
         this.uShape = null; this.uSat = null; this.uColor = null; this.uDir = null;
@@ -98,6 +99,7 @@ export class GameEngine {
                 salt: serverData.sessionSalt,
             };
         } catch (error) {
+            this.state = 'IDLE';
             console.error("Server Link Failed", error);
             this.ui.triggerSystemMessage("SERVER LINK LOST", "alert");
             this.ui.hideMiniStatus();
@@ -225,7 +227,7 @@ export class GameEngine {
 
                 this.animFrameId = requestAnimationFrame(loop);
 
-            } else if (this.state === 'IDLE') {
+            } else if (this.state === 'IDLE' || this.state === 'VALIDATING' || this.state === 'FETCHING') {
                 this.renderer.clear();
                 this.renderer.drawNeuralNetwork(this.sessionZone);
                 this.renderer.drawEchoes();
@@ -302,6 +304,7 @@ export class GameEngine {
         this.renderer.spawnParticles(hit.cx, hit.cy, 'var(--accent)');
 
         setTimeout(() => {
+            if (this.state !== 'QUESTIONING') return; // Prevent progressing if timed out
             this.inputLocked = false;
             this.lastSelectionIndex = -1;
             const u = this.user;
@@ -327,8 +330,10 @@ export class GameEngine {
 
     // ─── TRIAL FINALIZATION ─────────────────────────────────
     async finalizeTrial() {
+        if (this.state !== 'QUESTIONING') return; // Prevent double firing
+
         const u = this.user;
-        this.state = 'IDLE';
+        this.state = 'VALIDATING';
         this.ui.hideMiniStatus();
         const reactionTimeMs = Date.now() - this.roundStartTime;
 
@@ -452,10 +457,12 @@ export class GameEngine {
 
         } catch (e) {
             this.isValidating = false;
+            this.state = 'IDLE';
             console.error("Validation Error", e);
             this.ui.showNetworkError();
         }
 
+        this.state = 'IDLE';
         this.ui.unlockStartButton();
     }
 }
