@@ -1,245 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neuro-Speed Elite 7.0: Static Drift</title>
-    <style>
-        :root { 
-            --bg: #020617; --panel: #0f172a; --accent: #0ea5e9; --text: #f8fafc; 
-            --success: #10b981; --fail: #ef4444; --gold: #f59e0b; --quantum: #a855f7; 
-            --hyper: #f43f5e; --glass: rgba(15, 23, 42, 0.96);
-        }
-        
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; user-select: none; }
-        
-        body { 
-            background: var(--bg); color: var(--text); 
-            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
-            margin: 0; display: flex; flex-direction: column; 
-            height: 100vh; overflow: hidden; touch-action: none; 
-        }
+    <meta name="description"
+        content="Neuro-Speed Elite — A science-inspired adaptive cognitive speed training game. Train your brain with rapid visual processing challenges.">
+    <meta name="theme-color" content="#0a0f1e">
+    <meta property="og:title" content="Neuro-Speed Elite 8.0">
+    <meta property="og:description" content="Science-inspired adaptive cognitive speed training game.">
+    <meta property="og:type" content="website">
 
-        /* QoL: Animated Background Grid */
-        @keyframes grid-scroll {
-            0% { background-position: 0 0; }
-            100% { background-position: 40px 40px; }
-        }
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/svg+xml" href="/icon.svg">
+    <link rel="apple-touch-icon" href="/icon.svg">
 
-        body::before {
-            content: ""; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
-            background-image: 
-                linear-gradient(rgba(14, 165, 233, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(14, 165, 233, 0.03) 1px, transparent 1px);
-            background-size: 40px 40px; pointer-events: none; z-index: 0;
-            animation: grid-scroll 20s linear infinite;
-        }
-
-        /* Scanline Effect */
-        body::after {
-            content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
-            z-index: 2; background-size: 100% 2px, 3px 100%; pointer-events: none;
-        }
-
-        /* --- Header & Interactive Stats --- */
-        .header { 
-            height: 90px; width: 100%; display: flex; align-items: center; 
-            background: var(--panel); border-bottom: 2px solid #1e293b; 
-            z-index: 50; flex-shrink: 0; position: relative;
-        }
-        .stat-group { display: flex; flex-grow: 1; justify-content: space-around; height: 100%; }
-        
-        .stat { 
-            text-align: center; display: flex; flex-direction: column; 
-            justify-content: center; padding: 0 5px; cursor: pointer; 
-            transition: all 0.2s; min-width: 60px;
-        }
-        
-        .label { font-size: 0.5rem; text-transform: uppercase; opacity: 0.4; letter-spacing: 1.2px; margin-bottom: 2px; font-weight: 700; }
-        .val { font-size: 0.85rem; font-weight: 800; color: var(--accent); font-family: monospace; }
-        .xp-val { color: var(--gold); transition: color 0.3s; }
-
-        #btn-audio { opacity: 0.5; }
-        #btn-audio.active { opacity: 1; color: var(--success); }
-
-        /* --- ZONE THERMOMETER --- */
-        #zone-container {
-            width: 90%; height: 24px; background: #0f172a; 
-            margin: 10px auto 5px auto; position: relative; 
-            overflow: hidden; border-radius: 12px; border: 2px solid #1e293b;
-            box-shadow: inset 0 2px 6px rgba(0,0,0,0.6); z-index: 50;
-        }
-        #zone-fill {
-            height: 100%; width: 0%; 
-            background: linear-gradient(90deg, var(--accent), #38bdf8);
-            transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s; 
-            box-shadow: 0 0 15px var(--accent); position: relative; z-index: 1;
-        }
-        #zone-fill::after {
-            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 50%;
-            background: rgba(255,255,255,0.15); border-radius: 12px 12px 0 0;
-        }
-
-        #zone-label {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            font-size: 0.75rem; font-weight: 900; color: #fff; letter-spacing: 2px;
-            z-index: 2; text-shadow: 0 1px 3px rgba(0,0,0,0.9); white-space: nowrap;
-        }
-
-        @keyframes bar-pulse-gold {
-            0% { box-shadow: 0 0 10px var(--gold); }
-            50% { box-shadow: 0 0 25px var(--gold), inset 0 0 10px var(--gold); }
-            100% { box-shadow: 0 0 10px var(--gold); }
-        }
-        
-        .zone-gold { animation: bar-pulse-gold 1.5s infinite; }
-
-        /* --- Game Area --- */
-        #game-container { flex-grow: 1; position: relative; width: 100%; overflow: hidden; z-index: 10; }
-        canvas { display: block; width: 100%; height: 100%; transition: filter 0.3s; }
-
-        /* --- UI Overlays --- */
-        .overlay { 
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-            background: var(--glass); backdrop-filter: blur(20px); padding: 30px; 
-            border-radius: 24px; text-align: center; border: 1px solid rgba(255,255,255,0.1); 
-            width: 90%; max-width: 400px; z-index: 100; 
-            box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.9);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            max-height: 80vh; overflow-y: auto;
-        }
-        .hidden { opacity: 0; pointer-events: none; transform: translate(-50%, -45%) scale(0.95); }
-        
-        .action-btn { 
-            background: var(--accent); color: white; border: none; padding: 18px; 
-            font-size: 0.9rem; font-weight: 800; border-radius: 14px; cursor: pointer; 
-            width: 100%; margin-top: 10px; transition: all 0.2s;
-            text-transform: uppercase; letter-spacing: 1px;
-        }
-        .action-btn:active { transform: scale(0.97); }
-        .secondary-btn { background: #334155; }
-        .danger-btn { background: rgba(239, 68, 68, 0.1); border: 1px solid var(--fail); color: var(--fail); }
-        .secure-btn { background: rgba(16, 185, 129, 0.1); border: 1px solid var(--success); color: var(--success); }
-        .locked-btn { opacity: 0.5; pointer-events: none; filter: grayscale(1); }
-
-        .analytics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 15px 0; }
-        .a-card { background: rgba(0,0,0,0.4); padding: 12px; border-radius: 16px; text-align: left; }
-        .a-card .v { display: block; font-weight: 800; color: var(--accent); font-size: 1rem; }
-        .a-card .l { font-size: 0.5rem; opacity: 0.4; text-transform: uppercase; font-weight: 700; }
-
-        /* --- SYNC BAR UI --- */
-        #sync-vis-container {
-            margin: 15px 0 20px 0;
-            text-align: center;
-            opacity: 0; transition: opacity 0.3s;
-        }
-        #sync-percentage {
-            font-family: monospace; font-size: 1.8rem; font-weight: 900;
-            display: block; margin-bottom: 5px;
-            text-shadow: 0 0 10px rgba(0,0,0,0.5);
-        }
-        .sync-label-mini { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 2px; opacity: 0.6; }
-        
-        #sync-bar-bg {
-            width: 100%; height: 8px; background: rgba(255,255,255,0.1);
-            border-radius: 4px; overflow: hidden; position: relative;
-        }
-        #sync-bar-fill {
-            height: 100%; width: 0%;
-            background: var(--success);
-            box-shadow: 0 0 15px var(--success);
-            transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-            border-radius: 4px;
-        }
-
-        /* --- LEADERBOARD --- */
-        .lb-row { 
-            display: flex; align-items: center; padding: 12px 0; 
-            border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; 
-        }
-        .lb-rank { width: 30px; color: var(--gold); font-weight: 900; font-size: 0.8rem; }
-        .lb-name { flex-grow: 1; text-align: left; font-weight: 600; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding-right: 10px;}
-        .lb-tier { font-size: 0.5rem; background: #1e293b; padding: 2px 6px; border-radius: 4px; margin-right: 8px; color: #94a3b8; vertical-align: middle; }
-        .lb-right { text-align: right; min-width: 100px; }
-        .lb-score { color: var(--accent); font-family: monospace; font-weight: 700; font-size: 1rem; display: block; }
-        .lb-sub { font-size: 0.65rem; color: #94a3b8; margin-top: 2px; font-family: monospace;}
-        .lb-stat { margin-left: 6px; }
-        .lb-stat.peak { color: var(--hyper); }
-        .lb-stat.acc { color: var(--success); }
-        
-        #sync-indicator {
-            position: absolute; top: 15px; left: 15px; width: 8px; height: 8px; 
-            background: var(--success); border-radius: 50%; opacity: 0; transition: opacity 0.5s;
-            box-shadow: 0 0 10px var(--success); pointer-events: none;
-        }
-        .syncing { opacity: 1 !important; }
-
-        .singularity-glow { filter: saturate(1.5) contrast(1.1); }
-
-        /* --- UPDATED SYSTEM MESSAGE HUD --- */
-        #system-message {
-            position: absolute; 
-            bottom: 15%; 
-            left: 50%; transform: translateX(-50%);
-            background: rgba(15, 23, 42, 0.95); border: 1px solid #334155;
-            padding: 12px 24px; 
-            border-radius: 12px; z-index: 200;
-            text-align: center; font-weight: 900; letter-spacing: 1px; font-size: 0.8rem;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.8); pointer-events: none; 
-            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            width: auto; max-width: 90%;
-        }
-        .sys-upgrade { border-color: var(--success) !important; color: var(--success); box-shadow: 0 0 30px rgba(16, 185, 129, 0.3) !important; }
-        .sys-alert { border-color: var(--fail) !important; color: var(--fail); box-shadow: 0 0 30px rgba(239, 68, 68, 0.3) !important; }
-        .sys-info { border-color: var(--accent) !important; color: var(--accent); box-shadow: 0 0 30px rgba(14, 165, 233, 0.3) !important; }
-
-        /* --- NEW MINI STATUS (Bottom Right) --- */
-        #mini-status {
-            position: absolute; bottom: 20px; right: 20px;
-            font-family: monospace; font-size: 0.7rem; letter-spacing: 2px;
-            color: var(--accent); opacity: 0; transition: opacity 0.3s;
-            pointer-events: none; z-index: 50;
-            display: flex; align-items: center; gap: 8px;
-            background: rgba(15, 23, 42, 0.8); padding: 5px 10px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1);
-        }
-        .blink { animation: blinker 1s linear infinite; }
-        @keyframes blinker { 50% { opacity: 0.3; } }
-
-        /* --- INPUT STYLING --- */
-        #new-agent-name, #pin-input-field {
-            background: rgba(0,0,0,0.3);
-            border: 2px solid #334155;
-            color: var(--accent);
-            padding: 15px;
-            font-family: monospace;
-            font-weight: 800;
-            font-size: 1.2rem;
-            width: 100%;
-            text-align: center;
-            border-radius: 8px;
-            text-transform: uppercase;
-            margin-bottom: 5px;
-            transition: all 0.2s;
-            caret-color: var(--gold);
-        }
-        #new-agent-name:focus, #pin-input-field:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 20px rgba(14, 165, 233, 0.2);
-        }
-        #new-agent-name::placeholder { color: rgba(255,255,255,0.2); }
-
-        #pin-input-field {
-            letter-spacing: 10px;
-            font-size: 2rem;
-            -webkit-text-security: disc; 
-        }
-        .pin-subtitle {
-            font-size: 0.7rem; color: #94a3b8; margin-bottom: 15px; font-family: monospace;
-        }
-
-    </style>
+    <title>Neuro-Speed Elite 8.0</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap"
+        rel="stylesheet">
 </head>
+
 <body>
 
     <div class="header">
@@ -267,7 +50,7 @@
             </div>
         </div>
     </div>
-    
+
     <div id="zone-container">
         <div id="zone-fill"></div>
         <div id="zone-label" data-mult="1.0">NEURAL SYNC: 1.0x</div>
@@ -283,7 +66,7 @@
         <div id="main-overlay" class="overlay">
             <h2 id="msg-title">NEURAL READY</h2>
             <p id="msg-body" style="margin-bottom: 15px;">Secure Channel Established.</p>
-            
+
             <div id="sync-vis-container">
                 <span id="sync-percentage">0%</span>
                 <span class="sync-label-mini">SERVER VERIFICATION</span>
@@ -293,52 +76,119 @@
             </div>
 
             <button id="start-btn" class="action-btn">INITIATE SEQUENCE</button>
-            <button id="btn-lb-main" class="action-btn secondary-btn" style="margin-top: 10px; font-size: 0.75rem;">🌐 GLOBAL GRID</button>
+            <button id="btn-lb-main" class="action-btn secondary-btn" style="margin-top: 10px; font-size: 0.75rem;">🌐
+                GLOBAL GRID</button>
         </div>
 
         <div id="analytics-overlay" class="overlay hidden">
-            <h2>SYSTEM REPORT</h2>
-            <canvas id="chart-canvas" style="width: 100%; height: 100px; margin: 10px 0;"></canvas>
-            <div class="analytics-grid">
-                <div class="a-card"><span class="l">Peak Latency</span><span class="v" id="stat-peak">0ms</span></div>
-                <div class="a-card"><span class="l">Accuracy</span><span class="v" id="stat-acc-total">0%</span></div>
-                <div class="a-card"><span class="l">Grade</span><span class="v" id="stat-grade" style="color:var(--gold)">--</span></div>
-                <div class="a-card"><span class="l">Uptime</span><span class="v" id="stat-uptime">0.0h</span></div>
+            <div id="secret-pixel"
+                style="position:absolute; top:5px; left:5px; width:10px; height:10px; opacity:0; cursor:pointer;"></div>
+            <h2
+                style="text-align:center; color: var(--accent); font-family: var(--font-mono); letter-spacing: 3px; margin-bottom: 4px;">
+                SYSTEM REPORT</h2>
+
+            <!-- Tabs -->
+            <div class="analytics-tabs">
+                <button class="analytics-tab active" data-tab="performance">PERFORMANCE</button>
+                <button class="analytics-tab" data-tab="history">TRAINING LOG</button>
             </div>
-            <div id="analytics-actions"></div>
-            
-            <div id="security-zone">
+
+            <!-- Tab: Performance -->
+            <div class="analytics-panel" id="tab-performance">
+                <canvas id="chart-canvas"
+                    style="width: 100%; height: 100px; margin: 8px 0; border-radius: 8px;"></canvas>
+
+                <div class="analytics-grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+                    <div class="a-card">
+                        <div class="label">PEAK LATENCY</div>
+                        <div class="val" id="stat-peak">0ms</div>
+                    </div>
+                    <div class="a-card">
+                        <div class="label">ACCURACY</div>
+                        <div class="val" id="stat-acc-total">0%</div>
+                    </div>
+                    <div class="a-card">
+                        <div class="label">GRADE</div>
+                        <div class="val" id="stat-grade" style="color:var(--gold)">--</div>
+                    </div>
+                    <div class="a-card">
+                        <div class="label">SESSIONS</div>
+                        <div class="val" id="stat-sessions">0</div>
+                    </div>
+                    <div class="a-card">
+                        <div class="label">UPTIME</div>
+                        <div class="val" id="stat-uptime">0.0h</div>
+                    </div>
+                    <div class="a-card">
+                        <div class="label">DIFFICULTY</div>
+                        <div class="val" id="stat-difficulty">0</div>
+                    </div>
                 </div>
 
-            <div id="analytics-danger-zone" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+                <canvas id="radar-canvas" style="width: 100%; height: 150px; margin: 4px 0;"></canvas>
+            </div>
+
+            <!-- Tab: Training History -->
+            <div class="analytics-panel hidden" id="tab-history">
+                <canvas id="heatmap-canvas" style="width: 100%; height: 48px; margin: 8px 0;"></canvas>
+                <div id="training-progress-container" style="margin: 8px 0;"></div>
+                <div id="session-history-list" style="max-height: 220px; overflow-y: auto; margin: 8px 0;"></div>
+                <div id="history-empty"
+                    style="text-align: center; color: var(--text-muted); font-size: 0.75rem; padding: 30px; display: none;">
+                    NO SESSIONS RECORDED YET
+                </div>
+            </div>
+
+            <div id="security-zone" style="margin-top: 8px;"></div>
+
+            <button class="action-btn" id="btn-achievements"
+                style="font-size: 0.7rem; padding: 12px; background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(14, 165, 233, 0.15)); border: 1px solid rgba(168, 85, 247, 0.3); color: var(--quantum);">
+                🏆 ACHIEVEMENTS
+            </button>
+
+            <div id="analytics-danger-zone"
+                style="margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px;">
                 <button id="btn-unlink-account" class="action-btn danger-btn" style="font-size: 0.7rem; padding: 12px;">
                     🔒 SEVER LINK
                 </button>
             </div>
 
-            <button class="action-btn secondary-btn" id="btn-close-analytics" style="margin-top:10px">RETURN</button>
+            <button class="action-btn secondary-btn" id="btn-close-analytics" style="margin-top:8px">RETURN</button>
         </div>
 
         <div id="leaderboard-overlay" class="overlay hidden">
+            <button class="action-btn secondary-btn" id="btn-close-lb"
+                style="margin-top: 0; margin-bottom: 15px;">RETURN</button>
             <h2 style="color: var(--gold); letter-spacing: 2px;">GLOBAL GRID</h2>
             <div id="lb-loading" style="font-size: 0.8rem; opacity: 0.6; padding: 20px;">CONNECTING TO CORE...</div>
             <div id="lb-list" style="margin-bottom: 20px;"></div>
-            <button class="action-btn" id="btn-close-lb">RETURN</button>
+        </div>
+
+        <div id="achievement-overlay" class="overlay hidden">
+            <h2
+                style="text-align:center; color: var(--quantum); font-family: var(--font-mono); letter-spacing: 3px; margin-bottom: 4px;">
+                🏆 ACHIEVEMENTS</h2>
+            <div id="achievement-progress"
+                style="text-align: center; font-family: var(--font-mono); font-size: 0.65rem; color: var(--text-muted); margin-bottom: 12px;">
+            </div>
+            <div id="achievement-grid" style="max-height: 400px; overflow-y: auto;"></div>
+            <button class="action-btn secondary-btn" id="btn-close-achievements" style="margin-top:8px">RETURN</button>
         </div>
 
         <div id="user-overlay" class="overlay hidden">
             <h3>Select Agent</h3>
             <div id="user-list" style="max-height: 200px; overflow-y: auto;"></div>
-            <button class="action-btn" style="background:transparent; border: 1px dashed #444" id="btn-new-user">+ NEW / RECOVER</button>
+            <button class="action-btn" style="background:transparent; border: 1px dashed #444" id="btn-new-user">+ NEW /
+                RECOVER</button>
             <button class="action-btn" style="background:#334155" id="btn-close-user">CANCEL</button>
         </div>
 
         <div id="new-link-overlay" class="overlay hidden">
             <h3 style="color: var(--accent); letter-spacing: 2px;">CONNECTION</h3>
             <p style="font-size: 0.8rem; opacity: 0.7; margin-bottom: 20px;">ENTER DESIGNATION TO CREATE OR RECOVER</p>
-            
+
             <input type="text" id="new-agent-name" placeholder="AGENT_ID" maxlength="12" autocomplete="off">
-            
+
             <div style="display: flex; gap: 10px; margin-top: 20px;">
                 <button id="btn-create-link" class="action-btn">INITIALIZE</button>
                 <button id="btn-cancel-link" class="action-btn secondary-btn">ABORT</button>
@@ -348,1008 +198,151 @@
         <div id="pin-overlay" class="overlay hidden">
             <h3 id="pin-title" style="color: var(--hyper); letter-spacing: 2px;">SECURITY CHECK</h3>
             <p id="pin-reason" class="pin-subtitle">AUTHORIZATION REQUIRED</p>
-            
+
             <div id="pin-input-container">
-                <input type="password" inputmode="numeric" pattern="[0-9]*" id="pin-input-field" maxlength="4" placeholder="****" autocomplete="off">
+                <input type="password" inputmode="numeric" pattern="[0-9]*" id="pin-input-field" maxlength="4"
+                    placeholder="****" autocomplete="off">
             </div>
-            
+
             <div style="display: flex; gap: 10px; margin-top: 20px;">
                 <button id="btn-pin-confirm" class="action-btn">AUTHENTICATE</button>
                 <button id="btn-pin-cancel" class="action-btn secondary-btn">CANCEL</button>
             </div>
         </div>
-        
+
         <div id="confirm-overlay" class="overlay hidden">
-             <h3 style="color: var(--fail); letter-spacing: 2px;">WARNING</h3>
-             <p style="margin-bottom:20px; font-size: 0.9rem;">LOCAL NEURAL PATTERN WILL BE DELETED.</p>
-             <button id="btn-confirm-yes" class="action-btn danger-btn">CONFIRM DELETION</button>
-             <button id="btn-confirm-no" class="action-btn secondary-btn">CANCEL</button>
+            <h3 style="color: var(--fail); letter-spacing: 2px;">WARNING</h3>
+            <p style="margin-bottom:20px; font-size: 0.9rem;">LOCAL NEURAL PATTERN WILL BE DELETED.</p>
+            <button id="btn-confirm-yes" class="action-btn danger-btn">CONFIRM DELETION</button>
+            <button id="btn-confirm-no" class="action-btn secondary-btn">CANCEL</button>
+        </div>
+
+        <!-- Onboarding -->
+        <div id="onboarding-overlay" class="overlay hidden">
+            <div class="onboarding-dots">
+                <div class="onboarding-dot active"></div>
+                <div class="onboarding-dot"></div>
+                <div class="onboarding-dot"></div>
+            </div>
+
+            <!-- Step 1: Science -->
+            <div class="onboarding-step active">
+                <span class="onboarding-icon">🧠</span>
+                <div class="onboarding-title">TRAIN YOUR BRAIN</div>
+                <p class="onboarding-text">
+                    Neuro-Speed is an <strong>adaptive cognitive speed training</strong> game
+                    inspired by neuroscience research on visual processing speed.
+                </p>
+                <div class="science-badge">
+                    🔬 INSPIRED BY NIH-FUNDED RESEARCH
+                </div>
+                <p class="disclaimer-text">
+                    By initiating an uplink, you agree to the anonymous transmission of your neural-optical latency
+                    metrics. Data is processed locally and in aggregate to optimize global targeting pathways.
+                </p>
+            </div>
+
+            <!-- Step 2: How it works -->
+            <div class="onboarding-step">
+                <span class="onboarding-icon">⚡</span>
+                <div class="onboarding-title">HOW IT WORKS</div>
+                <p class="onboarding-text">
+                    Shapes flash on screen for a <strong>fraction of a second</strong>.
+                    Identify the center shape, the peripheral satellite, and more as you level up.
+                    <br><br>
+                    The game <strong>adapts to you</strong> — getting faster as you improve,
+                    always keeping you in the zone of maximum growth.
+                </p>
+            </div>
+
+            <!-- Step 3: Get started -->
+            <div class="onboarding-step">
+                <span class="onboarding-icon">🚀</span>
+                <div class="onboarding-title">READY TO BEGIN</div>
+                <p class="onboarding-text">
+                    Create your <strong>Agent ID</strong> to start training.
+                    Your progress syncs to the global leaderboard.
+                    <br><br>
+                    Aim for <strong>daily sessions</strong> to build your streak
+                    and push your reaction speed to its limits.
+                </p>
+            </div>
+
+            <button id="onboarding-next-btn" class="action-btn">CONTINUE</button>
+        </div>
+
+        <!-- Session Summary -->
+        <div id="session-summary-overlay" class="overlay hidden">
+            <h2
+                style="text-align:center; color: var(--accent); font-family: var(--font-mono); letter-spacing: 3px; margin-bottom: 8px;">
+                SESSION COMPLETE</h2>
+            <p id="session-summary-subtitle"
+                style="text-align:center; color: var(--text-muted); font-size: 0.75rem; letter-spacing: 2px; margin-bottom: 24px;">
+                TRAINING BLOCK 1 — SESSION 1/7</p>
+
+            <div class="analytics-grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+                <div class="a-card">
+                    <div class="label">ROUNDS</div>
+                    <div class="val" id="summary-rounds">0</div>
+                </div>
+                <div class="a-card">
+                    <div class="label">ACCURACY</div>
+                    <div class="val" id="summary-accuracy">0%</div>
+                </div>
+                <div class="a-card">
+                    <div class="label">AVG REACTION</div>
+                    <div class="val" id="summary-avg-reaction">0ms</div>
+                </div>
+                <div class="a-card">
+                    <div class="label">BEST REACTION</div>
+                    <div class="val" id="summary-best-reaction">0ms</div>
+                </div>
+                <div class="a-card">
+                    <div class="label">SPEED TREND</div>
+                    <div class="val" id="summary-trend">—</div>
+                </div>
+                <div class="a-card">
+                    <div class="label">DIFFICULTY</div>
+                    <div class="val" id="summary-difficulty">0</div>
+                </div>
+            </div>
+
+            <div id="summary-duration"
+                style="text-align: center; color: var(--text-muted); font-size: 0.7rem; letter-spacing: 2px; margin-bottom: 20px;">
+                DURATION: 0:00</div>
+
+            <button id="btn-continue-training" class="action-btn" style="margin-bottom: 10px;">CONTINUE
+                TRAINING</button>
+            <button id="btn-end-session" class="action-btn secondary-btn">END SESSION</button>
+        </div>
+
+        <!-- Booster Reminder -->
+        <div id="booster-reminder-overlay" class="overlay hidden">
+            <span class="onboarding-icon">⚡</span>
+            <h2
+                style="text-align:center; color: var(--gold); font-family: var(--font-mono); letter-spacing: 3px; margin-bottom: 8px;">
+                BOOSTER SESSION DUE</h2>
+            <p
+                style="text-align:center; color: var(--text-muted); font-size: 0.8rem; line-height: 1.6; margin-bottom: 24px; font-family: var(--font-mono);">
+                Research shows periodic <strong style="color: var(--text);">booster sessions</strong> help maintain
+                cognitive gains. It's been a while — time for a refresher!
+            </p>
+            <button id="btn-start-booster" class="action-btn">START BOOSTER</button>
+            <button id="btn-dismiss-booster" class="action-btn secondary-btn" style="margin-top: 10px;">LATER</button>
         </div>
 
     </div>
 
-<script type="module">
-    /* ----------------------------------------------------
-       NEURO-SPEED ELITE 7.0 [STATIC DRIFT]
-       - Added 'drawStatic' for anti-retina burn
-       - Added 'Neural Echoes' (Progressive background shapes)
-       - Added Set PIN capability for unsecured accounts
-       ----------------------------------------------------
-    */
-
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, doc, setDoc, query, orderBy, limit, getDocs, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyBbUKJ9FgkTMU2WHM4N0uYAujLBDBV-ILs",
-      authDomain: "neuro-speed-web.firebaseapp.com",
-      projectId: "neuro-speed-web",
-      storageBucket: "neuro-speed-web.firebasestorage.app",
-      messagingSenderId: "314397349425",
-      appId: "1:314397349425:web:992853535b9f8bd61de710"
-    };
-
-    (function() {
-        let db, functions, getGameRoundFunc, submitRoundFunc, setPinFunc;
-
-        try {
-            const app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            functions = getFunctions(app);
-            getGameRoundFunc = httpsCallable(functions, 'getGameRound');
-            submitRoundFunc = httpsCallable(functions, 'submitRound');
-            setPinFunc = httpsCallable(functions, 'setPin');
-            console.log("Neuro-Link Secured (Blind Auth).");
-        } catch(e) { console.error("Link Error:", e); }
-
-        const SALT = "NEURO_SECURE_SALT_9283"; 
-        let appData = { users: {}, currentUser: null };
-        let pinResolver = null; 
-        let realtimeUnsubscribe = null;
-
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-
-        // Game Config
-        const SHAPES = ['circle', 'square', 'triangle', 'diamond', 'cross'];
-        const L2_COLORS = ['#22d3ee', '#4ade80', '#f472b6', '#fbbf24'];
-        const QUESTION_TIMEOUT_MS = 15000;
-        let questionTimerStart = 0;
-        let isTimedOut = false;
-        let lastTickTime = 0; 
-        let screenShake = 0; // Visual glitch effect intensity
-        
-        // --- Particle System Array ---
-        let particles = [];
-        let ripples = [];
-        
-        // --- Neural Echoes System ---
-        let backgroundEchoes = [];
-
-        const DIR_MAP = [
-            { id: 0, key: 6, label: '6', angle: 0 },            
-            { id: 1, key: 3, label: '3', angle: Math.PI*0.25 },
-            { id: 2, key: 2, label: '2', angle: Math.PI*0.5 }, 
-            { id: 3, key: 1, label: '1', angle: Math.PI*0.75 },
-            { id: 4, key: 4, label: '4', angle: Math.PI },        
-            { id: 5, key: 7, label: '7', angle: Math.PI*1.25 },
-            { id: 6, key: 8, label: '8', angle: Math.PI*1.5 }, 
-            { id: 7, key: 9, label: '9', angle: Math.PI*1.75 } 
-        ];
-
-        let state = 'IDLE', currentTask = null, selectionBoxes = [];
-        let centerX, centerY, minDim;
-        let currentManifest = null; // HOLDS LOCAL GENERATION DATA
-        let uShape, uSat, uColor, uDir;
-        let sessionZone = 0;
-        let activeDistractors = [], lastFlashRadius = 0;
-        let inputLocked = false, lastSelectionIndex = -1;
-        let animFrameId;
-
-        const AudioSys = {
-            ctx: null, enabled: false,
-            init: function() {
-                if (!this.ctx) {
-                    const AudioContext = window.AudioContext || window.webkitAudioContext;
-                    if(AudioContext) this.ctx = new AudioContext();
-                }
-                if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
-            },
-            playTone: function(freq, type, duration, vol=0.1, slideTo=null) {
-                if (!this.enabled || !this.ctx) return;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.type = type;
-                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-                if (slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo, this.ctx.currentTime + duration);
-                gain.gain.setValueAtTime(vol, this.ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                osc.start();
-                osc.stop(this.ctx.currentTime + duration);
-            },
-            playUI: function(type) {
-                if(!this.enabled) return;
-                if(type === 'click') this.playTone(800, 'sine', 0.1, 0.05);
-                if(type === 'lock') this.playTone(1200, 'triangle', 0.1, 0.05, 600);
-            },
-            playGame: function(type) {
-                if(!this.enabled) return;
-                if (type === 'flash') this.playTone(200, 'triangle', 0.15, 0.1, 800);
-                else if (type === 'static') this.playTone(100, 'sawtooth', 0.1, 0.05); // Static sound
-                else if (type === 'success') {
-                    const root = 440 * (1 + (sessionZone * 0.05));
-                    this.playTone(root, 'sine', 0.3, 0.1);
-                    setTimeout(() => this.playTone(root * 1.25, 'sine', 0.3, 0.08), 50);
-                    setTimeout(() => this.playTone(root * 1.5, 'sine', 0.4, 0.06), 100);
-                } else if (type === 'fail') {
-                    this.playTone(150, 'sawtooth', 0.4, 0.15, 50);
-                    this.playTone(140, 'sawtooth', 0.4, 0.15, 40);
-                } else if (type === 'levelUp') {
-                    this.playTone(440, 'square', 0.1, 0.1);
-                    setTimeout(() => this.playTone(880, 'square', 0.1, 0.1), 100);
-                    setTimeout(() => this.playTone(1760, 'square', 0.4, 0.1), 200);
-                } else if (type === 'timer') this.playTone(800, 'square', 0.05, 0.02);
-            },
-            toggle: function() {
-                this.enabled = !this.enabled;
-                if(this.enabled) this.init();
-                return this.enabled;
-            }
-        };
-
-        function generateHash(data) {
-            const str = JSON.stringify(data) + SALT;
-            let hash = 0;
-            for (let i = 0; i < str.length; i++) {
-                const char = str.charCodeAt(i);
-                hash = ((hash << 5) - hash) + char;
-                hash = hash & hash;
-            }
-            return hash.toString();
-        }
-
-        function save() {
-            const hash = generateHash(appData);
-            localStorage.setItem('neuroElite_v3_secure', JSON.stringify(appData));
-            localStorage.setItem('neuroElite_sig', hash);
-        }
-
-        function hideOverlays() { document.querySelectorAll('.overlay').forEach(o => o.classList.add('hidden')); }
-
-        function showMiniStatus(text) {
-            const el = document.getElementById('mini-status');
-            el.innerHTML = `<span class="blink">●</span> ${text}`;
-            el.style.opacity = '1';
-        }
-
-        function hideMiniStatus() {
-            document.getElementById('mini-status').style.opacity = '0';
-        }
-
-        function triggerSystemMessage(text, type) {
-            const el = document.getElementById('system-message');
-            el.innerText = text; el.className = ''; 
-            if(type === 'upgrade') { el.classList.add('sys-upgrade'); AudioSys.playGame('levelUp'); }
-            else if(type === 'info') el.classList.add('sys-info');
-            else el.classList.add('sys-alert');
-            requestAnimationFrame(() => el.classList.remove('hidden'));
-            setTimeout(() => el.classList.add('hidden'), 3500);
-        }
-
-        function requestPin(title, reason, isAuth = true) {
-            return new Promise((resolve) => {
-                hideOverlays();
-                const overlay = document.getElementById('pin-overlay');
-                const input = document.getElementById('pin-input-field');
-                const container = document.getElementById('pin-input-container');
-                
-                document.getElementById('pin-title').innerText = title || "SECURITY CHECK";
-                document.getElementById('pin-reason').innerText = reason || "ENTER KEY";
-                
-                // Show input only if needed
-                if(isAuth) container.style.display = 'block';
-                else container.style.display = 'none';
-
-                input.value = "";
-                overlay.classList.remove('hidden');
-                if(isAuth) setTimeout(() => input.focus(), 100);
-                pinResolver = resolve;
-            });
-        }
-
-        // --- NEW: Static Noise Generator ---
-        function drawStatic(intensity = 0.5) {
-            const imageData = ctx.createImageData(canvas.width, canvas.height);
-            const data = imageData.data;
-            for (let i = 0; i < data.length; i += 4) {
-                const val = Math.random() * 255 * intensity;
-                data[i] = val;     // R
-                data[i + 1] = val; // G
-                data[i + 2] = val; // B
-                data[i + 3] = 255; // A (Full Opacity)
-            }
-            ctx.putImageData(imageData, 0, 0);
-        }
-        
-        // --- NEW: Draw Background Echoes ---
-        function drawEchoes() {
-            // Draw previous shapes with very low opacity
-            if(backgroundEchoes.length === 0) return;
-            
-            ctx.save();
-            ctx.globalAlpha = 0.06; // faint ghost
-            backgroundEchoes.forEach(echo => {
-                drawShape(echo.type, echo.x, echo.y, echo.size, echo.color);
-            });
-            ctx.restore();
-        }
-
-        // --- PARTICLE SYSTEM HELPER ---
-        function spawnParticles(x, y, color) {
-            const count = 12; // Number of particles
-            for (let i = 0; i < count; i++) {
-                const angle = Math.random() * Math.PI * 2;
-                const speed = Math.random() * 4 + 2;
-                particles.push({
-                    x: x, y: y,
-                    vx: Math.cos(angle) * speed,
-                    vy: Math.sin(angle) * speed,
-                    life: 1.0,
-                    color: color,
-                    size: Math.random() * 3 + 2
+    <script type="module" src="/src/main.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').catch(error => {
+                    console.log('SW registration failed:', error);
                 });
-            }
-        }
-        
-        // --- DE-LINK LOGIC ---
-        function initiateDeLink() {
-            const uName = appData.currentUser;
-            if(!uName) return;
-            hideOverlays();
-            document.getElementById('confirm-overlay').classList.remove('hidden');
-        }
-
-        function confirmDeLink() {
-             const uName = appData.currentUser;
-             if(appData.users[uName]) {
-                 delete appData.users[uName];
-                 appData.currentUser = null;
-                 save();
-                 hideOverlays();
-                 triggerSystemMessage("NEURAL PATTERN PURGED", "alert");
-                 setTimeout(showUserMenu, 1000);
-             }
-        }
-        
-        // --- NEW: SET PIN LOGIC ---
-        async function handleSetPin() {
-             const uName = appData.currentUser;
-             const pin = await requestPin("LOCK ACCOUNT", "ENTER A NEW 4-DIGIT PIN");
-             if (pin && pin.length === 4) {
-                 try {
-                     triggerSystemMessage("ENCRYPTING...", "info");
-                     await setPinFunc({ userId: uName, pin: pin });
-                     appData.users[uName].pin = pin;
-                     save();
-                     triggerSystemMessage("ACCOUNT SECURED", "upgrade");
-                 } catch (e) {
-                     console.error(e);
-                     triggerSystemMessage("ENCRYPTION FAILED", "alert");
-                 }
-             } else {
-                 triggerSystemMessage("INVALID PIN", "alert");
-             }
-             hideOverlays(); document.getElementById('analytics-overlay').classList.remove('hidden');
-        }
-
-        function initRealtimeSync(userId) {
-            if (realtimeUnsubscribe) realtimeUnsubscribe();
-            if (!db || !userId) return;
-            
-            realtimeUnsubscribe = onSnapshot(doc(db, "leaderboard", userId), (docSnap) => {
-                if (docSnap.exists()) {
-                    const cloudData = docSnap.data();
-                    const u = appData.users[userId];
-                    if (u) {
-                        u.score = cloudData.score || 0;
-                        u.speed = cloudData.speed;
-                        u.level2 = (cloudData.tier === 'T2' || cloudData.tier === 'T3');
-                        u.level3 = (cloudData.tier === 'T3');
-                        if(cloudData.pin && u.pin !== cloudData.pin) u.pin = cloudData.pin;
-                        
-                        save(); updateUI();
-                        const ind = document.getElementById('sync-indicator');
-                        ind.classList.add('syncing'); setTimeout(() => ind.classList.remove('syncing'), 1000);
-                    }
-                }
             });
         }
-
-        function updateUI() {
-            const u = appData.users[appData.currentUser];
-            if(!u) return;
-            if (!u.peakScore) u.peakScore = 0;
-            if (u.score > u.peakScore) u.peakScore = u.score;
-            document.getElementById('user-display').innerText = appData.currentUser;
-            const currentDisplay = Math.floor(u.score || 0);
-            document.getElementById('score-val').innerText = currentDisplay.toLocaleString();
-            const scoreEl = document.getElementById('score-val');
-            if (currentDisplay < u.peakScore * 0.5) scoreEl.style.color = 'var(--fail)';
-            else if (currentDisplay > u.peakScore * 0.9) scoreEl.style.color = 'var(--success)';
-            else scoreEl.style.color = 'var(--gold)';
-            document.getElementById('speed-val').innerText = Math.round(u.speed) + 'ms';
-            document.getElementById('daily-streak-badge').innerText = `🔥 ${u.dailyStreak || 0}`;
-            document.getElementById('mode-indicator').innerText = u.level3 ? "T3" : (u.level2 ? "T2" : "T1");
-            const fill = document.getElementById('zone-fill');
-            const label = document.getElementById('zone-label');
-            const percentage = Math.min(sessionZone * 10, 100);
-            fill.style.width = percentage + "%";
-            if (sessionZone >= 10) {
-                fill.style.background = "linear-gradient(90deg, #f59e0b, #ef4444)"; fill.classList.add('zone-gold');
-                label.innerText = "SINGULARITY: MAX"; canvas.classList.add('singularity-glow');
-            } else if (sessionZone >= 5) {
-                fill.style.background = "linear-gradient(90deg, #a855f7, #ec4899)"; fill.classList.add('zone-gold');
-                label.innerText = "OVERCLOCK: ACTIVE"; canvas.classList.remove('singularity-glow');
-            } else {
-                fill.style.background = "linear-gradient(90deg, var(--accent), #38bdf8)"; fill.classList.remove('zone-gold');
-                label.innerText = `SYNC STREAK: ${sessionZone}`; canvas.classList.remove('singularity-glow');
-            }
-        }
-
-        function checkDailyStreak() {
-            const u = appData.users[appData.currentUser];
-            const today = new Date().toISOString().split('T')[0];
-            if (!u.lastPlayDate) { u.lastPlayDate = today; u.dailyStreak = 1; }
-            else if (u.lastPlayDate !== today) {
-                const diff = (new Date(today) - new Date(u.lastPlayDate)) / 86400000;
-                if (diff >= 0.9 && diff < 2) u.dailyStreak++; else if (diff >= 2) u.dailyStreak = 1;
-                u.lastPlayDate = today;
-            }
-            save();
-        }
-
-        function drawShape(type, x, y, size, color) {
-            ctx.beginPath(); ctx.fillStyle = color;
-            if (type === 'circle') ctx.arc(x, y, size, 0, Math.PI * 2);
-            else if (type === 'square') ctx.rect(x - size, y - size, size * 2, size * 2);
-            else if (type === 'triangle') { ctx.moveTo(x, y - size); ctx.lineTo(x + size, y + size); ctx.lineTo(x - size, y + size); ctx.closePath(); }
-            else if (type === 'diamond') { ctx.moveTo(x, y - size * 1.2); ctx.lineTo(x + size * 1.2, y); ctx.lineTo(x, y + size * 1.2); ctx.lineTo(x - size * 1.2, y); ctx.closePath(); }
-            else if (type === 'cross') { ctx.rect(x - size/3, y - size, size/1.5, size * 2); ctx.rect(x - size, y - size/3, size * 2, size/1.5); }
-            ctx.fill();
-        }
-
-        // --- VISUAL UPGRADE: Singularity Reticle ---
-        function drawReticle() {
-            if (state !== 'IDLE') return;
-            
-            // Intensity based on streak (0 to 10)
-            const intensity = Math.min(sessionZone, 10) / 10;
-            
-            // Speed up rotation based on intensity
-            const rot = (Date.now() / 2000) * (1 + intensity * 4);
-            
-            // "Nervous" shake effect at high levels
-            const jitter = intensity > 0.8 ? (Math.random() - 0.5) * 4 : 0;
-
-            ctx.save();
-            ctx.translate(centerX + jitter, centerY + jitter);
-            ctx.rotate(rot);
-            
-            // Dynamic Size (Breathing gets faster/shallower)
-            const breathSpeed = 800 - (intensity * 600);
-            const breath = Math.sin(Date.now() / breathSpeed) * (2 + intensity * 5);
-            const size = 15 + breath;
-
-            // Color shifts from Blue -> Purple -> Gold -> Red
-            let color = `255, 255, 255`;
-            if(intensity > 0.3) color = `168, 85, 247`; // Quantum
-            if(intensity > 0.6) color = `245, 158, 11`; // Gold
-            if(intensity > 0.9) color = `244, 63, 94`;  // Hyper
-
-            ctx.strokeStyle = `rgba(${color}, ${0.15 + (intensity * 0.5)})`;
-            ctx.lineWidth = 1 + (intensity * 2);
-            
-            ctx.beginPath();
-            // Change shape based on intensity
-            if(intensity > 0.8) {
-                // Draw Triangle Reticle at max level
-                ctx.moveTo(-size, size); ctx.lineTo(0, -size); ctx.lineTo(size, size); ctx.closePath();
-            } else {
-                // Standard Crosshair
-                ctx.moveTo(-size, 0); ctx.lineTo(size, 0);
-                ctx.moveTo(0, -size); ctx.lineTo(0, size);
-            }
-            ctx.stroke();
-            
-            // Inner Circle Glow
-            ctx.beginPath();
-            ctx.arc(0, 0, 8 + (intensity*4), 0, Math.PI*2);
-            ctx.strokeStyle = `rgba(${color}, ${0.3 + intensity})`;
-            ctx.stroke();
-
-            ctx.restore();
-            
-            // Pulse center
-            const time = Date.now() / 1000;
-            const alpha = 0.1 + Math.sin(time * 3) * 0.05;
-            ctx.fillStyle = `rgba(${color}, ${alpha})`; // Dynamic color fill
-            ctx.beginPath(); ctx.arc(centerX, centerY, 3, 0, Math.PI*2); ctx.fill();
-        }
-
-        async function executeFlash() {
-            if (state !== 'IDLE') return;
-            
-            document.getElementById('system-message').classList.add('hidden');
-            hideMiniStatus();
-            
-            uShape = null; uSat = null; uColor = null; uDir = null;
-
-            if (!appData.currentUser) { showUserMenu(); return; }
-            
-            const payloadId = appData.currentUser;
-            document.getElementById('sync-vis-container').style.opacity = '0'; 
-            
-            showMiniStatus("ESTABLISHING UPLINK...");
-            
-            try {
-                const result = await getGameRoundFunc({ userId: payloadId });
-                const { sessionSalt } = result.data;
-
-                // SECURE LOCAL GENERATION (BLIND AUTH)
-                currentManifest = {
-                    targetShape: SHAPES[Math.floor(Math.random() * SHAPES.length)],
-                    satShape: SHAPES[Math.floor(Math.random() * SHAPES.length)],
-                    satColorIdx: Math.floor(Math.random() * L2_COLORS.length),
-                    satDirIdx: Math.floor(Math.random() * 8),
-                    salt: sessionSalt
-                };
-
-            } catch (error) {
-                console.error("Server Link Failed", error);
-                triggerSystemMessage("SERVER LINK LOST", "alert");
-                hideMiniStatus();
-                return; 
-            }
-
-            state = 'FLASHING'; isTimedOut = false; hideMiniStatus();
-            document.getElementById('system-message').classList.add('hidden'); 
-            
-            const u = appData.users[appData.currentUser];
-            
-            lastFlashRadius = minDim * 0.35;
-            const angle = currentManifest.satDirIdx * Math.PI * 0.25;
-            const satX = centerX + Math.cos(angle) * lastFlashRadius; 
-            const satY = centerY + Math.sin(angle) * lastFlashRadius;
-            
-            activeDistractors = [];
-            const count = 12; const step = (Math.PI * 2) / count;
-            for (let i = 0; i < count; i++) {
-                const a = i * step;
-                if (Math.abs(Math.atan2(Math.sin(a - angle), Math.cos(a - angle))) > 0.6) {
-                    activeDistractors.push({
-                        x: centerX + Math.cos(a) * lastFlashRadius + (Math.random()-0.5)*20,
-                        y: centerY + Math.sin(a) * lastFlashRadius + (Math.random()-0.5)*20,
-                        shape: SHAPES[Math.floor(Math.random() * SHAPES.length)]
-                    });
-                }
-            }
-
-            AudioSys.playGame('flash'); 
-            let startTime = null;
-            let staticPlayed = false;
-
-            function animate(now) {
-                if (!startTime) startTime = now;
-                const elapsed = now - startTime;
-
-                if (elapsed < u.speed) {
-                    // PHASE 1: SHOW SHAPES
-                    ctx.clearRect(0,0,canvas.width,canvas.height);
-                    
-                    // Render "Ghost" Echoes in background
-                    drawEchoes();
-
-                    activeDistractors.forEach(d => drawShape(d.shape, d.x, d.y, minDim * 0.05, '#334155'));
-                    drawShape(currentManifest.targetShape, centerX, centerY, minDim * 0.06, '#fff');
-                    drawShape(currentManifest.satShape, satX, satY, minDim * 0.05, u.level2 ? L2_COLORS[currentManifest.satColorIdx] : '#8b5cf6');
-                    animFrameId = requestAnimationFrame(animate);
-
-                } else if (elapsed < u.speed + 60) { 
-                    // PHASE 2: STATIC BURST (Retina Scrub)
-                    if(!staticPlayed) { AudioSys.playGame('static'); staticPlayed = true; }
-                    drawStatic(0.15); // Light static
-                    animFrameId = requestAnimationFrame(animate);
-
-                } else { 
-                    // PHASE 3: QUESTION
-                    state = 'QUESTIONING'; inputLocked = false; startQuestionLoop(); 
-                }
-            }
-            animFrameId = requestAnimationFrame(animate);
-        }
-
-        function startQuestionLoop() {
-            askTask('CENTER', SHAPES);
-            function loop(now) {
-                // Apply Screen Shake if needed
-                if(screenShake > 0.5) {
-                    ctx.save();
-                    const dx = (Math.random() - 0.5) * screenShake;
-                    const dy = (Math.random() - 0.5) * screenShake;
-                    ctx.translate(dx, dy);
-                    ctx.globalCompositeOperation = "lighter";
-                    screenShake *= 0.9; // Decay
-                }
-
-                if (state === 'QUESTIONING') {
-                    if (!questionTimerStart) questionTimerStart = now;
-                    const elapsed = now - questionTimerStart;
-                    const remaining = QUESTION_TIMEOUT_MS - elapsed;
-                    if (remaining <= 0) {
-                        if(!isTimedOut) { isTimedOut = true; triggerSystemMessage("NEURAL LINK SEVERED (TIMEOUT)", "alert"); uShape = null; finalizeTrial(); }
-                        if(screenShake > 0.5) ctx.restore(); // Safety restore
-                        return; 
-                    }
-                    if (remaining < 5000) {
-                        if (now - lastTickTime > 1000) { AudioSys.playGame('timer'); lastTickTime = now; }
-                    }
-                    
-                    ctx.clearRect(0,0,canvas.width,canvas.height); 
-                    
-                    // Render "Ghost" Echoes
-                    drawEchoes();
-
-                    // Timer Bar
-                    const timePct = Math.max(0, remaining / QUESTION_TIMEOUT_MS);
-                    const barColor = timePct < 0.2 ? '#ef4444' : (timePct < 0.5 ? '#f59e0b' : '#0ea5e9');
-                    ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fillRect(0, 0, canvas.width, 6); 
-                    ctx.fillStyle = barColor; ctx.shadowColor = barColor; ctx.shadowBlur = 10;
-                    ctx.fillRect(0, 0, canvas.width * timePct, 6); ctx.shadowBlur = 0;
-                    
-                    let title = "", sub = "";
-                    if(currentTask === 'CENTER') { title = "CORE ID"; sub = "SELECT CENTER SHAPE"; }
-                    else if(currentTask === 'SATELLITE') { title = "PERIPHERAL ID"; sub = "SELECT SATELLITE SHAPE"; }
-                    else if(currentTask === 'COLOR') { title = "SPECTRUM ID"; sub = "MATCH SATELLITE COLOR"; }
-                    else { title = "VECTOR ID"; sub = "INDICATE ORIGIN (NUMPAD OR ARROWS)"; }
-                    
-                    ctx.textAlign = "center"; ctx.fillStyle = "#fff";
-                    ctx.font = `900 ${minDim * 0.07}px 'Inter', system-ui`; ctx.fillText(title, centerX, centerY - minDim * 0.15);
-                    ctx.fillStyle = "#0ea5e9"; ctx.font = `700 ${minDim * 0.03}px monospace`; ctx.fillText(sub, centerX, centerY - minDim * 0.08);
-                    
-                    selectionBoxes = [];
-                    if (currentTask === 'DIRECTION') {
-                        const layoutRadius = minDim * 0.3; const btnSize = minDim * 0.07;
-                        DIR_MAP.forEach(dir => {
-                            const x = centerX + Math.cos(dir.angle) * layoutRadius;
-                            const y = centerY + Math.sin(dir.angle) * layoutRadius;
-                            const isSelected = (dir.id === lastSelectionIndex);
-                            ctx.beginPath();
-                            if (isSelected) { ctx.shadowBlur = 20; ctx.shadowColor = "rgba(14, 165, 233, 0.8)"; ctx.fillStyle = "rgba(14, 165, 233, 0.4)"; } 
-                            else { ctx.shadowBlur = 0; ctx.fillStyle = "rgba(255, 255, 255, 0.05)"; }
-                            ctx.strokeStyle = isSelected ? "var(--accent)" : "#334155"; ctx.lineWidth = 3;
-                            ctx.arc(x, y, btnSize, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.shadowBlur = 0;
-                            ctx.fillStyle = isSelected ? "#fff" : "#64748b"; ctx.font = `800 ${minDim * 0.05}px monospace`;
-                            ctx.textBaseline = "middle"; ctx.fillText(dir.label, x, y); ctx.textBaseline = "alphabetic";
-                            selectionBoxes.push({ key: dir.id, val: dir.id, x1: x - btnSize, x2: x + btnSize, y1: y - btnSize, y2: y + btnSize, cx: x, cy: y });
-                        });
-                    } else {
-                        const items = currentTask === 'CENTER' ? SHAPES : (currentTask === 'SATELLITE' ? SHAPES : L2_COLORS);        
-                        const rowWidth = canvas.width * 0.85; const spacing = rowWidth / (items.length - 1); const startX = (canvas.width - rowWidth) / 2;
-                        items.forEach((item, i) => {
-                            const x = startX + (i * spacing), y = centerY + 60;
-                            const isSelected = (i === lastSelectionIndex);
-                            if (isSelected) { ctx.save(); ctx.shadowBlur = 20; ctx.shadowColor = "rgba(14, 165, 233, 0.8)"; ctx.fillStyle = "rgba(14, 165, 233, 0.2)"; ctx.beginPath(); ctx.arc(x, y, minDim * 0.08, 0, Math.PI*2); ctx.fill(); ctx.restore(); }
-                            if (currentTask === 'COLOR') { ctx.fillStyle = item; ctx.beginPath(); ctx.arc(x, y, minDim * 0.06, 0, Math.PI*2); ctx.fill(); }
-                            else { drawShape(item, x, y, minDim * 0.05, '#fff'); }
-                            selectionBoxes.push({ key: item, val: i, x1: x - spacing/2, x2: x + spacing/2, y1: y - 100, y2: y + 100, cx: x, cy: y });
-
-                            if (!('ontouchstart' in window)) {
-                                ctx.fillStyle = "rgba(255,255,255,0.3)";
-                                ctx.font = `600 ${minDim * 0.025}px monospace`;
-                                ctx.fillText(`[${i+1}]`, x, y + minDim * 0.09);
-                            }
-                        });
-                    }
-                    
-                    // --- PARTICLE RENDERER ---
-                    for (let i = particles.length - 1; i >= 0; i--) {
-                        const p = particles[i];
-                        p.x += p.vx;
-                        p.y += p.vy;
-                        p.life -= 0.03;
-                        p.size *= 0.95; 
-
-                        if (p.life <= 0) {
-                            particles.splice(i, 1);
-                        } else {
-                            ctx.globalCompositeOperation = 'lighter'; 
-                            ctx.fillStyle = p.color;
-                            ctx.globalAlpha = p.life;
-                            ctx.beginPath();
-                            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                            ctx.fill();
-                            ctx.globalAlpha = 1.0;
-                            ctx.globalCompositeOperation = 'source-over';
-                        }
-                    }
-
-                    for (let i = ripples.length - 1; i >= 0; i--) {
-                        const r = ripples[i]; r.radius += 5; r.opacity -= 0.05;
-                        ctx.beginPath(); ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2); ctx.strokeStyle = `rgba(255, 255, 255, ${r.opacity})`; ctx.stroke();
-                        if (r.opacity <= 0) ripples.splice(i, 1);
-                    }
-                    animFrameId = requestAnimationFrame(loop);
-                } else if (state === 'IDLE') {
-                    // IDLE LOOP
-                    ctx.clearRect(0,0,canvas.width,canvas.height);
-                    
-                    // Render "Ghost" Echoes in IDLE too
-                    drawEchoes();
-                    drawReticle();
-                    
-                    // Render leftover particles
-                    for (let i = particles.length - 1; i >= 0; i--) {
-                        const p = particles[i]; p.x += p.vx; p.y += p.vy; p.life -= 0.03; p.size *= 0.95;
-                        if (p.life <= 0) particles.splice(i, 1);
-                        else {
-                            ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = p.color; ctx.globalAlpha = p.life;
-                            ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
-                            ctx.globalAlpha = 1.0; ctx.globalCompositeOperation = 'source-over';
-                        }
-                    }
-
-                    animFrameId = requestAnimationFrame(loop);
-                }
-
-                if(screenShake > 0.5) ctx.restore(); // Restore context after shake
-            }
-            animFrameId = requestAnimationFrame(loop);
-        }
-
-        function askTask(type, items) { 
-            currentTask = type; 
-            questionTimerStart = Date.now(); 
-        }
-        
-        function processHit(hit) {
-            lastSelectionIndex = hit.val; inputLocked = true; AudioSys.playUI('lock');
-            
-            spawnParticles(hit.cx, hit.cy, 'var(--accent)'); 
-
-            setTimeout(() => { 
-                inputLocked = false; lastSelectionIndex = -1;
-                const u = appData.users[appData.currentUser];
-                if (currentTask === 'CENTER') { uShape = hit.key; askTask('SATELLITE', SHAPES); }
-                else if (currentTask === 'SATELLITE') {
-                    uSat = hit.key;
-                    if (u.level2) askTask('COLOR', L2_COLORS); else if (u.level3) askTask('DIRECTION', null); else finalizeTrial();
-                } 
-                else if (currentTask === 'COLOR') { uColor = hit.val; if (u.level3) askTask('DIRECTION', null); else finalizeTrial(); }
-                else if (currentTask === 'DIRECTION') { uDir = hit.val; finalizeTrial(); }
-            }, 320);
-        }
-
-        async function finalizeTrial() {
-            const u = appData.users[appData.currentUser];
-            state = 'IDLE'; 
-            hideMiniStatus();
-            
-            const prevTier = u.level3 ? "T3" : (u.level2 ? "T2" : "T1");
-
-            document.getElementById('msg-title').innerText = "VALIDATING...";
-            document.getElementById('main-overlay').classList.remove('hidden');
-
-            try {
-                const result = await submitRoundFunc({
-                    userId: appData.currentUser,
-                    manifest: currentManifest, 
-                    answer: {
-                        uShape: uShape,
-                        uSat: uSat,
-                        uColor: (uColor !== null) ? uColor : undefined,
-                        uDir: (uDir !== null) ? uDir : undefined
-                    },
-                    speed: u.speed
-                });
-
-                const serverData = result.data;
-                const correct = serverData.correct;
-                const prevSpeed = u.speed;
-
-                if (correct) {
-                    sessionZone++; AudioSys.playGame('success');
-                    u.streak = Math.max(0, u.streak) + 1;
-                    document.getElementById('msg-title').innerText = "SYNC STABLE";
-                    document.getElementById('msg-title').style.color = "#10b981";
-                    document.getElementById('msg-body').innerText = `RATING: ${serverData.newScore}`;
-
-                    if (serverData.newTier && serverData.newTier !== prevTier) {
-                        u.level2 = (serverData.newTier === 'T2' || serverData.newTier === 'T3');
-                        u.level3 = (serverData.newTier === 'T3');
-                        document.getElementById('mode-indicator').innerText = serverData.newTier;
-                        triggerSystemMessage(`PROMOTION: ${serverData.newTier} UNLOCKED`, "upgrade");
-                    }
-
-                    // --- ADD ECHOES ---
-                    const angle = currentManifest.satDirIdx * Math.PI * 0.25;
-                    const satX = centerX + Math.cos(angle) * lastFlashRadius; 
-                    const satY = centerY + Math.sin(angle) * lastFlashRadius;
-
-                    // Add current shapes to persistent "echo" array
-                    backgroundEchoes.push({ type: currentManifest.targetShape, x: centerX, y: centerY, size: minDim * 0.06, color: '#fff' });
-                    backgroundEchoes.push({ type: currentManifest.satShape, x: satX, y: satY, size: minDim * 0.05, color: u.level2 ? L2_COLORS[currentManifest.satColorIdx] : '#8b5cf6' });
-                    
-                    // Keep echo buffer manageable (Max 20 shapes)
-                    if(backgroundEchoes.length > 20) backgroundEchoes.splice(0, 2);
-
-
-                    // --- ADAPTIVE HEAT LOGIC ---
-                    const reactionTime = Date.now() - questionTimerStart; 
-                    const heatMultiplier = Math.max(0.1, reactionTime / 3000); 
-
-                    if (u.streak > 1) {
-                        if (heatMultiplier < 0.5) {
-                            u.speed = Math.max(16, u.speed * 0.85); 
-                            showMiniStatus(">>> VELOCITY SURGE <<<");
-                            screenShake = 5; 
-                        } 
-                        else {
-                            u.speed = Math.max(16, u.speed * 0.95); 
-                        }
-                    }
-
-                } else {
-                    // FAIL STATE - PURGE ECHOES
-                    screenShake = 15; 
-                    sessionZone = 0; AudioSys.playGame('fail');
-                    u.streak = Math.min(0, u.streak) - 1; u.speed = Math.min(1000, u.speed + 80); 
-                    document.getElementById('msg-title').innerText = (isTimedOut || serverData.reason === "TEMPORAL_ANOMALY") ? "SYNC TIMEOUT" : "SYNC LOST";
-                    document.getElementById('msg-title').style.color = "#ef4444";
-                    document.getElementById('msg-body').innerText = `RATING DROPPED`;
-                    
-                    backgroundEchoes = []; // CLEAR VISUAL NOISE ON FAIL
-                }
-
-                // Update Visual Bar
-                const maxLatency = 1000;
-                const oldPct = Math.max(0, Math.min(100, ((maxLatency - prevSpeed) / maxLatency) * 100));
-                const newPct = Math.max(0, Math.min(100, ((maxLatency - u.speed) / maxLatency) * 100));
-                const barVis = document.getElementById('sync-vis-container');
-                const barFill = document.getElementById('sync-bar-fill');
-                const pctText = document.getElementById('sync-percentage');
-                barVis.style.opacity = '1';
-                const themeColor = correct ? 'var(--success)' : 'var(--fail)';
-                barFill.style.background = themeColor; barFill.style.boxShadow = `0 0 15px ${themeColor}`; pctText.style.color = themeColor;
-                barFill.style.transition = 'none'; barFill.style.width = `${oldPct}%`; pctText.innerText = `${Math.round(oldPct)}%`;
-                setTimeout(() => { barFill.style.transition = 'width 0.6s cubic-bezier(0.22, 1, 0.36, 1)'; barFill.style.width = `${newPct}%`; pctText.innerText = `${Math.round(newPct)}%`; }, 50);
-
-                u.history.push(Math.round(u.speed));
-                u.resultsHistory.push({ correct, date: new Date().toISOString().split('T')[0] });
-                
-                save(); updateUI();
-
-            } catch (e) {
-                console.error("Validation Error", e);
-                document.getElementById('msg-title').innerText = "NETWORK ERROR";
-            }
-
-            setTimeout(() => document.getElementById('start-btn').classList.remove('locked-btn'), 500);
-        }
-
-        async function showLeaderboard() {
-            AudioSys.playUI('click');
-            hideOverlays(); document.getElementById('leaderboard-overlay').classList.remove('hidden');
-            const list = document.getElementById('lb-list'); list.innerHTML = "";
-            document.getElementById('lb-loading').style.display = 'block';
-            try {
-                const q = query(collection(db, "leaderboard"), orderBy("score", "desc"), limit(20));
-                const querySnapshot = await getDocs(q);
-                document.getElementById('lb-loading').style.display = 'none';
-                let rank = 1;
-                querySnapshot.forEach((doc) => {
-                    const data = doc.data();
-                    const acc = data.accuracy !== undefined ? Math.round(data.accuracy) + "%" : "--";
-                    const isSecure = data.pin ? "🔒" : "";
-                    const row = document.createElement('div'); row.className = 'lb-row';
-                    row.innerHTML = `<div class="lb-rank">${rank++}</div><div class="lb-name"><span class="lb-tier">${data.tier}</span>${data.name} <span style="font-size:0.7em">${isSecure}</span></div><div class="lb-right"><span class="lb-score">${data.score.toLocaleString()}</span><div class="lb-sub"><span class="lb-stat peak">⚡${Math.round(data.speed)}ms</span> <span class="lb-stat acc">🎯${acc}</span></div></div>`;
-                    list.appendChild(row);
-                });
-            } catch (e) { console.error(e); }
-        }
-
-        function showAnalytics() {
-            AudioSys.playUI('click');
-            hideOverlays(); document.getElementById('analytics-overlay').classList.remove('hidden');
-            const u = appData.users[appData.currentUser];
-            const cv = document.getElementById('chart-canvas'), cx = cv.getContext('2d');
-            cv.width = cv.offsetWidth * 2; cv.height = cv.offsetHeight * 2;
-            cx.strokeStyle = "#0ea5e9"; cx.lineWidth = 4; cx.beginPath();
-            const data = u.history.slice(-30);
-            data.forEach((v, i) => {
-                const x = (i / (data.length - 1 || 1)) * cv.width;
-                const y = cv.height - (v / 1000 * cv.height);
-                if (i === 0) cx.moveTo(x,y); else cx.lineTo(x,y);
-            });
-            cx.stroke();
-            const acc = Math.round((u.resultsHistory.filter(r => r.correct).length / u.resultsHistory.length * 100)) || 0;
-            document.getElementById('stat-peak').innerText = `${Math.round(Math.min(...u.history))}ms`;
-            document.getElementById('stat-acc-total').innerText = `${acc}%`;
-            document.getElementById('stat-uptime').innerText = (u.totalTimeMs / 3600000).toFixed(1) + 'h';
-            document.getElementById('stat-grade').innerText = acc > 90 ? "S" : (acc > 75 ? "A" : "B");
-            
-            // --- NEW: Security Button Injection ---
-            const secZone = document.getElementById('security-zone');
-            secZone.innerHTML = '';
-            if(!u.pin) {
-                const btn = document.createElement('button');
-                btn.className = "action-btn secure-btn";
-                btn.style.fontSize = "0.7rem";
-                btn.style.padding = "12px";
-                btn.innerHTML = "🛡️ LOCK ACCOUNT (ADD PIN)";
-                btn.onclick = handleSetPin;
-                secZone.appendChild(btn);
-            }
-        }
-
-        function showUserMenu() {
-            AudioSys.playUI('click');
-            if(realtimeUnsubscribe) { realtimeUnsubscribe(); realtimeUnsubscribe = null; }
-            hideOverlays(); document.getElementById('user-overlay').classList.remove('hidden');
-            const list = document.getElementById('user-list'); list.innerHTML = '';
-            Object.keys(appData.users).forEach(name => {
-                const btn = document.createElement('div'); btn.className = 'a-card';
-                btn.style.marginBottom = '8px'; btn.style.cursor = 'pointer';
-                const s = appData.users[name].score ? Math.floor(appData.users[name].score) : 0;
-                btn.innerHTML = `<span class="l">${name}</span><span class="v" style="color:var(--gold)">${s} Rating</span>`;
-                btn.onclick = () => { 
-                    appData.currentUser = name; 
-                    sessionZone = appData.users[name].sessionZone || 0; 
-                    checkDailyStreak(); updateUI(); hideOverlays(); 
-                    document.getElementById('main-overlay').classList.remove('hidden');
-                    initRealtimeSync(name);
-                };
-                list.appendChild(btn);
-            });
-        }
-
-        async function handleNewLinkAttempt() {
-            const input = document.getElementById('new-agent-name');
-            const btn = document.getElementById('btn-create-link');
-            const n = input.value.trim().toUpperCase();
-            if (!n) return;
-            btn.innerText = "SCANNING GRID...";
-            try {
-                const docSnap = await getDoc(doc(db, "leaderboard", n));
-                if (docSnap.exists()) {
-                    const cloudData = docSnap.data();
-                    let authenticated = true;
-                    if (cloudData.pin) {
-                        const enteredPin = await requestPin("RECOVERY MODE", `AGENT ${n} DETECTED. ENTER KEY.`);
-                        authenticated = (enteredPin === cloudData.pin);
-                    }
-                    if (authenticated) {
-                        appData.users[n] = { 
-                            speed: cloudData.speed || 450, score: cloudData.score || 0, peakScore: cloudData.score || 0, 
-                            streak: 0, history: [cloudData.speed || 450], resultsHistory: [], 
-                            level2: cloudData.tier === 'T2' || cloudData.tier === 'T3', level3: cloudData.tier === 'T3', 
-                            totalTimeMs: 0, dailyStreak: 0, lastPlayDate: null, pin: cloudData.pin,
-                            sessionZone: 0
-                        };
-                        appData.currentUser = n; save(); updateUI(); hideOverlays();
-                        document.getElementById('main-overlay').classList.remove('hidden');
-                        initRealtimeSync(n); return; 
-                    }
-                }
-            } catch (e) { console.error(e); }
-            
-            let pin = await requestPin("SECURE NEW LINK", "SET OPTIONAL 4-DIGIT PIN (OR LEAVE BLANK)");
-            appData.users[n] = { 
-                speed: 450, score: 0, peakScore: 0, streak: 0, history: [450], resultsHistory: [], 
-                level2: false, level3: false, totalTimeMs: 0, dailyStreak: 0, lastPlayDate: null, pin: pin || null,
-                sessionZone: 0
-            };
-            appData.currentUser = n; save(); updateUI(); hideOverlays(); 
-            document.getElementById('main-overlay').classList.remove('hidden');
-            initRealtimeSync(n); 
-        }
-
-        function load() {
-            const saved = localStorage.getItem('neuroElite_v3_secure');
-            const sig = localStorage.getItem('neuroElite_sig');
-            if (saved && sig) {
-                const check = generateHash(JSON.parse(saved));
-                if (check === sig) { appData = JSON.parse(saved); } 
-            }
-            if (appData.currentUser) { 
-                sessionZone = appData.users[appData.currentUser].sessionZone || 0;
-                checkDailyStreak(); updateUI(); initRealtimeSync(appData.currentUser); 
-            } 
-            else showUserMenu();
-        }
-
-        function resize() { 
-            canvas.width = window.innerWidth; canvas.height = window.innerHeight - 96; 
-            centerX = canvas.width / 2; centerY = canvas.height / 2; minDim = Math.min(canvas.width, canvas.height); 
-        }
-
-        function handleInput(e) {
-            if (state !== 'QUESTIONING' || inputLocked) return;
-            const rect = canvas.getBoundingClientRect();
-            const clientX = e.clientX || (e.touches && e.touches.length > 0 ? e.touches[0].clientX : 0);
-            const clientY = e.clientY || (e.touches && e.touches.length > 0 ? e.touches[0].clientY : 0);
-            const x = clientX - rect.left; const y = clientY - rect.top;
-            ripples.push({ x: x, y: y, radius: 0, opacity: 1 });
-            const hit = selectionBoxes.find(b => x > b.x1 && x < b.x2 && y > b.y1 && y < b.y2);
-            if (hit) processHit(hit);
-        }
-
-        window.addEventListener('keydown', (e) => {
-            if (state !== 'QUESTIONING' || inputLocked) return;
-            const key = e.key;
-            if (currentTask !== 'DIRECTION' && /^[1-9]$/.test(key)) {
-                const idx = parseInt(key) - 1;
-                const hit = selectionBoxes.find(b => b.val === idx); 
-                if(hit) processHit(hit);
-            }
-            if (currentTask === 'DIRECTION') {
-                let dirId = -1;
-                const dir = DIR_MAP.find(d => d.label === key);
-                if(dir) dirId = dir.id;
-                
-                if (key === "ArrowRight") dirId = 0; 
-                else if (key === "ArrowDown") dirId = 2; 
-                else if (key === "ArrowLeft") dirId = 4; 
-                else if (key === "ArrowUp") dirId = 6; 
-
-                if (dirId !== -1) {
-                    const hit = selectionBoxes.find(b => b.val === dirId);
-                    if(hit) processHit(hit);
-                }
-            }
-        });
-
-        document.getElementById('start-btn').onclick = () => { AudioSys.init(); AudioSys.playUI('click'); hideOverlays(); setTimeout(executeFlash, 300); };
-        document.getElementById('btn-audio').onclick = () => {
-             const enabled = AudioSys.toggle();
-             const btn = document.getElementById('btn-audio');
-             const lbl = document.getElementById('audio-icon');
-             if(enabled) { btn.classList.add('active'); lbl.innerText = "ON"; AudioSys.playUI('click'); } 
-             else { btn.classList.remove('active'); lbl.innerText = "OFF"; }
-        };
-
-        document.getElementById('btn-user').onclick = showUserMenu;
-        document.getElementById('btn-analytics').onclick = showAnalytics;
-        document.getElementById('btn-analytics-2').onclick = showAnalytics;
-        document.getElementById('btn-leaderboard').onclick = showLeaderboard;
-        document.getElementById('btn-lb-main').onclick = showLeaderboard;
-        
-        document.getElementById('btn-close-analytics').onclick = () => { hideOverlays(); document.getElementById('main-overlay').classList.remove('hidden'); };
-        document.getElementById('btn-close-lb').onclick = () => { hideOverlays(); document.getElementById('main-overlay').classList.remove('hidden'); };
-        document.getElementById('btn-close-user').onclick = () => { if(appData.currentUser) { hideOverlays(); document.getElementById('main-overlay').classList.remove('hidden'); } };
-        
-        document.getElementById('btn-pin-confirm').onclick = () => { if (pinResolver) { pinResolver(document.getElementById('pin-input-field').value); pinResolver = null; } hideOverlays(); };
-        document.getElementById('btn-pin-cancel').onclick = () => { if (pinResolver) { pinResolver(null); pinResolver = null; } hideOverlays(); };
-        document.getElementById('btn-new-user').onclick = () => {
-             hideOverlays(); document.getElementById('new-link-overlay').classList.remove('hidden');
-        };
-        document.getElementById('btn-create-link').onclick = handleNewLinkAttempt;
-        document.getElementById('btn-cancel-link').onclick = () => { hideOverlays(); showUserMenu(); };
-        
-        document.getElementById('btn-unlink-account').onclick = initiateDeLink;
-        document.getElementById('btn-confirm-yes').onclick = confirmDeLink;
-        document.getElementById('btn-confirm-no').onclick = () => { hideOverlays(); document.getElementById('analytics-overlay').classList.remove('hidden'); };
-
-        window.addEventListener('resize', resize);
-        canvas.addEventListener('mousedown', handleInput);
-        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleInput(e); }, {passive: false});
-        resize(); load();
-        startQuestionLoop(); 
-        setInterval(() => { if (appData.currentUser) appData.users[appData.currentUser].totalTimeMs += 2000; }, 2000);
-
-    })();
-</script>
+    </script>
 </body>
+
 </html>
