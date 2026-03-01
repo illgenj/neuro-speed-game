@@ -338,20 +338,22 @@ function updateModeUI() {
         els.startBtn.classList.remove('locked-btn');
     } else if (currentMode === 'DAILY_CASUAL') {
         els.modeDesc.innerHTML = "1 ATTEMPT PER DAY<br>BASE DIFFICULTY, NORMAL RULES";
-        if (u && u.dailyCasualDate === today && !game.session.isSessionActive()) {
+        const isContinuing = game.session.isSessionActive() && game.currentMode === currentMode;
+        if (u && u.dailyCasualDate === today && !isContinuing) {
             els.startBtn.innerText = "ATTEMPT USED";
             els.startBtn.classList.add('locked-btn');
         } else {
-            els.startBtn.innerText = game.session.isSessionActive() ? "CONTINUE RUN" : "INITIATE DAILY CASUAL";
+            els.startBtn.innerText = isContinuing ? "CONTINUE RUN" : "INITIATE DAILY CASUAL";
             els.startBtn.classList.remove('locked-btn');
         }
     } else if (currentMode === 'DAILY_DEATH') {
         els.modeDesc.innerHTML = "1 ATTEMPT PER DAY<br>BASE DIFFICULTY, 1 STRIKE = OVER";
-        if (u && u.dailyDeathDate === today && !game.session.isSessionActive()) {
+        const isContinuing = game.session.isSessionActive() && game.currentMode === currentMode;
+        if (u && u.dailyDeathDate === today && !isContinuing) {
             els.startBtn.innerText = "ATTEMPT USED";
             els.startBtn.classList.add('locked-btn');
         } else {
-            els.startBtn.innerText = game.session.isSessionActive() ? "CONTINUE RUN" : "INITIATE DAILY DEATH";
+            els.startBtn.innerText = isContinuing ? "CONTINUE RUN" : "INITIATE DAILY DEATH";
             els.startBtn.classList.remove('locked-btn');
         }
     }
@@ -733,6 +735,20 @@ function confirmDeLink() {
 // ─── EVENT WIRING ───────────────────────────────────────────
 els.startBtn.onclick = () => {
     if (els.startBtn.classList.contains('locked-btn')) return;
+
+    if (game.currentMode !== currentMode) {
+        if (game.session.isSessionActive()) {
+            const summary = game.session.endSession();
+            if (summary && appData.currentUser) {
+                const u = appData.users[appData.currentUser];
+                if (!u.sessions) u.sessions = [];
+                u.sessions.push(summary);
+                u.totalSessions = (u.totalSessions || 0) + 1;
+                u.trainingBlock = Math.floor(u.totalSessions / 7);
+                saveAppData(appData);
+            }
+        }
+    }
 
     // Check if daily run is valid
     if (currentMode !== 'STANDARD') {
