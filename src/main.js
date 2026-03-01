@@ -22,6 +22,8 @@ import { L2_COLORS, TRAINING_BLOCK_SIZE, APP_VERSION } from './config/constants.
 let appData = { users: {}, currentUser: null };
 let pinResolver = null;
 let lastDisplayedScore = 0;
+let currentMode = 'STANDARD';
+let lbCurrentMode = 'STANDARD';
 
 // ─── MICRO-INTERACTION HELPERS ──────────────────────────────
 function animateClass(el, className, duration = 500) {
@@ -90,6 +92,13 @@ const els = {
     pinInputField: document.getElementById('pin-input-field'),
     confirmOverlay: document.getElementById('confirm-overlay'),
     securityZone: document.getElementById('security-zone'),
+    modeTabs: document.querySelectorAll('#mode-selection .analytics-tab'),
+    modeDesc: document.getElementById('mode-desc'),
+    btnAbortRun: document.getElementById('btn-abort-run'),
+    abortConfirmOverlay: document.getElementById('abort-confirm-overlay'),
+    btnAbortYes: document.getElementById('btn-abort-yes'),
+    btnAbortNo: document.getElementById('btn-abort-no'),
+    lbTabs: document.querySelectorAll('#leaderboard-overlay .analytics-tab'),
 };
 
 // ─── UI CALLBACKS FOR ENGINE ────────────────────────────────
@@ -196,10 +205,20 @@ const uiCallbacks = {
     },
     onSessionEnd(summary) {
         game.audio.stopAmbient();
-        // Check session-based achievements
         if (appData.currentUser) {
             const u = appData.users[appData.currentUser];
-            runAchievementCheck(u, { sessionSummary: summary });
+            if (currentMode === 'STANDARD') {
+                runAchievementCheck(u, { sessionSummary: summary });
+            } else if (currentMode === 'DAILY_CASUAL' || currentMode === 'DAILY_DEATH') {
+                // Return to mode selection
+                game.currentMode = 'STANDARD'; // reset
+                currentMode = 'STANDARD';
+                els.btnAbortRun.classList.add('hidden');
+                updateModeUI();
+                els.mainOverlay.classList.remove('hidden');
+                uiCallbacks.triggerSystemMessage("DAILY RUN SYNCHRONIZED", "info");
+                return; // skip standard session summary
+            }
         }
         showSessionSummary(summary);
     },
@@ -297,6 +316,38 @@ function updateUI() {
         els.zoneFill.classList.remove('zone-gold');
         els.zoneLabel.innerText = `SYNC STREAK: ${game.sessionZone}`;
         canvas.classList.remove('singularity-glow');
+    }
+}
+
+function updateModeUI() {
+    els.modeTabs.forEach(tab => tab.classList.remove('active'));
+    document.querySelector(`#mode-selection [data-mode="${currentMode}"]`)?.classList.add('active');
+
+    const u = appData.currentUser ? appData.users[appData.currentUser] : null;
+    const today = new Date().toISOString().split('T')[0];
+
+    if (currentMode === 'STANDARD') {
+        els.modeDesc.innerHTML = "CUMULATIVE PROGRESSION<br>GLOBAL RANKINGS";
+        els.startBtn.innerText = "INITIATE SEQUENCE";
+        els.startBtn.classList.remove('locked-btn');
+    } else if (currentMode === 'DAILY_CASUAL') {
+        els.modeDesc.innerHTML = "1 ATTEMPT PER DAY<br>BASE DIFFICULTY, NORMAL RULES";
+        if (u && u.dailyCasualDate === today) {
+            els.startBtn.innerText = "ATTEMPT USED";
+            els.startBtn.classList.add('locked-btn');
+        } else {
+            els.startBtn.innerText = "INITIATE DAILY CASUAL";
+            els.startBtn.classList.remove('locked-btn');
+        }
+    } else if (currentMode === 'DAILY_DEATH') {
+        els.modeDesc.innerHTML = "1 ATTEMPT PER DAY<br>BASE DIFFICULTY, 1 STRIKE = OVER";
+        if (u && u.dailyDeathDate === today) {
+            els.startBtn.innerText = "ATTEMPT USED";
+            els.startBtn.classList.add('locked-btn');
+        } else {
+            els.startBtn.innerText = "INITIATE DAILY DEATH";
+            els.startBtn.classList.remove('locked-btn');
+        }
     }
 }
 
@@ -406,12 +457,25 @@ async function showLeaderboard() {
     game.audio.playUI('click');
     hideOverlays();
     els.leaderboardOverlay.classList.remove('hidden');
+
+    // Update active tab UI
+    els.lbTabs.forEach(tab => tab.classList.remove('active'));
+    if (lbCurrentMode === 'STANDARD') document.getElementById('lb-tab-standard').classList.add('active');
+    else if (lbCurrentMode === 'DAILY_CASUAL') document.getElementById('lb-tab-casual').classList.add('active');
+    else if (lbCurrentMode === 'DAILY_DEATH') document.getElementById('lb-tab-death').classList.add('active');
+
     els.lbList.innerHTML = '';
     els.lbLoading.style.display = 'block';
 
     try {
-        const results = await fetchLeaderboard(20);
+        const results = await fetchLeaderboard(20, lbCurrentMode);
         els.lbLoading.style.display = 'none';
+
+        if (results.length === 0) {
+            els.lbList.innerHTML = '<div style="text-align:center; padding: 20px; opacity: 0.6">NO DETECTIONS FOUND</div>';
+            return;
+        }
+
         results.forEach(data => {
             const acc = data.accuracy !== undefined ? Math.round(data.accuracy) + '%' : '--';
             const isSecure = data.pin ? '🔒' : '';
@@ -430,27 +494,36 @@ async function showLeaderboard() {
                 else dateStr = ts.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             }
 
+            let statBlock = `<span class="lb-stat peak">⚡${Math.round(data.speed || 450)}ms</span><span class="lb-stat acc">🎯${acc}</span>`;
+            if (lbCurrentMode !== 'STANDARD') {
+                statBlock = `<span class="lb-stat rnds">RNDS: ${data.roundsPlayed || 0}</span>`;
+            }
+
             const row = document.createElement('div');
             row.className = `lb-row${isYou ? ' is-you' : ''}`;
             row.innerHTML = `
                 <div class="lb-rank-badge ${rankClass}">${data.rank}</div>
                 <div class="lb-name">
-                    <span class="lb-tier">${data.tier}</span>${data.name}
+                    <span class="lb-tier">${data.tier || 'T1'}</span>${data.name}
                     ${isSecure ? `<span style="font-size:0.7em">${isSecure}</span>` : ''}
                     ${isYou ? '<span class="lb-you-badge">YOU</span>' : ''}
                 </div>
                 <div class="lb-right">
                     <span class="lb-score">${data.score.toLocaleString()}</span>
                     <div class="lb-sub">
-                        <span class="lb-stat peak">⚡${Math.round(data.speed)}ms</span>
-                        <span class="lb-stat acc">🎯${acc}</span>
+                        ${statBlock}
                     </div>
                     ${dateStr ? `<div class="lb-date">${dateStr}</div>` : ''}
                 </div>
             `;
             els.lbList.appendChild(row);
         });
-    } catch (e) { console.error(e); }
+    } catch (e) {
+        console.error(e);
+        els.lbLoading.style.display = 'block';
+        els.lbLoading.innerText = `ERR: ${e.message.substring(0, 60)}`;
+        els.lbLoading.style.color = '#ef4444';
+    }
 }
 
 function showAnalytics() {
@@ -653,14 +726,54 @@ function confirmDeLink() {
 
 // ─── EVENT WIRING ───────────────────────────────────────────
 els.startBtn.onclick = () => {
+    if (els.startBtn.classList.contains('locked-btn')) return;
+
+    // Check if daily run is valid
+    if (currentMode !== 'STANDARD') {
+        const u = appData.users[appData.currentUser];
+        const today = new Date().toISOString().split('T')[0];
+        if (currentMode === 'DAILY_CASUAL' && u.dailyCasualDate === today) return;
+        if (currentMode === 'DAILY_DEATH' && u.dailyDeathDate === today) return;
+    }
+
     game.audio.init();
     game.audio.playUI('click');
     hideOverlays();
     Toast.clearAll();
+
+    if (currentMode !== 'STANDARD') {
+        els.btnAbortRun.classList.remove('hidden');
+    }
+
+    game.currentMode = currentMode;
     // Start ambient drone when beginning a round
     game.audio.startAmbient();
     setTimeout(() => game.executeFlash(), 300);
 };
+
+els.modeTabs.forEach(tab => {
+    tab.onclick = () => {
+        currentMode = tab.dataset.mode;
+        updateModeUI();
+    };
+});
+
+els.btnAbortRun.onclick = () => {
+    els.abortConfirmOverlay.classList.remove('hidden');
+};
+
+els.btnAbortNo.onclick = () => {
+    els.abortConfirmOverlay.classList.add('hidden');
+};
+
+els.btnAbortYes.onclick = () => {
+    els.abortConfirmOverlay.classList.add('hidden');
+    game.abortRun();
+};
+
+document.getElementById('lb-tab-standard').onclick = () => { lbCurrentMode = 'STANDARD'; showLeaderboard(); };
+document.getElementById('lb-tab-casual').onclick = () => { lbCurrentMode = 'DAILY_CASUAL'; showLeaderboard(); };
+document.getElementById('lb-tab-death').onclick = () => { lbCurrentMode = 'DAILY_DEATH'; showLeaderboard(); };
 
 document.getElementById('btn-audio').onclick = () => {
     const enabled = game.audio.toggle();
@@ -765,7 +878,55 @@ canvas.addEventListener('touchend', (e) => {
     touchStartY = null;
 }, { passive: false });
 
-window.addEventListener('keydown', (e) => game.handleKeyInput(e.key));
+window.addEventListener('keydown', (e) => {
+    // If the user is typing in an input, don't trigger global shortcuts
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        if (e.key === 'Enter') {
+            if (e.target.id === 'new-agent-name') document.getElementById('btn-create-link').click();
+            if (e.target.id === 'pin-input-field') document.getElementById('btn-pin-confirm').click();
+        }
+        return;
+    }
+
+    // Global "Initiate" shortcuts (Enter/Space)
+    if (e.key === 'Enter' || e.key === ' ') {
+        // 1. Main Overlay: Initiate Sequence
+        if (!els.mainOverlay.classList.contains('hidden')) {
+            if (!els.startBtn.classList.contains('locked-btn')) {
+                e.preventDefault();
+                els.startBtn.click();
+                return;
+            }
+        }
+
+        // 2. Session Summary: Continue Training
+        const summaryOverlay = document.getElementById('session-summary-overlay');
+        if (summaryOverlay && !summaryOverlay.classList.contains('hidden')) {
+            e.preventDefault();
+            document.getElementById('btn-continue-training').click();
+            return;
+        }
+
+        // 3. Booster Reminder: Start Booster
+        const boosterOverlay = document.getElementById('booster-reminder-overlay');
+        if (boosterOverlay && !boosterOverlay.classList.contains('hidden')) {
+            e.preventDefault();
+            document.getElementById('btn-start-booster').click();
+            return;
+        }
+
+        // 4. Onboarding: Next
+        const onboardingOverlay = document.getElementById('onboarding-overlay');
+        if (onboardingOverlay && !onboardingOverlay.classList.contains('hidden')) {
+            e.preventDefault();
+            document.getElementById('onboarding-next-btn').click();
+            return;
+        }
+    }
+
+    // Pass to game engine for active trial inputs
+    game.handleKeyInput(e.key);
+});
 
 // ─── ACHIEVEMENTS ───────────────────────────────────────────
 function runAchievementCheck(user, context) {
@@ -918,7 +1079,25 @@ async function checkForUpdates(manual = false) {
             const data = await res.json();
             if (data.version && data.version !== APP_VERSION) {
                 uiCallbacks.triggerSystemMessage("UPDATE DETECTED. REFRESHING...", "upgrade");
-                setTimeout(() => window.location.reload(true), 1500);
+                setTimeout(async () => {
+                    if ('serviceWorker' in navigator) {
+                        try {
+                            const regs = await navigator.serviceWorker.getRegistrations();
+                            for (let r of regs) await r.unregister();
+                        } catch (e) {
+                            console.warn('SW unregister failed', e);
+                        }
+                    }
+                    if ('caches' in window) {
+                        try {
+                            const names = await caches.keys();
+                            for (let n of names) await caches.delete(n);
+                        } catch (e) {
+                            console.warn('Cache delete failed', e);
+                        }
+                    }
+                    window.location.reload(true);
+                }, 1500);
             } else if (manual) {
                 uiCallbacks.triggerSystemMessage("SYSTEM UP TO DATE", "info");
             }
@@ -948,6 +1127,7 @@ function boot() {
         checkDailyStreak(appData.users[appData.currentUser]);
         saveAppData(appData);
         updateUI();
+        updateModeUI();
         initRealtimeSync(appData.currentUser);
         // Check for booster reminder
         setTimeout(() => checkBooster(), 1000);

@@ -1,5 +1,5 @@
 // ─── Leaderboard Service ────────────────────────────────────
-import { getDb, collection, doc, query, orderBy, limit, getDocs, onSnapshot } from './firebase.js';
+import { getDb, collection, doc, query, orderBy, limit, getDocs, onSnapshot, getLeaderboard } from './firebase.js';
 
 let realtimeUnsubscribe = null;
 
@@ -22,16 +22,15 @@ export function unsubscribe() {
     }
 }
 
-export async function fetchLeaderboard(count = 20) {
+export async function fetchLeaderboard(count = 20, mode = 'STANDARD') {
     const db = getDb();
     if (!db) return [];
 
-    const q = query(collection(db, "leaderboard"), orderBy("score", "desc"), limit(count));
-    const snapshot = await getDocs(q);
-    const results = [];
-    let rank = 1;
-    snapshot.forEach((doc) => {
-        results.push({ rank: rank++, ...doc.data() });
-    });
-    return results;
+    try {
+        const result = await getLeaderboard({ count, mode });
+        return result.data.results || [];
+    } catch (e) {
+        console.error("fetchLeaderboard failed", e);
+        throw e;
+    }
 }

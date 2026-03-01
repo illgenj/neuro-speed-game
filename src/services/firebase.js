@@ -5,7 +5,7 @@ import { getFunctions, httpsCallable } from 'firebase/functions';
 import { FIREBASE_CONFIG } from '../config/constants.js';
 
 let app, db, functions;
-let getGameRoundFunc, submitRoundFunc, setPinFunc, syncProfileFunc;
+let getGameRoundFunc, submitRoundFunc, setPinFunc, syncProfileFunc, getLeaderboardFunc;
 
 export function initFirebase() {
     try {
@@ -16,6 +16,7 @@ export function initFirebase() {
         submitRoundFunc = httpsCallable(functions, 'submitRound');
         setPinFunc = httpsCallable(functions, 'setPin');
         syncProfileFunc = httpsCallable(functions, 'syncProfile');
+        getLeaderboardFunc = httpsCallable(functions, 'getLeaderboard');
         console.log("Neuro-Link Secured (Blind Auth).");
         return true;
     } catch (e) {
@@ -29,6 +30,7 @@ export function getGameRound(data) { return getGameRoundFunc(data); }
 export function submitRound(data) { return submitRoundFunc(data); }
 export function setPin(data) { return setPinFunc(data); }
 export function syncProfile(data) { return syncProfileFunc(data); }
+export function getLeaderboard(data) { return getLeaderboardFunc(data); }
 
 // Re-export Firestore utilities needed by other modules
 export { collection, doc, setDoc, query, orderBy, limit, getDocs, getDoc, onSnapshot };

@@ -22,7 +22,7 @@ export const ACHIEVEMENT_DEFS = [
     {
         id: 'velocity_demon',
         name: 'VELOCITY DEMON',
-        desc: '5 correct answers under 1.5s each',
+        desc: '10 correct answers under 1.0s each',
         icon: '🔥',
         category: 'speed',
         color: '#f97316',
@@ -179,8 +179,8 @@ export function checkAchievements(user, context = {}) {
                 break;
             case 'velocity_demon': {
                 const hist = user.resultsHistory || [];
-                const recent = hist.slice(-5);
-                earned = recent.length >= 5 && recent.every(r => r.correct);
+                const recent = hist.slice(-10);
+                earned = recent.length >= 10 && recent.every(r => r.correct && r.reactionMs < 1000);
                 break;
             }
 

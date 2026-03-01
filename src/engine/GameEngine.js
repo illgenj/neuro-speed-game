@@ -45,6 +45,10 @@ export class GameEngine {
         return this.appData.currentUser;
     }
 
+    get mode() {
+        return this.currentMode || 'STANDARD';
+    }
+
     get user() {
         return this.appData.users[this.appData.currentUser];
     }
@@ -61,6 +65,27 @@ export class GameEngine {
                 this.difficulty = new DifficultyManager(this.user.difficulty);
             }
         }
+    }
+
+    abortRun() {
+        this.state = 'IDLE';
+        this.isValidating = false;
+        this.inputLocked = false;
+        this.sessionZone = 0;
+        this.renderer.clear();
+        this.renderer.drawNeuralNetwork(this.sessionZone);
+        this.renderer.drawEchoes();
+        this.renderer.drawReticle(this.sessionZone);
+
+        // Force the daily attempt dates locally so they cannot refresh to try again
+        if (this.user && this.mode !== 'STANDARD') {
+            const today = new Date().toISOString().split('T')[0];
+            if (this.mode === 'DAILY_CASUAL') this.user.dailyCasualDate = today;
+            if (this.mode === 'DAILY_DEATH') this.user.dailyDeathDate = today;
+        }
+
+        const summary = this.session.endSession();
+        if (this.ui.onSessionEnd) this.ui.onSessionEnd(summary);
     }
 
     // ─── FLASH SEQUENCE ─────────────────────────────────────
@@ -97,6 +122,10 @@ export class GameEngine {
                 satShape: serverData.satShape,
                 satColorIdx: serverData.satColorIdx,
                 satDirIdx: serverData.satDirIdx,
+                targetColorIdx: serverData.targetColorIdx,
+                sat2Shape: serverData.sat2Shape,
+                sat2DirIdx: serverData.sat2DirIdx,
+                targetSolid: serverData.targetSolid,
                 salt: serverData.sessionSalt,
             };
         } catch (error) {
@@ -114,6 +143,11 @@ export class GameEngine {
         this.ui.hideSystemMessage();
 
         const u = this.user;
+
+        if (this.mode !== 'STANDARD' && (!this.session.isSessionActive() || this.session.getSessionStats().roundsPlayed === 0)) {
+            // Start from scratch every time
+            this.difficulty = new DifficultyManager();
+        }
 
         this.isAnomalyRound = false;
         if (u.level2 && Math.random() < 0.1) {
@@ -379,28 +413,42 @@ export class GameEngine {
                 userId: this.currentUser,
                 manifest: this.currentManifest,
                 answer: answerPayload,
-                speed: u.speed,
+                speed: this.mode === 'STANDARD' ? u.speed : this.difficulty.getFlashDuration(),
+                mode: this.mode
             });
 
             const serverData = result.data;
             this.isValidating = false;
 
             // Sync server properties immediately to eliminate race conditions
-            if (serverData.newScore !== undefined) {
-                u.score = serverData.newScore;
-                if (!u.peakScore) u.peakScore = 0;
-                if (u.score > u.peakScore) u.peakScore = u.score;
+            if (this.mode === 'STANDARD') {
+                if (serverData.newScore !== undefined) {
+                    u.score = serverData.newScore;
+                    if (!u.peakScore) u.peakScore = 0;
+                    if (u.score > u.peakScore) u.peakScore = u.score;
+                }
+                if (serverData.newTier) u.tier = serverData.newTier;
+            } else {
+                if (this.mode === 'DAILY_CASUAL') {
+                    u.dailyCasualScore = serverData.newScore || 0;
+                    u.dailyCasualDate = new Date().toISOString().split('T')[0];
+                }
+                if (this.mode === 'DAILY_DEATH') {
+                    u.dailyDeathScore = serverData.newScore || 0;
+                    u.dailyDeathDate = new Date().toISOString().split('T')[0];
+                }
             }
-            if (serverData.newTier) u.tier = serverData.newTier;
 
             const correct = serverData.correct;
-            const prevSpeed = u.speed;
+            const prevSpeed = this.mode === 'STANDARD' ? u.speed : this.difficulty.getFlashDuration();
 
             // Adapt difficulty using DifficultyManager
             this.difficulty.adapt(correct, reactionTimeMs);
 
-            // Sync speed for cloud (keep server happy)
-            u.speed = this.difficulty.getFlashDuration();
+            // Sync speed for cloud (keep server happy) only on standard
+            if (this.mode === 'STANDARD') {
+                u.speed = this.difficulty.getFlashDuration();
+            }
 
             // Record round in session
             this.session.recordRound({
@@ -462,18 +510,28 @@ export class GameEngine {
 
                 const reason = (this.isTimedOut || serverData.reason === "TEMPORAL_ANOMALY") ? "SYNC TIMEOUT" : "SYNC LOST";
                 this.ui.showResult(false, null, reason);
+
+                if (this.mode === 'DAILY_DEATH') {
+                    // Death mode ends immediately on fail
+                    setTimeout(() => {
+                        this.abortRun();
+                    }, 500);
+                    return;
+                }
             }
 
             // Update sync bar
             this.ui.updateSyncBar(prevSpeed, u.speed, correct);
 
             // Save difficulty state
-            u.difficulty = this.difficulty.getState();
+            if (this.mode === 'STANDARD') {
+                u.difficulty = this.difficulty.getState();
+            }
 
             u.history.push(Math.round(u.speed));
             if (u.history.length > 500) u.history.shift();
 
-            u.resultsHistory.push({ correct, date: new Date().toISOString().split('T')[0] });
+            u.resultsHistory.push({ correct, reactionMs: reactionTimeMs, date: new Date().toISOString().split('T')[0] });
             if (u.resultsHistory.length > 500) u.resultsHistory.shift();
 
             saveAppData(this.appData);

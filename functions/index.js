@@ -60,6 +60,7 @@ exports.submitRound = functions.https.onCall(async (request, context) => {
     const userId = data.userId;
     const clientAns = data.answer;
     const clientSpeed = data.speed;
+    const mode = data.mode || 'STANDARD';
 
     const sessionRef = db.collection('private_sessions').doc(userId);
     const sessionSnap = await sessionRef.get();
@@ -114,6 +115,25 @@ exports.submitRound = functions.https.onCall(async (request, context) => {
     let newTier = userData.tier || "T1";
     let speed = clientSpeed;
 
+    const isDaily = mode !== 'STANDARD';
+    let dailyScore = 0;
+    let dailyRounds = 0;
+    let dailyRef = null;
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    if (isDaily) {
+        const collName = mode === 'DAILY_CASUAL' ? 'leaderboard_daily_casual' : 'leaderboard_daily_death';
+        dailyRef = db.collection(collName).doc(userId);
+        const dailySnap = await dailyRef.get();
+        if (dailySnap.exists) {
+            const dData = dailySnap.data();
+            if (dData.date === todayStr) {
+                dailyScore = dData.score || 0;
+                dailyRounds = dData.roundsPlayed || 0;
+            }
+        }
+    }
+
     if (isCorrect) {
         const performanceVal = Math.max(100, (1500 - speed));
 
@@ -124,42 +144,64 @@ exports.submitRound = functions.https.onCall(async (request, context) => {
         else if (isT3) tierMult = 2.5;
         else if (isT2) tierMult = 1.5;
 
-        const rawPoints = performanceVal * tierMult * 10;
-        const delta = (rawPoints - newScore) * 0.15;
-        if (delta > 0) newScore += delta;
+        // Scoring differences
+        if (isDaily) {
+            const roundPoints = performanceVal * tierMult;
+            dailyScore += roundPoints;
+            dailyRounds++;
+        } else {
+            const rawPoints = performanceVal * tierMult * 10;
+            const delta = (rawPoints - newScore) * 0.15;
+            if (delta > 0) newScore += delta;
+        }
 
         // Progression Requirements
-        if (speed <= 400 && !isT2) newTier = "T2";
-        else if (speed <= 300 && isT2 && !isT3) newTier = "T3";
-        else if (speed <= 250 && isT3 && !isT4) newTier = "T4";
-        else if (speed <= 200 && isT4 && !isT5) newTier = "T5";
-        else if (speed <= 150 && isT5 && !isT6) newTier = "T6";
+        if (speed <= 350 && !isT2) newTier = "T2";
+        else if (speed <= 250 && isT2 && !isT3) newTier = "T3";
+        else if (speed <= 180 && isT3 && !isT4) newTier = "T4";
+        else if (speed <= 120 && isT4 && !isT5) newTier = "T5";
+        else if (speed <= 80 && isT5 && !isT6) newTier = "T6";
 
     } else {
-        newScore = Math.max(0, newScore - (newScore * 0.20));
+        if (!isDaily) {
+            newScore = Math.max(0, newScore - (newScore * 0.20));
+        }
 
         // Tier Demotion limits
-        if (userData.tier === 'T6' && speed > 200) newTier = 'T5';
-        else if (userData.tier === 'T5' && speed > 250) newTier = 'T4';
-        else if (userData.tier === 'T4' && speed > 300) newTier = 'T3';
-        else if (userData.tier === 'T3' && speed > 500) newTier = 'T2';
+        if (userData.tier === 'T6' && speed > 100) newTier = 'T5';
+        else if (userData.tier === 'T5' && speed > 150) newTier = 'T4';
+        else if (userData.tier === 'T4' && speed > 220) newTier = 'T3';
+        else if (userData.tier === 'T3' && speed > 300) newTier = 'T2';
     }
 
-    await userRef.set({
-        name: userId,
-        score: Math.floor(newScore),
-        tier: newTier,
-        speed: speed,
-        pin: userData.pin || null,
-        sessionZone: userData.sessionZone || 0,
-        timestamp: admin.firestore.FieldValue.serverTimestamp()
-    }, { merge: true });
+    if (!isDaily) {
+        await userRef.set({
+            name: userId,
+            score: Math.floor(newScore),
+            tier: newTier,
+            speed: speed,
+            pin: userData.pin || null,
+            sessionZone: userData.sessionZone || 0,
+            timestamp: admin.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+    } else {
+        await dailyRef.set({
+            name: userId,
+            score: Math.floor(dailyScore),
+            tier: newTier,
+            speed: speed,
+            roundsPlayed: dailyRounds,
+            pin: userData.pin || null,
+            date: todayStr,
+            timestamp: admin.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+    }
 
     await sessionRef.update({ active: false });
 
     return {
         correct: isCorrect,
-        newScore: Math.floor(newScore),
+        newScore: Math.floor(isDaily ? dailyScore : newScore),
         newTier: newTier
     };
 });
@@ -185,4 +227,53 @@ exports.syncProfile = functions.https.onCall(async (request, context) => {
     // Merge the full profile data sent from the client
     await userRef.set(profileData, { merge: true });
     return { success: true };
+});
+
+exports.getLeaderboard = functions.https.onCall(async (request, context) => {
+    const data = request.data || request;
+    const mode = data.mode || 'STANDARD';
+    const count = data.count || 20;
+
+    let collectionName = "leaderboard";
+    if (mode === 'DAILY_CASUAL') collectionName = "leaderboard_daily_casual";
+    if (mode === 'DAILY_DEATH') collectionName = "leaderboard_daily_death";
+
+    const fetchCount = mode === 'STANDARD' ? count : 50;
+
+    try {
+        const snapshot = await db.collection(collectionName)
+            .orderBy("score", "desc")
+            .limit(fetchCount)
+            .get();
+
+        const results = [];
+        const now = Date.now();
+
+        snapshot.forEach((doc) => {
+            const d = doc.data();
+
+            if (mode !== 'STANDARD') {
+                if (d.timestamp) {
+                    const ts = d.timestamp.toDate ? d.timestamp.toDate() : new Date(d.timestamp);
+                    if (now - ts.getTime() > 24 * 60 * 60 * 1000) return;
+                }
+            }
+            // We strip timestamps to send over network smoothly, keeping only strings/numbers
+            const cleanData = { ...d };
+            if (cleanData.timestamp) cleanData.timestamp = cleanData.timestamp.toDate ? cleanData.timestamp.toDate().toISOString() : new Date(cleanData.timestamp).toISOString();
+            results.push(cleanData);
+        });
+
+        results.sort((a, b) => b.score - a.score);
+
+        let rank = 1;
+        return {
+            results: results.slice(0, count).map(r => ({
+                rank: rank++, ...r
+            }))
+        };
+    } catch (e) {
+        console.error("Leaderboard Fetch Error:", e);
+        throw new functions.https.HttpsError('internal', 'Unable to fetch grid data');
+    }
 });

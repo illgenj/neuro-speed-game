@@ -1,4 +1,4 @@
-const CACHE_NAME = 'neuro-speed-v8.1.0';
+const CACHE_NAME = 'neuro-speed-v9.0.1';
 const ASSETS = [
     '/',
     '/index.html',

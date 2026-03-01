@@ -7,7 +7,7 @@
     <meta name="description"
         content="Neuro-Speed Elite — A science-inspired adaptive cognitive speed training game. Train your brain with rapid visual processing challenges.">
     <meta name="theme-color" content="#0a0f1e">
-    <meta property="og:title" content="Neuro-Speed Elite 8.0">
+    <meta property="og:title" content="Neuro-Speed Elite 9.0">
     <meta property="og:description" content="Science-inspired adaptive cognitive speed training game.">
     <meta property="og:type" content="website">
 
@@ -15,7 +15,7 @@
     <link rel="icon" type="image/svg+xml" href="/icon.svg">
     <link rel="apple-touch-icon" href="/icon.svg">
 
-    <title>Neuro-Speed Elite 8.0</title>
+    <title>Neuro-Speed Elite 9.0</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -44,6 +44,10 @@
                 <span class="label">AUDIO</span>
                 <span id="audio-icon" class="val">OFF</span>
             </div>
+            <div class="stat hidden" id="btn-abort-run" style="border: 1px solid var(--fail); cursor: pointer;">
+                <span class="label" style="color: var(--fail)">ABORT</span>
+                <span class="val" style="color: var(--fail)">RUN</span>
+            </div>
             <div class="stat" id="btn-leaderboard">
                 <span class="label">GRID</span>
                 <span id="mode-indicator" class="val">T1</span>
@@ -61,7 +65,7 @@
         <div id="sync-indicator"></div>
         <div id="version-display"
             style="position: absolute; bottom: 10px; right: 10px; font-size: 0.6rem; color: var(--text-muted); opacity: 0.5; font-family: var(--font-mono); z-index: 100;">
-            v8.1.0</div>
+            v9.0.1</div>
 
         <div id="system-message" class="hidden">SYSTEM READY</div>
         <div id="mini-status"><span class="blink">●</span> ESTABLISHING UPLINK...</div>
@@ -76,6 +80,17 @@
                 <div id="sync-bar-bg" style="margin-top: 8px;">
                     <div id="sync-bar-fill"></div>
                 </div>
+            </div>
+
+            <!-- Mode Selection -->
+            <div id="mode-selection" class="analytics-tabs" style="margin-top: 15px; margin-bottom: 20px;">
+                <button class="analytics-tab active" data-mode="STANDARD" style="font-size: 0.65rem;">STANDARD</button>
+                <button class="analytics-tab" data-mode="DAILY_CASUAL" style="font-size: 0.65rem;">DAILY CASUAL</button>
+                <button class="analytics-tab" data-mode="DAILY_DEATH" style="font-size: 0.65rem;">DAILY DEATH</button>
+            </div>
+            <div id="mode-desc"
+                style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 15px; text-align: center; height: 30px;">
+                CUMULATIVE PROGRESSION<br>GLOBAL RANKINGS
             </div>
 
             <button id="start-btn" class="action-btn">INITIATE SEQUENCE</button>
@@ -163,6 +178,13 @@
             <button class="action-btn secondary-btn" id="btn-close-lb"
                 style="margin-top: 0; margin-bottom: 15px;">RETURN</button>
             <h2 style="color: var(--gold); letter-spacing: 2px;">GLOBAL GRID</h2>
+
+            <div class="analytics-tabs" style="margin-bottom: 15px;">
+                <button class="analytics-tab active" id="lb-tab-standard">STANDARD</button>
+                <button class="analytics-tab" id="lb-tab-casual">CASUAL</button>
+                <button class="analytics-tab" id="lb-tab-death">DEATH</button>
+            </div>
+
             <div id="lb-loading" style="font-size: 0.8rem; opacity: 0.6; padding: 20px;">CONNECTING TO CORE...</div>
             <div id="lb-list" style="margin-bottom: 20px;"></div>
         </div>
@@ -218,6 +240,13 @@
             <p style="margin-bottom:20px; font-size: 0.9rem;">LOCAL NEURAL PATTERN WILL BE DELETED.</p>
             <button id="btn-confirm-yes" class="action-btn danger-btn">CONFIRM DELETION</button>
             <button id="btn-confirm-no" class="action-btn secondary-btn">CANCEL</button>
+        </div>
+
+        <div id="abort-confirm-overlay" class="overlay hidden">
+            <h3 style="color: var(--fail); letter-spacing: 2px;">ABORT DAILY RUN?</h3>
+            <p style="margin-bottom:20px; font-size: 0.9rem;">Your current run will be terminated and scored at 0.</p>
+            <button id="btn-abort-yes" class="action-btn danger-btn">CONFIRM ABORT</button>
+            <button id="btn-abort-no" class="action-btn secondary-btn">CANCEL</button>
         </div>
 
         <!-- Onboarding -->

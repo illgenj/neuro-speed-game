@@ -42,6 +42,12 @@ export function createLocalUser(name, cloudData = null, pin = null) {
             trainingBlock: cloudData.trainingBlock || 0,
             lastBoosterDate: cloudData.lastBoosterDate || null,
             achievements: cloudData.achievements || [],
+            dailyCasualDate: cloudData.dailyCasualDate || null,
+            dailyDeathDate: cloudData.dailyDeathDate || null,
+            dailyCasualStreak: cloudData.dailyCasualStreak || 0,
+            dailyDeathStreak: cloudData.dailyDeathStreak || 0,
+            dailyCasualScore: cloudData.dailyCasualScore || 0,
+            dailyDeathScore: cloudData.dailyDeathScore || 0,
         };
     }
     return {
@@ -68,11 +74,19 @@ export function createLocalUser(name, cloudData = null, pin = null) {
         trainingBlock: 0,
         lastBoosterDate: null,
         achievements: [],
+        dailyCasualDate: null,
+        dailyDeathDate: null,
+        dailyCasualStreak: 0,
+        dailyDeathStreak: 0,
+        dailyCasualScore: 0,
+        dailyDeathScore: 0,
     };
 }
 
 export function checkDailyStreak(user) {
     const today = new Date().toISOString().split('T')[0];
+
+    // Main streak
     if (!user.lastPlayDate) {
         user.lastPlayDate = today;
         user.dailyStreak = 1;
@@ -81,6 +95,20 @@ export function checkDailyStreak(user) {
         if (diff >= 0.9 && diff < 2) user.dailyStreak++;
         else if (diff >= 2) user.dailyStreak = 1;
         user.lastPlayDate = today;
+    }
+
+    // Casual streak
+    if (user.dailyCasualDate !== today) {
+        const diffCasual = user.dailyCasualDate ? (new Date(today) - new Date(user.dailyCasualDate)) / 86400000 : 2;
+        if (diffCasual >= 2) user.dailyCasualStreak = 0;
+        // The streak increments when they actually play
+    }
+
+    // Death streak
+    if (user.dailyDeathDate !== today) {
+        const diffDeath = user.dailyDeathDate ? (new Date(today) - new Date(user.dailyDeathDate)) / 86400000 : 2;
+        if (diffDeath >= 2) user.dailyDeathStreak = 0;
+        // The streak increments when they actually play
     }
 }
 
