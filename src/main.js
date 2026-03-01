@@ -260,7 +260,14 @@ function updateUI() {
     els.speedVal.innerText = Math.round(u.speed) + 'ms';
     els.dailyStreakBadge.innerText = `🔥 ${u.dailyStreak || 0}`;
     if ((u.dailyStreak || 0) >= 3) animateClass(els.dailyStreakBadge, 'streak-fire', 600);
-    els.modeIndicator.innerText = u.level3 ? "T3" : (u.level2 ? "T2" : "T1");
+
+    // Tier Indicator Logic
+    if (u.level6) els.modeIndicator.innerText = "T6";
+    else if (u.level5) els.modeIndicator.innerText = "T5";
+    else if (u.level4) els.modeIndicator.innerText = "T4";
+    else if (u.level3) els.modeIndicator.innerText = "T3";
+    else if (u.level2) els.modeIndicator.innerText = "T2";
+    else els.modeIndicator.innerText = "T1";
 
     // Mark active stat
     const statAgent = document.getElementById('btn-analytics');
@@ -313,8 +320,14 @@ function initRealtimeSync(userId) {
         if (u) {
             u.score = cloudData.score || 0;
             u.speed = cloudData.speed;
-            u.level2 = (cloudData.tier === 'T2' || cloudData.tier === 'T3');
-            u.level3 = (cloudData.tier === 'T3');
+
+            const tr = cloudData.tier || 'T1';
+            u.level2 = ['T2', 'T3', 'T4', 'T5', 'T6'].includes(tr);
+            u.level3 = ['T3', 'T4', 'T5', 'T6'].includes(tr);
+            u.level4 = ['T4', 'T5', 'T6'].includes(tr);
+            u.level5 = ['T5', 'T6'].includes(tr);
+            u.level6 = (tr === 'T6');
+
             if (cloudData.pin && u.pin !== cloudData.pin) u.pin = cloudData.pin;
             saveAppData(appData);
             updateUI();

@@ -1,0 +1,1614 @@
+﻿
+big_logs.txt:4:2026-02-27T1
+7:51:40.595950Z I 
+submitround: 
+big_logs.txt:5:2026-02-27T1
+7:51:40.642298Z I 
+submitround: 
+big_logs.txt:6:2026-02-27T1
+7:51:40.649065Z D 
+submitround: 
+{"message":"Callable 
+request verification passed
+","verifications":{"app":"M
+ISSING","auth":"MISSING"}}
+big_logs.txt:10:2026-02-27T
+17:51:47.386234Z I 
+submitround: 
+big_logs.txt:11:2026-02-27T
+17:51:47.438766Z I 
+submitround: 
+big_logs.txt:12:2026-02-27T
+17:51:47.443372Z D 
+submitround: {"verification
+s":{"auth":"MISSING","app":
+"MISSING"},"message":"Calla
+ble request verification 
+passed"}
+big_logs.txt:16:2026-02-27T
+17:51:55.413312Z I 
+submitround: 
+big_logs.txt:17:2026-02-27T
+17:51:55.458961Z I 
+submitround: 
+big_logs.txt:18:2026-02-27T
+17:51:55.463773Z D 
+submitround: 
+{"message":"Callable 
+request verification passed
+","verifications":{"auth":"
+MISSING","app":"MISSING"}}
+big_logs.txt:22:2026-02-27T
+17:52:05.409521Z I 
+submitround: 
+big_logs.txt:23:2026-02-27T
+17:52:05.465537Z I 
+submitround: 
+big_logs.txt:24:2026-02-27T
+17:52:05.471864Z D 
+submitround: 
+{"message":"Callable 
+request verification passed
+","verifications":{"app":"M
+ISSING","auth":"MISSING"}}
+big_logs.txt:28:2026-02-27T
+17:52:11.899970Z I 
+submitround: 
+big_logs.txt:29:2026-02-27T
+17:52:11.954279Z I 
+submitround: 
+big_logs.txt:30:2026-02-27T
+17:52:11.960358Z D 
+submitround: {"verification
+s":{"app":"MISSING","auth":
+"MISSING"},"message":"Calla
+ble request verification 
+passed"}
+big_logs.txt:34:2026-02-27T
+17:52:19.389709Z I 
+submitround: 
+big_logs.txt:35:2026-02-27T
+17:52:19.439416Z I 
+submitround: 
+big_logs.txt:36:2026-02-27T
+17:52:19.443956Z D 
+submitround: 
+{"message":"Callable 
+request verification passed
+","verifications":{"app":"M
+ISSING","auth":"MISSING"}}
+big_logs.txt:40:2026-02-27T
+17:52:26.178988Z I 
+submitround: 
+big_logs.txt:41:2026-02-27T
+17:52:26.227872Z I 
+submitround: 
+big_logs.txt:42:2026-02-27T
+17:52:26.232925Z D 
+submitround: 
+{"message":"Callable 
+request verification passed
+","verifications":{"auth":"
+MISSING","app":"MISSING"}}
+big_logs.txt:46:2026-02-27T
+17:52:55.784393Z I 
+submitround: 
+big_logs.txt:47:2026-02-27T
+17:52:55.833232Z I 
+submitround: 
+big_logs.txt:48:2026-02-27T
+17:52:55.837756Z D 
+submitround: {"verification
+s":{"app":"MISSING","auth":
+"MISSING"},"message":"Calla
+ble request verification 
+passed"}
+big_logs.txt:52:2026-02-27T
+17:53:03.530543Z I 
+submitround: 
+big_logs.txt:53:2026-02-27T
+17:53:03.580225Z I 
+submitround: 
+big_logs.txt:54:2026-02-27T
+17:53:03.585892Z D 
+submitround: 
+{"message":"Callable 
+request verification passed
+","verifications":{"app":"M
+ISSING","auth":"MISSING"}}
+big_logs.txt:58:2026-02-27T
+17:53:20.983436Z I 
+submitround: 
+big_logs.txt:59:2026-02-27T
+17:53:21.032477Z I 
+submitround: 
+big_logs.txt:60:2026-02-27T
+17:53:21.036883Z D 
+submitround: 
+{"message":"Callable 
+request verification passed
+","verifications":{"app":"M
+ISSING","auth":"MISSING"}}
+big_logs.txt:64:2026-02-27T
+17:53:28.408037Z I 
+submitround: 
+big_logs.txt:65:2026-02-27T
+17:53:28.456261Z I 
+submitround: 
+big_logs.txt:66:2026-02-27T
+17:53:28.460524Z D 
+submitround: 
+{"message":"Callable 
+request verification passed
+","verifications":{"app":"M
+ISSING","auth":"MISSING"}}
+big_logs.txt:70:2026-02-27T
+17:53:36.149037Z I 
+submitround: 
+big_logs.txt:71:2026-02-27T
+17:53:36.197441Z I 
+submitround: 
+big_logs.txt:72:2026-02-27T
+17:53:36.201681Z D 
+submitround: 
+{"message":"Callable 
+request verification passed
+","verifications":{"app":"M
+ISSING","auth":"MISSING"}}
+big_logs.txt:76:2026-02-27T
+17:53:47.238715Z I 
+submitround: 
+big_logs.txt:77:2026-02-27T
+17:53:48.203143Z I 
+submitround: 
+big_logs.txt:78:2026-02-27T
+17:53:48.207442Z D 
+submitround: {"verification
+s":{"app":"MISSING","auth":
+"MISSING"},"message":"Calla
+ble request verification 
+passed"}
+big_logs.txt:82:2026-02-27T
+17:53:56.554410Z I 
+submitround: 
+big_logs.txt:83:2026-02-27T
+17:53:56.602520Z I 
+submitround: 
+big_logs.txt:84:2026-02-27T
+17:53:56.607722Z D 
+submitround: 
+{"message":"Callable 
+request verification passed
+","verifications":{"app":"M
+ISSING","auth":"MISSING"}}
+big_logs.txt:88:2026-02-27T
+17:54:04.103071Z I 
+submitround: 
+big_logs.txt:89:2026-02-27T
+17:54:04.149920Z I 
+submitround: 
+big_logs.txt:90:2026-02-27T
+17:54:04.154717Z D 
+submitround: {"verification
+s":{"app":"MISSING","auth":
+"MISSING"},"message":"Calla
+ble request verification 
+passed"}
+big_logs.txt:94:2026-02-27T
+17:54:10.818801Z I 
+submitround: 
+big_logs.txt:95:2026-02-27T
+17:54:10.866791Z I 
+submitround: 
+big_logs.txt:96:2026-02-27T
+17:54:10.870674Z D 
+submitround: {"verification
+s":{"app":"MISSING","auth":
+"MISSING"},"message":"Calla
+ble request verification 
+passed"}
+big_logs.txt:100:2026-02-27
+T17:54:17.353005Z I 
+submitround: 
+big_logs.txt:101:2026-02-27
+T17:54:17.412615Z I 
+submitround: 
+big_logs.txt:102:2026-02-27
+T17:54:17.417731Z D 
+submitround: {"verification
+s":{"app":"MISSING","auth":
+"MISSING"},"message":"Calla
+ble request verification 
+passed"}
+big_logs.txt:106:2026-02-27
+T17:54:23.476228Z I 
+submitround: 
+big_logs.txt:107:2026-02-27
+T17:54:23.525237Z I 
+submitround: 
+big_logs.txt:108:2026-02-27
+T17:54:23.531822Z D 
+submitround: 
+{"message":"Callable 
+request verification passed
+","verifications":{"app":"M
+ISSING","auth":"MISSING"}}
+big_logs.txt:112:2026-02-27
+T17:54:31.500745Z I 
+submitround: 
+big_logs.txt:113:2026-02-27
+T17:54:31.551455Z I 
+submitround: 
+big_logs.txt:114:2026-02-27
+T17:54:31.555814Z D 
+submitround: 
+{"message":"Callable 
+request verification passed
+","verifications":{"app":"M
+ISSING","auth":"MISSING"}}
+big_logs.txt:118:2026-02-27
+T17:54:38.214798Z I 
+submitround: 
+big_logs.txt:119:2026-02-27
+T17:54:38.262155Z I 
+submitround: 
+big_logs.txt:120:2026-02-27
+T17:54:38.266909Z D 
+submitround: {"verification
+s":{"app":"MISSING","auth":
+"MISSING"},"message":"Calla
+ble request verification 
+passed"}
+big_logs.txt:124:2026-02-27
+T17:54:44.156216Z I 
+submitround: 
+big_logs.txt:125:2026-02-27
+T17:54:44.206406Z I 
+submitround: 
+big_logs.txt:126:2026-02-27
+T17:54:44.211548Z D 
+submitround: {"verification
+s":{"app":"MISSING","auth":
+"MISSING"},"message":"Calla
+ble request verification 
+passed"}
+big_logs.txt:130:2026-02-27
+T17:54:48.873497Z I 
+submitround: 
+big_logs.txt:131:2026-02-27
+T17:54:48.878017Z D 
+submitround: 
+{"message":"Callable 
+request verification passed
+","verifications":{"app":"M
+ISSING","auth":"MISSING"}}
+big_logs.txt:135:2026-02-27
+T17:54:57.493741Z I 
+submitround: 
+big_logs.txt:136:2026-02-27
+T17:54:57.550973Z I 
+submitround: 
+big_logs.txt:137:2026-02-27
+T17:54:57.557191Z D 
+submitround: 
+{"message":"Callable 
+request verification passed
+","verifications":{"auth":"
+MISSING","app":"MISSING"}}
+big_logs.txt:141:2026-02-27
+T17:55:03.599628Z I 
+submitround: 
+big_logs.txt:142:2026-02-27
+T17:55:03.643970Z I 
+submitround: 
+big_logs.txt:143:2026-02-27
+T17:55:03.648764Z D 
+submitround: 
+{"message":"Callable 
+request verification passed
+","verifications":{"app":"M
+ISSING","auth":"MISSING"}}
+big_logs.txt:147:2026-02-27
+T17:55:15.028153Z I 
+submitround: 
+big_logs.txt:148:2026-02-27
+T17:55:15.083746Z I 
+submitround: 
+big_logs.txt:149:2026-02-27
+T17:55:15.087714Z D 
+submitround: 
+{"message":"Callable 
+request verification passed
+","verifications":{"app":"M
+ISSING","auth":"MISSING"}}
+big_logs.txt:155:2026-02-27
+T19:30:41.702233Z I 
+submitround: 
+big_logs.txt:156:2026-02-27
+T19:30:41.719832Z I 
+submitround: Starting new 
+instance. Reason: 
+AUTOSCALING - Instance 
+started due to configured 
+scaling factors (e.g. CPU 
+utilization, request 
+throughput, etc.) or no 
+existing capacity for 
+current traffic.
+big_logs.txt:157:2026-02-27
+T19:30:43.440749Z I 
+submitround: Default 
+STARTUP TCP probe 
+succeeded after 1 attempt 
+for container "worker" on 
+port 8080.
+big_logs.txt:158:2026-02-27
+T19:30:43.605599Z I 
+submitround: 
+big_logs.txt:159:2026-02-27
+T19:30:43.636909Z D 
+submitround: {"verification
+s":{"auth":"MISSING","app":
+"MISSING"},"message":"Calla
+ble request verification 
+passed"}
+big_logs.txt:163:2026-02-27
+T19:30:50.534621Z I 
+submitround: 
+big_logs.txt:164:2026-02-27
+T19:30:50.613224Z I 
+submitround: 
+big_logs.txt:165:2026-02-27
+T19:30:50.618792Z D 
+submitround: {"verification
+s":{"app":"MISSING","auth":
+"MISSING"},"message":"Calla
+ble request verification 
+passed"}
+big_logs.txt:169:2026-02-27
+T19:30:57.205744Z I 
+submitround: 
+big_logs.txt:170:2026-02-27
+T19:30:57.297582Z I 
+submitround: 
+big_logs.txt:171:2026-02-27
+T19:30:57.303131Z D 
+submitround: {"verification
+s":{"auth":"MISSING","app":
+"MISSING"},"message":"Calla
+ble request verification 
+passed"}
+big_logs.txt:175:2026-02-27
+T19:31:03.473997Z I 
+submitround: 
+big_logs.txt:176:2026-02-27
+T19:31:03.601762Z I 
+submitround: 
+big_logs.txt:177:2026-02-27
+T19:31:03.608490Z D 
+submitround: {"verification
+s":{"app":"MISSING","auth":
+"MISSING"},"message":"Calla
+ble request verification 
+passed"}
+big_logs.txt:181:2026-02-27
+T19:31:08.712244Z I 
+submitround: 
+big_logs.txt:182:2026-02-27
+T19:31:08.817389Z I 
+submitround: 
+big_logs.txt:183:2026-02-27
+T19:31:08.822578Z D 
+submitround: {"verification
+s":{"app":"MISSING","auth":
+"MISSING"},"message":"Calla
+ble request verification 
+passed"}
+big_logs.txt:186:2026-02-27
+T19:31:13.332588Z I 
+submitround: 
+big_logs.txt:187:2026-02-27
+T19:31:13.336954Z D 
+submitround: 
+{"message":"Callable 
+request verification passed
+","verifications":{"auth":"
+MISSING","app":"MISSING"}}
+big_logs.txt:191:2026-02-27
+T19:31:19.225436Z I 
+submitround: 
+big_logs.txt:192:2026-02-27
+T19:31:19.309113Z I 
+submitround: 
+big_logs.txt:193:2026-02-27
+T19:31:19.313975Z D 
+submitround: {"verification
+s":{"auth":"MISSING","app":
+"MISSING"},"message":"Calla
+ble request verification 
+passed"}
+big_logs.txt:197:2026-02-27
+T19:31:24.605580Z I 
+submitround: 
+big_logs.txt:198:2026-02-27
+T19:31:24.696376Z I 
+submitround: 
+big_logs.txt:199:2026-02-27
+T19:31:24.707097Z D 
+submitround: {"verification
+s":{"app":"MISSING","auth":
+"MISSING"},"message":"Calla
+ble request verification 
+passed"}
+big_logs.txt:203:2026-02-27
+T19:31:30.148489Z I 
+submitround: 
+big_logs.txt:204:2026-02-27
+T19:31:30.239827Z I 
+submitround: 
+big_logs.txt:205:2026-02-27
+T19:31:30.245162Z D 
+submitround: {"verification
+s":{"auth":"MISSING","app":
+"MISSING"},"message":"Calla
+ble request verification 
+passed"}
+big_logs.txt:208:2026-02-27
+T19:31:34.995841Z I 
+submitround: 
+big_logs.txt:209:2026-02-27
+T19:31:35.000900Z D 
+submitround: {"verification
+s":{"auth":"MISSING","app":
+"MISSING"},"message":"Calla
+ble request verification 
+passed"}
+big_logs.txt:213:2026-02-27
+T19:31:54.127359Z I 
+submitround: 
+big_logs.txt:214:2026-02-27
+T19:31:54.200487Z I 
+submitround: 
+big_logs.txt:215:2026-02-27
+T19:31:54.204585Z D 
+submitround: 
+{"message":"Callable 
+request verification passed
+","verifications":{"app":"M
+ISSING","auth":"MISSING"}}
+big_logs.txt:219:2026-02-27
+T19:32:06.276936Z I 
+submitround: 
+big_logs.txt:220:2026-02-27
+T19:32:06.364566Z I 
+submitround: 
+big_logs.txt:221:2026-02-27
+T19:32:06.370338Z D 
+submitround: 
+{"message":"Callable 
+request verification passed
+","verifications":{"auth":"
+MISSING","app":"MISSING"}}
+big_logs.txt:225:2026-02-27
+T19:32:14.370860Z I 
+submitround: 
+big_logs.txt:226:2026-02-27
+T19:32:14.443603Z I 
+submitround: 
+big_logs.txt:227:2026-02-27
+T19:32:14.449978Z D 
+submitround: 
+{"message":"Callable 
+request verification passed
+","verifications":{"app":"M
+ISSING","auth":"MISSING"}}
+big_logs.txt:231:2026-02-27
+T19:32:20.798760Z I 
+submitround: 
+big_logs.txt:232:2026-02-27
+T19:32:20.874758Z I 
+submitround: 
+big_logs.txt:233:2026-02-27
+T19:32:20.879994Z D 
+submitround: 
+{"message":"Callable 
+request verification passed
+","verifications":{"app":"M
+ISSING","auth":"MISSING"}}
+big_logs.txt:237:2026-02-27
+T19:32:25.835459Z I 
+submitround: 
+big_logs.txt:238:2026-02-27
+T19:32:25.841310Z D 
+submitround: {"verification
+s":{"app":"MISSING","auth":
+"MISSING"},"message":"Calla
+ble request verification 
+passed"}
+big_logs.txt:244:2026-02-28
+T00:33:59.912283Z I 
+submitround: 
+big_logs.txt:245:2026-02-28
+T00:33:59.941133Z I 
+submitround: Starting new 
+instance. Reason: 
+AUTOSCALING - Instance 
+started due to configured 
+scaling factors (e.g. CPU 
+utilization, request 
+throughput, etc.) or no 
+existing capacity for 
+current traffic.
+big_logs.txt:246:2026-02-28
+T00:34:01.899130Z I 
+submitround: Default 
+STARTUP TCP probe 
+succeeded after 1 attempt 
+for container "worker" on 
+port 8080.
+big_logs.txt:247:2026-02-28
+T00:34:02.017428Z I 
+submitround: 
+big_logs.txt:248:2026-02-28
+T00:34:02.046105Z D 
+submitround: 
+{"message":"Callable 
+request verification passed
+","verifications":{"app":"M
+ISSING","auth":"MISSING"}}
+big_logs.txt:252:2026-02-28
+T00:34:08.749633Z I 
+submitround: 
+big_logs.txt:253:2026-02-28
+T00:34:08.785611Z I 
+submitround: 
+big_logs.txt:254:2026-02-28
+T00:34:08.790980Z D 
+submitround: {"verification
+s":{"auth":"MISSING","app":
+"MISSING"},"message":"Calla
+ble request verification 
+passed"}
+big_logs.txt:258:2026-02-28
+T00:34:17.765382Z I 
+submitround: 
+big_logs.txt:259:2026-02-28
+T00:34:17.797487Z I 
+submitround: 
+big_logs.txt:260:2026-02-28
+T00:34:17.802698Z D 
+submitround: 
+{"message":"Callable 
+request verification passed
+","verifications":{"app":"M
+ISSING","auth":"MISSING"}}
+big_logs.txt:264:2026-02-28
+T00:34:25.033139Z I 
+submitround: 
+big_logs.txt:265:2026-02-28
+T00:34:25.074238Z I 
+submitround: 
+big_logs.txt:266:2026-02-28
+T00:34:25.079220Z D 
+submitround: {"verification
+s":{"auth":"MISSING","app":
+"MISSING"},"message":"Calla
+ble request verification 
+passed"}
+big_logs.txt:270:2026-02-28
+T00:34:35.280933Z I 
+submitround: 
+big_logs.txt:271:2026-02-28
+T00:34:35.314024Z I 
+submitround: 
+big_logs.txt:272:2026-02-28
+T00:34:35.319334Z D 
+submitround: {"verification
+s":{"auth":"MISSING","app":
+"MISSING"},"message":"Calla
+ble request verification 
+passed"}
+big_logs.txt:276:2026-02-28
+T00:34:43.346548Z I 
+submitround: 
+big_logs.txt:277:2026-02-28
+T00:34:43.378491Z I 
+submitround: 
+big_logs.txt:278:2026-02-28
+T00:34:43.383625Z D 
+submitround: 
+{"message":"Callable 
+request verification passed
+","verifications":{"app":"M
+ISSING","auth":"MISSING"}}
+big_logs.txt:287:2026-02-28
+T22:20:12.356636361Z N 
+submitRound: {"@type":"type
+.googleapis.com/google.clou
+d.audit.AuditLog","authenti
+cationInfo":{"principalEmai
+l":"illgenj@gmail.com","pri
+ncipalSubject":"user:illgen
+j@gmail.com","oauthInfo":{"
+oauthClientId":"56358433586
+9-fgrhgmd47bqnekij5i8b5pr03
+ho849e6.apps.googleusercont
+ent.com"}},"requestMetadata
+":{"callerIp":"2600:1702:2b
+a0:44d0:39be:320e:5448:75ce
+","callerSuppliedUserAgent"
+:"FirebaseCLI/15.6.0 agent-
+name/antigravity,gzip(gfe),
+gzip(gfe)","requestAttribut
+es":{"time":"2026-02-28T22:
+20:11.616621686Z","auth":{}
+},"destinationAttributes":{
+}},"serviceName":"cloudfunc
+tions.googleapis.com","meth
+odName":"google.cloud.funct
+ions.v2.FunctionService.Upd
+ateFunction","authorization
+Info":[{"resource":"project
+s/neuro-speed-web/locations
+/us-central1/functions/subm
+itRound","permission":"clou
+dfunctions.functions.update
+","granted":true,"resourceA
+ttributes":{"service":"clou
+dfunctions.googleapis.com",
+"name":"projects/neuro-spee
+d-web/locations/us-central1
+/functions/submitRound","ty
+pe":"cloudfunctions.googlea
+pis.com/Function"},"permiss
+ionType":"ADMIN_WRITE"}],"r
+esourceName":"projects/neur
+o-speed-web/locations/us-ce
+ntral1/functions/submitRoun
+d","request":{"function":{"
+service_config":{"available
+_memory":"256Mi","available
+_cpu":"1","max_instance_req
+uest_concurrency":80},"labe
+ls":{"deployment-callable":
+"true","deployment-tool":"c
+li-firebase","firebase-func
+tions-hash":"b872aeb5d51aa9
+473d4ddde4d21640711e804e4e"
+},"build_config":{"source_t
+oken":"Cldwcm9qZWN0cy8zMTQz
+OTczNDk0MjUvbG9jYXRpb25zL3V
+zLWNlbnRyYWwxL2J1aWxkcy8zZj
+Q3Yjc0OC02MjFhLTRkNWYtYmFkZ
+C1mOGZiNGJiYjlkODIScnVzLWNl
+bnRyYWwxLWRvY2tlci5wa2cuZGV
+2L25ldXJvLXNwZWVkLXdlYi9nY2
+YtYXJ0aWZhY3RzL25ldXJvLS1zc
+GVlZC0td2ViX191cy0tY2VudHJh
+bDFfX2dldF9nYW1lX3JvdW5kOnZ
+lcnNpb25fMRixrKuckwkiRXByb2
+plY3RzL25ldXJvLXNwZWVkLXdlY
+i9sb2NhdGlvbnMvdXMtY2VudHJh
+bDEvZnVuY3Rpb25zL2dldEdhbWV
+Sb3VuZCoLCJLUjc0GEICC+mIyCG
+5vZGVqczI0OnYKI2djci5pby9nY
+WUtcnVudGltZXMvbm9kZWpzMjQ6
+c3RhYmxlEk91cy1jZW50cmFsMS1
+kb2NrZXIucGtnLmRldi9zZXJ2ZX
+JsZXNzLXJ1bnRpbWVzL2dvb2dsZ
+S0yNC1mdWxsL3J1bnRpbWVzL25v
+ZGVqczI0QAE=","source":{},"
+entry_point":"submitRound",
+"runtime":"nodejs24"},"name
+":"projects/neuro-speed-web
+/locations/us-central1/func
+tions/submitRound"},"update
+_mask":{"paths":["name","bu
+ild_config.runtime","build_
+config.entry_point","build_
+config.source.storage_sourc
+e.bucket","build_config.sou
+rce.storage_source.object",
+"build_config.environment_v
+ariables","build_config.sou
+rce_token","service_config.
+environment_variables","ser
+vice_config.ingress_setting
+s","service_config.timeout_
+seconds","service_config.se
+rvice_account_email","servi
+ce_config.available_memory"
+,"service_config.min_instan
+ce_count","service_config.m
+ax_instance_count","service
+_config.max_instance_reques
+t_concurrency","service_con
+fig.available_cpu","service
+_config.vpc_connector","ser
+vice_config.vpc_connector_e
+gress_settings","labels"]},
+"@type":"type.googleapis.co
+m/google.cloud.functions.v2
+.UpdateFunctionRequest"},"r
+esponse":{"@type":"type.goo
+gleapis.com/google.longrunn
+ing.Operation"},"resourceLo
+cation":{"currentLocations"
+:["us-central1"]}}
+big_logs.txt:290:2026-02-28
+T22:20:25.779090Z I 
+submitround: Starting new 
+instance. Reason: 
+DEPLOYMENT_ROLLOUT - 
+Instance started due to 
+traffic shifting between 
+revisions due to 
+deployment, traffic split 
+adjustment, or deployment 
+health check.
+big_logs.txt:293:2026-02-28
+T22:20:28.537139Z I 
+submitround: Default 
+STARTUP TCP probe 
+succeeded after 1 attempt 
+for container "worker" on 
+port 8080.
+big_logs.txt:295:2026-02-28
+T22:20:32.670157932Z N 
+submitRound: {"@type":"type
+.googleapis.com/google.clou
+d.audit.AuditLog","status":
+{},"authenticationInfo":{"p
+rincipalEmail":"illgenj@gma
+il.com","principalSubject":
+"user:illgenj@gmail.com","o
+authInfo":{"oauthClientId":
+"563584335869-fgrhgmd47bqne
+kij5i8b5pr03ho849e6.apps.go
+ogleusercontent.com"}},"req
+uestMetadata":{"requestAttr
+ibutes":{},"destinationAttr
+ibutes":{}},"serviceName":"
+cloudfunctions.googleapis.c
+om","methodName":"google.cl
+oud.functions.v2.FunctionSe
+rvice.UpdateFunction","reso
+urceName":"projects/neuro-s
+peed-web/locations/us-centr
+al1/functions/submitRound",
+"response":{"serviceConfig"
+:{"timeoutSeconds":60,"avai
+lableCpu":"1","serviceAccou
+ntEmail":"314397349425-comp
+ute@developer.gserviceaccou
+nt.com","allTrafficOnLatest
+Revision":true,"maxInstance
+RequestConcurrency":80,"max
+InstanceCount":20,"ingressS
+ettings":"ALLOW_ALL","revis
+ion":"submitround-00011-rir
+","availableMemory":"256Mi"
+,"uri":"https://submitround
+-5ieivsh72q-uc.a.run.app"},
+"state":"ACTIVE","buildConf
+ig":{"dockerRegistry":"ARTI
+FACT_REGISTRY","dockerRepos
+itory":"projects/neuro-spee
+d-web/locations/us-central1
+/repositories/gcf-artifacts
+","serviceAccount":"project
+s/neuro-speed-web/serviceAc
+counts/314397349425-compute
+@developer.gserviceaccount.
+com","automaticUpdatePolicy
+":{},"runtime":"nodejs24","
+entryPoint":"submitRound","
+source":{}},"name":"project
+s/neuro-speed-web/locations
+/us-central1/functions/subm
+itRound","environment":"GEN
+_2","url":"https://us-centr
+al1-neuro-speed-web.cloudfu
+nctions.net/submitRound","c
+reateTime":"2026-02-13T05:1
+2:30.340887004Z","satisfies
+Pzi":true,"updateTime":"202
+6-02-28T22:20:12.343921134Z
+","labels":{"deployment-too
+l":"cli-firebase","firebase
+-functions-hash":"b872aeb5d
+51aa9473d4ddde4d21640711e80
+4e4e","deployment-callable"
+:"true"},"@type":"type.goog
+leapis.com/google.cloud.fun
+ctions.v2.Function"},"resou
+rceLocation":{"currentLocat
+ions":["us-central1"]}}
+big_logs.txt:333:2026-02-28
+T22:29:50.636686538Z N 
+submitRound: {"@type":"type
+.googleapis.com/google.clou
+d.audit.AuditLog","authenti
+cationInfo":{"principalEmai
+l":"illgenj@gmail.com","pri
+ncipalSubject":"user:illgen
+j@gmail.com","oauthInfo":{"
+oauthClientId":"56358433586
+9-fgrhgmd47bqnekij5i8b5pr03
+ho849e6.apps.googleusercont
+ent.com"}},"requestMetadata
+":{"callerIp":"2600:1702:2b
+a0:44d0:39be:320e:5448:75ce
+","callerSuppliedUserAgent"
+:"FirebaseCLI/15.6.0 agent-
+name/antigravity,gzip(gfe),
+gzip(gfe)","requestAttribut
+es":{"time":"2026-02-28T22:
+29:49.925990027Z","auth":{}
+},"destinationAttributes":{
+}},"serviceName":"cloudfunc
+tions.googleapis.com","meth
+odName":"google.cloud.funct
+ions.v2.FunctionService.Upd
+ateFunction","authorization
+Info":[{"resource":"project
+s/neuro-speed-web/locations
+/us-central1/functions/subm
+itRound","permission":"clou
+dfunctions.functions.update
+","granted":true,"resourceA
+ttributes":{"service":"clou
+dfunctions.googleapis.com",
+"name":"projects/neuro-spee
+d-web/locations/us-central1
+/functions/submitRound","ty
+pe":"cloudfunctions.googlea
+pis.com/Function"},"permiss
+ionType":"ADMIN_WRITE"}],"r
+esourceName":"projects/neur
+o-speed-web/locations/us-ce
+ntral1/functions/submitRoun
+d","request":{"update_mask"
+:{"paths":["name","build_co
+nfig.runtime","build_config
+.entry_point","build_config
+.source.storage_source.buck
+et","build_config.source.st
+orage_source.object","build
+_config.environment_variabl
+es","build_config.source_to
+ken","service_config.enviro
+nment_variables","service_c
+onfig.ingress_settings","se
+rvice_config.timeout_second
+s","service_config.service_
+account_email","service_con
+fig.available_memory","serv
+ice_config.min_instance_cou
+nt","service_config.max_ins
+tance_count","service_confi
+g.max_instance_request_conc
+urrency","service_config.av
+ailable_cpu","service_confi
+g.vpc_connector","service_c
+onfig.vpc_connector_egress_
+settings","labels"]},"@type
+":"type.googleapis.com/goog
+le.cloud.functions.v2.Updat
+eFunctionRequest","function
+":{"service_config":{"max_i
+nstance_request_concurrency
+":80,"available_memory":"25
+6Mi","available_cpu":"1"},"
+labels":{"firebase-function
+s-hash":"a922f596b83313b265
+8eda0acc96853f15ee8d9b","de
+ployment-tool":"cli-firebas
+e","deployment-callable":"t
+rue"},"build_config":{"runt
+ime":"nodejs22","source_tok
+en":"Cldwcm9qZWN0cy8zMTQzOT
+czNDk0MjUvbG9jYXRpb25zL3VzL
+WNlbnRyYWwxL2J1aWxkcy8zZWNk
+NGJhOC0yNGRlLTRlNzUtOWFmOC0
+zNjhmMGNlMzk2NTgScnVzLWNlbn
+RyYWwxLWRvY2tlci5wa2cuZGV2L
+25ldXJvLXNwZWVkLXdlYi9nY2Yt
+YXJ0aWZhY3RzL25ldXJvLS1zcGV
+lZC0td2ViX191cy0tY2VudHJhbD
+FfX2dldF9nYW1lX3JvdW5kOnZlc
+nNpb25fMRixrKuckwkiRXByb2pl
+Y3RzL25ldXJvLXNwZWVkLXdlYi9
+sb2NhdGlvbnMvdXMtY2VudHJhbD
+EvZnVuY3Rpb25zL2dldEdhbWVSb
+3VuZCoLCNvYjc0GEMCth0UyCG5v
+ZGVqczIyOnYKI2djci5pby9nYWU
+tcnVudGltZXMvbm9kZWpzMjI6c3
+RhYmxlEk91cy1jZW50cmFsMS1kb
+2NrZXIucGtnLmRldi9zZXJ2ZXJs
+ZXNzLXJ1bnRpbWVzL2dvb2dsZS0
+yMi1mdWxsL3J1bnRpbWVzL25vZG
+VqczIyQAE=","entry_point":"
+submitRound","source":{}},"
+name":"projects/neuro-speed
+-web/locations/us-central1/
+functions/submitRound"}},"r
+esponse":{"@type":"type.goo
+gleapis.com/google.longrunn
+ing.Operation"},"resourceLo
+cation":{"currentLocations"
+:["us-central1"]}}
+big_logs.txt:336:2026-02-28
+T22:29:53.589970Z I 
+submitround: Starting new 
+instance. Reason: 
+DEPLOYMENT_ROLLOUT - 
+Instance started due to 
+traffic shifting between 
+revisions due to 
+deployment, traffic split 
+adjustment, or deployment 
+health check.
+big_logs.txt:339:2026-02-28
+T22:29:56.138457Z I 
+submitround: Default 
+STARTUP TCP probe 
+succeeded after 1 attempt 
+for container "worker" on 
+port 8080.
+big_logs.txt:342:2026-02-28
+T22:29:57.683065354Z N 
+submitRound: {"@type":"type
+.googleapis.com/google.clou
+d.audit.AuditLog","status":
+{},"authenticationInfo":{"p
+rincipalEmail":"illgenj@gma
+il.com","principalSubject":
+"user:illgenj@gmail.com","o
+authInfo":{"oauthClientId":
+"563584335869-fgrhgmd47bqne
+kij5i8b5pr03ho849e6.apps.go
+ogleusercontent.com"}},"req
+uestMetadata":{"requestAttr
+ibutes":{},"destinationAttr
+ibutes":{}},"serviceName":"
+cloudfunctions.googleapis.c
+om","methodName":"google.cl
+oud.functions.v2.FunctionSe
+rvice.UpdateFunction","reso
+urceName":"projects/neuro-s
+peed-web/locations/us-centr
+al1/functions/submitRound",
+"response":{"@type":"type.g
+oogleapis.com/google.cloud.
+functions.v2.Function","ser
+viceConfig":{"timeoutSecond
+s":60,"ingressSettings":"AL
+LOW_ALL","serviceAccountEma
+il":"314397349425-compute@d
+eveloper.gserviceaccount.co
+m","availableMemory":"256Mi
+","maxInstanceCount":20,"ur
+i":"https://submitround-5ie
+ivsh72q-uc.a.run.app","allT
+rafficOnLatestRevision":tru
+e,"revision":"submitround-0
+0012-viq","maxInstanceReque
+stConcurrency":80,"availabl
+eCpu":"1"},"environment":"G
+EN_2","name":"projects/neur
+o-speed-web/locations/us-ce
+ntral1/functions/submitRoun
+d","buildConfig":{"automati
+cUpdatePolicy":{},"runtime"
+:"nodejs22","entryPoint":"s
+ubmitRound","source":{},"do
+ckerRegistry":"ARTIFACT_REG
+ISTRY","dockerRepository":"
+projects/neuro-speed-web/lo
+cations/us-central1/reposit
+ories/gcf-artifacts","servi
+ceAccount":"projects/neuro-
+speed-web/serviceAccounts/3
+14397349425-compute@develop
+er.gserviceaccount.com"},"s
+tate":"ACTIVE","url":"https
+://us-central1-neuro-speed-
+web.cloudfunctions.net/subm
+itRound","createTime":"2026
+-02-13T05:12:30.340887004Z"
+,"updateTime":"2026-02-28T2
+2:29:50.626786203Z","labels
+":{"deployment-callable":"t
+rue","deployment-tool":"cli
+-firebase","firebase-functi
+ons-hash":"a922f596b83313b2
+658eda0acc96853f15ee8d9b"},
+"satisfiesPzi":true},"resou
+rceLocation":{"currentLocat
+ions":["us-central1"]}}
+big_logs.txt:349:2026-02-28
+T22:30:56.354193Z I 
+submitround: 
+big_logs.txt:350:2026-02-28
+T22:30:56.425951Z I 
+submitround: 
+big_logs.txt:351:2026-02-28
+T22:30:56.456454Z D 
+submitround: {"verification
+s":{"app":"MISSING","auth":
+"MISSING"},"message":"Calla
+ble request verification 
+passed"}
+big_logs.txt:357:2026-02-28
+T22:31:14.065597Z I 
+submitround: 
+big_logs.txt:358:2026-02-28
+T22:31:14.098012Z I 
+submitround: 
+big_logs.txt:359:2026-02-28
+T22:31:14.108833Z D 
+submitround: {"verification
+s":{"app":"MISSING","auth":
+"MISSING"},"message":"Calla
+ble request verification 
+passed"}
+big_logs.txt:365:2026-02-28
+T22:31:20.873796Z I 
+submitround: 
+big_logs.txt:366:2026-02-28
+T22:31:20.905684Z I 
+submitround: 
+big_logs.txt:367:2026-02-28
+T22:31:20.912754Z D 
+submitround: {"verification
+s":{"auth":"MISSING","app":
+"MISSING"},"message":"Calla
+ble request verification 
+passed"}
+big_logs.txt:373:2026-02-28
+T22:31:28.266272Z I 
+submitround: 
+big_logs.txt:374:2026-02-28
+T22:31:28.301692Z I 
+submitround: 
+big_logs.txt:375:2026-02-28
+T22:31:28.307834Z D 
+submitround: {"verification
+s":{"app":"MISSING","auth":
+"MISSING"},"message":"Calla
+ble request verification 
+passed"}
+big_logs.txt:381:2026-02-28
+T22:31:35.616052Z I 
+submitround: 
+big_logs.txt:382:2026-02-28
+T22:31:35.649828Z I 
+submitround: 
+big_logs.txt:383:2026-02-28
+T22:31:35.655527Z D 
+submitround: 
+{"message":"Callable 
+request verification passed
+","verifications":{"auth":"
+MISSING","app":"MISSING"}}
+big_logs.txt:389:2026-02-28
+T22:31:51.422782Z I 
+submitround: 
+big_logs.txt:390:2026-02-28
+T22:31:51.454240Z I 
+submitround: 
+big_logs.txt:391:2026-02-28
+T22:31:51.459835Z D 
+submitround: 
+{"message":"Callable 
+request verification passed
+","verifications":{"auth":"
+MISSING","app":"MISSING"}}
+big_logs.txt:397:2026-02-28
+T22:31:56.490024Z I 
+submitround: 
+big_logs.txt:398:2026-02-28
+T22:31:56.522412Z I 
+submitround: 
+big_logs.txt:399:2026-02-28
+T22:31:56.526773Z D 
+submitround: 
+{"message":"Callable 
+request verification passed
+","verifications":{"app":"M
+ISSING","auth":"MISSING"}}
+big_logs.txt:404:2026-02-28
+T22:32:02.524576Z I 
+submitround: 
+big_logs.txt:405:2026-02-28
+T22:32:02.556832Z I 
+submitround: 
+big_logs.txt:406:2026-02-28
+T22:32:02.560888Z D 
+submitround: {"verification
+s":{"app":"MISSING","auth":
+"MISSING"},"message":"Calla
+ble request verification 
+passed"}
+big_logs.txt:412:2026-02-28
+T22:32:07.484934Z I 
+submitround: 
+big_logs.txt:413:2026-02-28
+T22:32:07.496297Z D 
+submitround: {"verification
+s":{"auth":"MISSING","app":
+"MISSING"},"message":"Calla
+ble request verification 
+passed"}
+big_logs.txt:419:2026-02-28
+T22:32:12.973517Z I 
+submitround: 
+big_logs.txt:420:2026-02-28
+T22:32:13.000983Z I 
+submitround: 
+big_logs.txt:421:2026-02-28
+T22:32:13.006187Z D 
+submitround: 
+{"message":"Callable 
+request verification passed
+","verifications":{"app":"M
+ISSING","auth":"MISSING"}}
+big_logs.txt:427:2026-02-28
+T22:40:56.430740Z I 
+submitround: 
+big_logs.txt:428:2026-02-28
+T22:40:56.469970Z I 
+submitround: 
+big_logs.txt:429:2026-02-28
+T22:40:56.474651Z D 
+submitround: 
+{"message":"Callable 
+request verification passed
+","verifications":{"auth":"
+MISSING","app":"MISSING"}}
+big_logs.txt:435:2026-02-28
+T22:41:02.941307Z I 
+submitround: 
+big_logs.txt:436:2026-02-28
+T22:41:02.973726Z I 
+submitround: 
+big_logs.txt:437:2026-02-28
+T22:41:02.977650Z D 
+submitround: 
+{"message":"Callable 
+request verification passed
+","verifications":{"auth":"
+MISSING","app":"MISSING"}}
+big_logs.txt:443:2026-02-28
+T22:41:10.961631Z I 
+submitround: 
+big_logs.txt:444:2026-02-28
+T22:41:10.996664Z I 
+submitround: 
+big_logs.txt:445:2026-02-28
+T22:41:11.003468Z D 
+submitround: {"verification
+s":{"app":"MISSING","auth":
+"MISSING"},"message":"Calla
+ble request verification 
+passed"}
+big_logs.txt:451:2026-02-28
+T22:45:32.611920Z I 
+submitround: 
+big_logs.txt:452:2026-02-28
+T22:45:32.656550Z I 
+submitround: 
+big_logs.txt:453:2026-02-28
+T22:45:32.662786Z D 
+submitround: 
+{"message":"Callable 
+request verification passed
+","verifications":{"app":"M
+ISSING","auth":"MISSING"}}
+big_logs.txt:459:2026-02-28
+T22:45:45.193565Z I 
+submitround: 
+big_logs.txt:460:2026-02-28
+T22:45:45.232886Z I 
+submitround: 
+big_logs.txt:461:2026-02-28
+T22:45:45.237540Z D 
+submitround: 
+{"message":"Callable 
+request verification passed
+","verifications":{"app":"M
+ISSING","auth":"MISSING"}}
+big_logs.txt:467:2026-02-28
+T22:46:13.460974Z I 
+submitround: 
+big_logs.txt:468:2026-02-28
+T22:46:13.500577Z I 
+submitround: 
+big_logs.txt:469:2026-02-28
+T22:46:13.506188Z D 
+submitround: 
+{"message":"Callable 
+request verification passed
+","verifications":{"app":"M
+ISSING","auth":"MISSING"}}
+big_logs.txt:475:2026-02-28
+T22:46:20.659788Z I 
+submitround: 
+big_logs.txt:476:2026-02-28
+T22:46:20.699440Z I 
+submitround: 
+big_logs.txt:477:2026-02-28
+T22:46:20.703533Z D 
+submitround: 
+{"message":"Callable 
+request verification passed
+","verifications":{"auth":"
+MISSING","app":"MISSING"}}
+big_logs.txt:479:2026-02-28
+T22:53:18.105397512Z N 
+submitRound: {"@type":"type
+.googleapis.com/google.clou
+d.audit.AuditLog","authenti
+cationInfo":{"principalEmai
+l":"illgenj@gmail.com","pri
+ncipalSubject":"user:illgen
+j@gmail.com","oauthInfo":{"
+oauthClientId":"56358433586
+9-fgrhgmd47bqnekij5i8b5pr03
+ho849e6.apps.googleusercont
+ent.com"}},"requestMetadata
+":{"callerIp":"2600:1702:2b
+a0:44d0:39be:320e:5448:75ce
+","callerSuppliedUserAgent"
+:"FirebaseCLI/15.6.0 agent-
+name/antigravity,gzip(gfe),
+gzip(gfe)","requestAttribut
+es":{"time":"2026-02-28T22:
+53:17.453522926Z","auth":{}
+},"destinationAttributes":{
+}},"serviceName":"cloudfunc
+tions.googleapis.com","meth
+odName":"google.cloud.funct
+ions.v2.FunctionService.Upd
+ateFunction","authorization
+Info":[{"resource":"project
+s/neuro-speed-web/locations
+/us-central1/functions/subm
+itRound","permission":"clou
+dfunctions.functions.update
+","granted":true,"resourceA
+ttributes":{"service":"clou
+dfunctions.googleapis.com",
+"name":"projects/neuro-spee
+d-web/locations/us-central1
+/functions/submitRound","ty
+pe":"cloudfunctions.googlea
+pis.com/Function"},"permiss
+ionType":"ADMIN_WRITE"}],"r
+esourceName":"projects/neur
+o-speed-web/locations/us-ce
+ntral1/functions/submitRoun
+d","request":{"update_mask"
+:{"paths":["name","build_co
+nfig.runtime","build_config
+.entry_point","build_config
+.source.storage_source.buck
+et","build_config.source.st
+orage_source.object","build
+_config.environment_variabl
+es","build_config.source_to
+ken","service_config.enviro
+nment_variables","service_c
+onfig.ingress_settings","se
+rvice_config.timeout_second
+s","service_config.service_
+account_email","service_con
+fig.available_memory","serv
+ice_config.min_instance_cou
+nt","service_config.max_ins
+tance_count","service_confi
+g.max_instance_request_conc
+urrency","service_config.av
+ailable_cpu","service_confi
+g.vpc_connector","service_c
+onfig.vpc_connector_egress_
+settings","labels"]},"funct
+ion":{"labels":{"deployment
+-callable":"true","firebase
+-functions-hash":"7a0a204b1
+c0f78792275bf00b6fc58917ae2
+adec","deployment-tool":"cl
+i-firebase"},"service_confi
+g":{"max_instance_request_c
+oncurrency":80,"available_m
+emory":"256Mi","available_c
+pu":"1"},"build_config":{"s
+ource":{},"entry_point":"su
+bmitRound","runtime":"nodej
+s22","source_token":"Cldwcm
+9qZWN0cy8zMTQzOTczNDk0MjUvb
+G9jYXRpb25zL3VzLWNlbnRyYWwx
+L2J1aWxkcy9jM2ZkN2U0OS1hZGJ
+jLTRkYmMtOGQyNC04MzgyNmQ2Nj
+FmOTcScnVzLWNlbnRyYWwxLWRvY
+2tlci5wa2cuZGV2L25ldXJvLXNw
+ZWVkLXdlYi9nY2YtYXJ0aWZhY3R
+zL25ldXJvLS1zcGVlZC0td2ViX1
+91cy0tY2VudHJhbDFfX2dldF9nY
+W1lX3JvdW5kOnZlcnNpb25fMRix
+rKuckwkiRXByb2plY3RzL25ldXJ
+vLXNwZWVkLXdlYi9sb2NhdGlvbn
+MvdXMtY2VudHJhbDEvZnVuY3Rpb
+25zL2dldEdhbWVSb3VuZCoMCNrj
+jc0GEMCooaYDMghub2RlanMyMjp
+2CiNnY3IuaW8vZ2FlLXJ1bnRpbW
+VzL25vZGVqczIyOnN0YWJsZRJPd
+XMtY2VudHJhbDEtZG9ja2VyLnBr
+Zy5kZXYvc2VydmVybGVzcy1ydW5
+0aW1lcy9nb29nbGUtMjItZnVsbC
+9ydW50aW1lcy9ub2RlanMyMkAB"
+},"name":"projects/neuro-sp
+eed-web/locations/us-centra
+l1/functions/submitRound"},
+"@type":"type.googleapis.co
+m/google.cloud.functions.v2
+.UpdateFunctionRequest"},"r
+esponse":{"@type":"type.goo
+gleapis.com/google.longrunn
+ing.Operation"},"resourceLo
+cation":{"currentLocations"
+:["us-central1"]}}
+big_logs.txt:482:2026-02-28
+T22:53:21.168834Z I 
+submitround: Starting new 
+instance. Reason: 
+DEPLOYMENT_ROLLOUT - 
+Instance started due to 
+traffic shifting between 
+revisions due to 
+deployment, traffic split 
+adjustment, or deployment 
+health check.
+big_logs.txt:485:2026-02-28
+T22:53:22.874017Z I 
+submitround: Default 
+STARTUP TCP probe 
+succeeded after 1 attempt 
+for container "worker" on 
+port 8080.
+big_logs.txt:488:2026-02-28
+T22:53:24.672523143Z N 
+submitRound: {"@type":"type
+.googleapis.com/google.clou
+d.audit.AuditLog","status":
+{},"authenticationInfo":{"p
+rincipalEmail":"illgenj@gma
+il.com","principalSubject":
+"user:illgenj@gmail.com","o
+authInfo":{"oauthClientId":
+"563584335869-fgrhgmd47bqne
+kij5i8b5pr03ho849e6.apps.go
+ogleusercontent.com"}},"req
+uestMetadata":{"requestAttr
+ibutes":{},"destinationAttr
+ibutes":{}},"serviceName":"
+cloudfunctions.googleapis.c
+om","methodName":"google.cl
+oud.functions.v2.FunctionSe
+rvice.UpdateFunction","reso
+urceName":"projects/neuro-s
+peed-web/locations/us-centr
+al1/functions/submitRound",
+"response":{"name":"project
+s/neuro-speed-web/locations
+/us-central1/functions/subm
+itRound","updateTime":"2026
+-02-28T22:53:18.095971058Z"
+,"buildConfig":{"runtime":"
+nodejs22","entryPoint":"sub
+mitRound","source":{},"dock
+erRegistry":"ARTIFACT_REGIS
+TRY","dockerRepository":"pr
+ojects/neuro-speed-web/loca
+tions/us-central1/repositor
+ies/gcf-artifacts","service
+Account":"projects/neuro-sp
+eed-web/serviceAccounts/314
+397349425-compute@developer
+.gserviceaccount.com","auto
+maticUpdatePolicy":{}},"sta
+te":"ACTIVE","createTime":"
+2026-02-13T05:12:30.3408870
+04Z","@type":"type.googleap
+is.com/google.cloud.functio
+ns.v2.Function","serviceCon
+fig":{"timeoutSeconds":60,"
+maxInstanceCount":20,"uri":
+"https://submitround-5ieivs
+h72q-uc.a.run.app","allTraf
+ficOnLatestRevision":true,"
+maxInstanceRequestConcurren
+cy":80,"availableMemory":"2
+56Mi","availableCpu":"1","s
+erviceAccountEmail":"314397
+349425-compute@developer.gs
+erviceaccount.com","revisio
+n":"submitround-00013-hud",
+"ingressSettings":"ALLOW_AL
+L"},"environment":"GEN_2","
+labels":{"deployment-callab
+le":"true","deployment-tool
+":"cli-firebase","firebase-
+functions-hash":"7a0a204b1c
+0f78792275bf00b6fc58917ae2a
+dec"},"url":"https://us-cen
+tral1-neuro-speed-web.cloud
+functions.net/submitRound",
+"satisfiesPzi":true},"resou
+rceLocation":{"currentLocat
+ions":["us-central1"]}}
+big_logs.txt:500:2026-02-28
+T22:58:34.674051Z I 
+submitround: 
+big_logs.txt:501:2026-02-28
+T22:58:34.740338Z I 
+submitround: 
+big_logs.txt:502:2026-02-28
+T22:58:34.767122Z D 
+submitround: {"verification
+s":{"app":"MISSING","auth":
+"MISSING"},"message":"Calla
+ble request verification 
+passed"}
+big_logs.txt:503:2026-02-28
+T22:58:35.617016Z ? 
+submitround: [JUDGE] User: 
+JOHN | Tier: T3 (isT2:true)
+big_logs.txt:505:2026-02-28
+T22:58:35.617128Z ? 
+submitround: [JUDGE] 
+ClientAns: {"uShape":"trian
+gle","uSat":"diamond","uCol
+or":2,"uDir":1}
+big_logs.txt:507:2026-02-28
+T22:58:35.617221Z ? 
+submitround: [JUDGE] 
+ServerKey: {"targetShape":"
+circle","satShape":"square"
+,"satColorIdx":3,"satDirIdx
+":3,"sessionSalt":"kuoj3cx1
+","active":true,"createdAt"
+:{"_seconds":1772319510,"_n
+anoseconds":623000000}}
+big_logs.txt:514:2026-02-28
+T22:58:40.970593Z I 
+submitround: 
+big_logs.txt:515:2026-02-28
+T22:58:41.008053Z I 
+submitround: 
+big_logs.txt:516:2026-02-28
+T22:58:41.014245Z D 
+submitround: 
+{"message":"Callable 
+request verification passed
+","verifications":{"app":"M
+ISSING","auth":"MISSING"}}
+big_logs.txt:517:2026-02-28
+T22:58:41.123637Z ? 
+submitround: [JUDGE] User: 
+JOHN | Tier: T3 (isT2:true)
+big_logs.txt:519:2026-02-28
+T22:58:41.123737Z ? 
+submitround: [JUDGE] 
+ClientAns: {"uShape":"cross
+","uSat":"square","uColor":
+3,"uDir":6}
+big_logs.txt:521:2026-02-28
+T22:58:41.123814Z ? 
+submitround: [JUDGE] 
+ServerKey: {"targetShape":"
+circle","satShape":"square"
+,"satColorIdx":1,"satDirIdx
+":6,"sessionSalt":"qnbiadxf
+","active":true,"createdAt"
+:{"_seconds":1772319517,"_n
+anoseconds":276000000}}
+big_logs.txt:527:2026-02-28
+T22:58:45.843901Z I 
+submitround: 
+big_logs.txt:528:2026-02-28
+T22:58:45.848841Z D 
+submitround: {"verification
+s":{"auth":"MISSING","app":
+"MISSING"},"message":"Calla
+ble request verification 
+passed"}
+big_logs.txt:529:2026-02-28
+T22:58:45.945845Z ? 
+submitround: [JUDGE] User: 
+JOHN | Tier: T3 (isT2:true)
+big_logs.txt:531:2026-02-28
+T22:58:45.945961Z ? 
+submitround: [JUDGE] 
+ClientAns: {"uShape":"trian
+gle","uSat":"diamond","uCol
+or":1,"uDir":7}
+big_logs.txt:533:2026-02-28
+T22:58:45.945986Z ? 
+submitround: [JUDGE] 
+ServerKey: {"targetShape":"
+circle","satShape":"square"
+,"satColorIdx":3,"satDirIdx
+":5,"sessionSalt":"la7lkxmv
+","active":true,"createdAt"
+:{"_seconds":1772319522,"_n
+anoseconds":232000000}}
+big_logs.txt:540:2026-02-28
+T22:59:13.946938Z I 
+submitround: 
+big_logs.txt:541:2026-02-28
+T22:59:13.986223Z I 
+submitround: 
+big_logs.txt:542:2026-02-28
+T22:59:13.990775Z D 
+submitround: 
+{"message":"Callable 
+request verification passed
+","verifications":{"app":"M
+ISSING","auth":"MISSING"}}
+big_logs.txt:543:2026-02-28
+T22:59:14.056997Z ? 
+submitround: [JUDGE] User: 
+JOHN | Tier: T3 (isT2:true)
+big_logs.txt:545:2026-02-28
+T22:59:14.057092Z ? 
+submitround: [JUDGE] 
+ClientAns: {"uShape":"trian
+gle","uSat":"triangle","uCo
+lor":3,"uDir":7}
+big_logs.txt:547:2026-02-28
+T22:59:14.057158Z ? 
+submitround: [JUDGE] 
+ServerKey: {"targetShape":"
+square","satShape":"diamond
+","satColorIdx":2,"satDirId
+x":2,"sessionSalt":"2qzkhp0
+7","active":true,"createdAt
+":{"_seconds":1772319550,"_
+nanoseconds":59000000}}
+big_logs.txt:554:2026-02-28
+T22:59:19.806728Z I 
+submitround: 
+big_logs.txt:555:2026-02-28
+T22:59:19.844126Z I 
+submitround: 
+big_logs.txt:556:2026-02-28
+T22:59:19.848850Z D 
+submitround: {"verification
+s":{"app":"MISSING","auth":
+"MISSING"},"message":"Calla
+ble request verification 
+passed"}
+big_logs.txt:557:2026-02-28
+T22:59:19.924424Z ? 
+submitround: [JUDGE] User: 
+JOHN | Tier: T3 (isT2:true)
+big_logs.txt:559:2026-02-28
+T22:59:19.924498Z ? 
+submitround: [JUDGE] 
+ClientAns: {"uShape":"circl
+e","uSat":"square","uColor"
+:2,"uDir":1}
+big_logs.txt:561:2026-02-28
+T22:59:19.924556Z ? 
+submitround: [JUDGE] 
+ServerKey: {"targetShape":"
+cross","satShape":"circle",
+"satColorIdx":3,"satDirIdx"
+:3,"sessionSalt":"f6xp2i4e"
+,"active":true,"createdAt":
+{"_seconds":1772319555,"_na
+noseconds":277000000}}
+
+

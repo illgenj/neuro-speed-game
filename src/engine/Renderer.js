@@ -140,16 +140,24 @@ export class Renderer {
     }
 
     // ─── Shapes ─────────────────────────────────────────────
-    drawShape(type, x, y, size, color) {
+    drawShape(type, x, y, size, color, isSolid = true) {
         const ctx = this.ctx;
         ctx.beginPath();
-        ctx.fillStyle = color;
+        if (isSolid) {
+            ctx.fillStyle = color;
+        } else {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = size * 0.3; // Hollow thickness
+        }
+
         if (type === 'circle') ctx.arc(x, y, size, 0, Math.PI * 2);
         else if (type === 'square') ctx.rect(x - size, y - size, size * 2, size * 2);
         else if (type === 'triangle') { ctx.moveTo(x, y - size); ctx.lineTo(x + size, y + size); ctx.lineTo(x - size, y + size); ctx.closePath(); }
         else if (type === 'diamond') { ctx.moveTo(x, y - size * 1.2); ctx.lineTo(x + size * 1.2, y); ctx.lineTo(x, y + size * 1.2); ctx.lineTo(x - size * 1.2, y); ctx.closePath(); }
         else if (type === 'cross') { ctx.rect(x - size / 3, y - size, size / 1.5, size * 2); ctx.rect(x - size, y - size / 3, size * 2, size / 1.5); }
-        ctx.fill();
+
+        if (isSolid) ctx.fill();
+        else ctx.stroke();
     }
 
     drawStatic(intensity = 0.5) {
@@ -350,14 +358,30 @@ export class Renderer {
         this.clear();
         this.drawEchoes();
 
+        // Secondary THREAT Satellite (T5+ / Dual Bogeys)
+        if (user.level5 || user.level6) {
+            const angle2 = manifest.sat2DirIdx * Math.PI * 0.25;
+            const sat2X = this.centerX + Math.cos(angle2) * lastFlashRadius * 1.2; // Slightly further out to avoid crowding
+            const sat2Y = this.centerY + Math.sin(angle2) * lastFlashRadius * 1.2;
+            const threatColor = '#ef4444'; // Red for secondary
+            this.drawShape(manifest.sat2Shape, sat2X, sat2Y, this.minDim * 0.045, threatColor);
+        }
+
+        // Primary Satellite
         const angle = manifest.satDirIdx * Math.PI * 0.25;
         const satX = this.centerX + Math.cos(angle) * lastFlashRadius;
         const satY = this.centerY + Math.sin(angle) * lastFlashRadius;
 
         distractors.forEach(d => this.drawShape(d.shape, d.x, d.y, this.minDim * 0.05, '#334155'));
-        this.drawShape(manifest.targetShape, this.centerX, this.centerY, this.minDim * 0.06, '#fff');
+
+        // Target Core (with Polarity T6+ and Spectrum T4+)
+        const coreColor = (user.level4 || user.level5 || user.level6) ? L2_COLORS[manifest.targetColorIdx] : '#fff';
+        const isSolid = user.level6 ? manifest.targetSolid : true;
+
+        this.drawShape(manifest.targetShape, this.centerX, this.centerY, this.minDim * 0.06, coreColor, isSolid);
+
         this.drawShape(manifest.satShape, satX, satY, this.minDim * 0.05,
-            user.level2 ? L2_COLORS[manifest.satColorIdx] : '#8b5cf6');
+            (user.level2 || user.level3 || user.level4 || user.level5 || user.level6) ? L2_COLORS[manifest.satColorIdx] : '#8b5cf6');
     }
 
     // ─── Question UI ────────────────────────────────────────
@@ -377,12 +401,15 @@ export class Renderer {
         ctx.fillRect(0, 0, this.canvas.width * timerPct, 4);
         ctx.shadowBlur = 0;
 
-        // Title
         let title = "", sub = "";
         if (currentTask === 'CENTER') { title = "CORE ID"; sub = "SELECT CENTER SHAPE"; }
         else if (currentTask === 'SATELLITE') { title = "PERIPHERAL ID"; sub = "SELECT SATELLITE SHAPE"; }
         else if (currentTask === 'COLOR') { title = "SPECTRUM ID"; sub = "MATCH SATELLITE COLOR"; }
-        else { title = "VECTOR ID"; sub = "INDICATE ORIGIN (NUMPAD OR ARROWS)"; }
+        else if (currentTask === 'DIRECTION') { title = "VECTOR ID"; sub = "INDICATE ORIGIN (NUMPAD OR ARROWS)"; }
+        else if (currentTask === 'TARGET_COLOR') { title = "CORE SPECTRUM"; sub = "MATCH CENTER SHAPE COLOR"; }
+        else if (currentTask === 'SAT2_SHAPE') { title = "THREAT ID"; sub = "SELECT SECONDARY THREAT SHAPE"; }
+        else if (currentTask === 'SAT2_DIR') { title = "THREAT VECTOR"; sub = "INDICATE SECONDARY THREAT ORIGIN"; }
+        else if (currentTask === 'POLARITY') { title = "POLARITY INVERSION"; sub = "WAS CORE SOLID OR HOLLOW?"; }
 
         ctx.textAlign = "center";
         ctx.fillStyle = "#fff";
@@ -395,10 +422,12 @@ export class Renderer {
         // Draw selection items
         selectionBoxes.length = 0;
 
-        if (currentTask === 'DIRECTION') {
+        if (currentTask === 'DIRECTION' || currentTask === 'SAT2_DIR') {
             this._drawDirectionButtons(selectionBoxes, lastSelectionIndex);
+        } else if (currentTask === 'POLARITY') {
+            this._drawPolarityButtons(selectionBoxes, lastSelectionIndex);
         } else {
-            const items = currentTask === 'COLOR' ? L2_COLORS : SHAPES;
+            const items = (currentTask === 'COLOR' || currentTask === 'TARGET_COLOR') ? L2_COLORS : SHAPES;
             this._drawItemRow(items, currentTask, selectionBoxes, lastSelectionIndex);
         }
 
@@ -440,6 +469,53 @@ export class Renderer {
         });
     }
 
+    _drawPolarityButtons(selectionBoxes, lastSelectionIndex) {
+        const ctx = this.ctx;
+        const btnWidth = this.minDim * 0.3;
+        const btnHeight = this.minDim * 0.12;
+        const spacing = this.minDim * 0.05;
+        const startX = this.centerX - btnWidth - spacing;
+        const y = this.centerY;
+
+        const options = [
+            { id: 1, label: 'SOLID', cx: startX + btnWidth / 2 },
+            { id: 0, label: 'HOLLOW', cx: startX + btnWidth + spacing * 2 + btnWidth / 2 }
+        ];
+
+        options.forEach(opt => {
+            const isSelected = (opt.id === lastSelectionIndex);
+            ctx.beginPath();
+            ctx.roundRect(opt.cx - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, 8);
+
+            if (isSelected) {
+                ctx.shadowBlur = 24;
+                ctx.shadowColor = "rgba(14, 165, 233, 0.8)";
+                ctx.fillStyle = "rgba(14, 165, 233, 0.3)";
+            } else {
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = "rgba(255, 255, 255, 0.04)";
+            }
+            ctx.strokeStyle = isSelected ? "#0ea5e9" : "rgba(255,255,255,0.08)";
+            ctx.lineWidth = 2;
+            ctx.fill();
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            ctx.fillStyle = isSelected ? "#fff" : "#64748b";
+            ctx.font = `800 ${this.minDim * 0.04}px 'JetBrains Mono', monospace`;
+            ctx.textBaseline = "middle";
+            ctx.fillText(opt.label, opt.cx, y);
+            ctx.textBaseline = "alphabetic";
+
+            selectionBoxes.push({
+                key: opt.id, val: (opt.id === 1),
+                x1: opt.cx - btnWidth / 2, x2: opt.cx + btnWidth / 2,
+                y1: y - btnHeight / 2, y2: y + btnHeight / 2,
+                cx: opt.cx, cy: y
+            });
+        });
+    }
+
     _drawItemRow(items, currentTask, selectionBoxes, lastSelectionIndex) {
         const ctx = this.ctx;
         const rowWidth = this.canvas.width * 0.85;
@@ -462,13 +538,14 @@ export class Renderer {
                 ctx.restore();
             }
 
-            if (currentTask === 'COLOR') {
+            if (currentTask === 'COLOR' || currentTask === 'TARGET_COLOR') {
                 ctx.fillStyle = item;
                 ctx.beginPath();
                 ctx.arc(x, y, this.minDim * 0.06, 0, Math.PI * 2);
                 ctx.fill();
             } else {
-                this.drawShape(item, x, y, this.minDim * 0.05, '#fff');
+                const itemSize = this.minDim * 0.05;
+                this.drawShape(item, x, y, itemSize, '#fff', true);
             }
 
             selectionBoxes.push({

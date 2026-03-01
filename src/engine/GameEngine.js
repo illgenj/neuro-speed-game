@@ -71,6 +71,7 @@ export class GameEngine {
         this.ui.hideSystemMessage();
         this.ui.hideMiniStatus();
         this.uShape = null; this.uSat = null; this.uColor = null; this.uDir = null;
+        this.uTargetColor = undefined; this.uSat2Shape = undefined; this.uSat2Dir = undefined; this.uSolid = undefined;
 
         if (!this.currentUser) {
             this.ui.showUserMenu();
@@ -180,7 +181,29 @@ export class GameEngine {
 
     // ─── QUESTION LOOP ──────────────────────────────────────
     startQuestionLoop() {
-        this.askTask('CENTER');
+        const u = this.user;
+        this.questionQueue = ['CENTER']; // Always start with core shape
+
+        if (u.level4 || u.level5 || u.level6) {
+            // T4+ Interrogation Roulette (Random 3 additional max)
+            const pool = ['SATELLITE'];
+            if (u.level2) pool.push('COLOR');
+            if (u.level3 || u.level4 || u.level5 || u.level6) pool.push('DIRECTION');
+            if (u.level4 || u.level5 || u.level6) pool.push('TARGET_COLOR');
+            if (u.level5 || u.level6) { pool.push('SAT2_SHAPE', 'SAT2_DIR'); }
+            if (u.level6) pool.push('POLARITY');
+
+            // Shuffle and pick 3 max to prevent fatigue at 150ms
+            pool.sort(() => 0.5 - Math.random());
+            this.questionQueue.push(...pool.slice(0, 3));
+        } else {
+            // Standard T1-T3 sequential
+            this.questionQueue.push('SATELLITE');
+            if (u.level2) this.questionQueue.push('COLOR');
+            if (u.level3) this.questionQueue.push('DIRECTION');
+        }
+
+        this.askTask(this.questionQueue.shift());
 
         const loop = (now) => {
             // Screen shake
@@ -309,20 +332,18 @@ export class GameEngine {
             this.lastSelectionIndex = -1;
             const u = this.user;
 
-            if (this.currentTask === 'CENTER') {
-                this.uShape = hit.key;
-                this.askTask('SATELLITE');
-            } else if (this.currentTask === 'SATELLITE') {
-                this.uSat = hit.key;
-                if (u.level2) this.askTask('COLOR');
-                else if (u.level3) this.askTask('DIRECTION');
-                else this.finalizeTrial();
-            } else if (this.currentTask === 'COLOR') {
-                this.uColor = hit.val;
-                if (u.level3) this.askTask('DIRECTION');
-                else this.finalizeTrial();
-            } else if (this.currentTask === 'DIRECTION') {
-                this.uDir = hit.val;
+            if (this.currentTask === 'CENTER') this.uShape = hit.key;
+            else if (this.currentTask === 'SATELLITE') this.uSat = hit.key;
+            else if (this.currentTask === 'COLOR') this.uColor = hit.val;
+            else if (this.currentTask === 'DIRECTION') this.uDir = hit.val;
+            else if (this.currentTask === 'TARGET_COLOR') this.uTargetColor = hit.val;
+            else if (this.currentTask === 'SAT2_SHAPE') this.uSat2Shape = hit.key;
+            else if (this.currentTask === 'SAT2_DIR') this.uSat2Dir = hit.val;
+            else if (this.currentTask === 'POLARITY') this.uSolid = hit.val;
+
+            if (this.questionQueue.length > 0) {
+                this.askTask(this.questionQueue.shift());
+            } else {
                 this.finalizeTrial();
             }
         }, 320);
@@ -343,20 +364,35 @@ export class GameEngine {
         this.isValidating = true;
 
         try {
+            // Strip undefined/null so JSON stringify drops them completely
+            const answerPayload = {};
+            if (this.uShape !== null && this.uShape !== undefined) answerPayload.uShape = this.uShape;
+            if (this.uSat !== null && this.uSat !== undefined) answerPayload.uSat = this.uSat;
+            if (this.uColor !== null && this.uColor !== undefined) answerPayload.uColor = this.uColor;
+            if (this.uDir !== null && this.uDir !== undefined) answerPayload.uDir = this.uDir;
+            if (this.uTargetColor !== null && this.uTargetColor !== undefined) answerPayload.uTargetColor = this.uTargetColor;
+            if (this.uSat2Shape !== null && this.uSat2Shape !== undefined) answerPayload.uSat2Shape = this.uSat2Shape;
+            if (this.uSat2Dir !== null && this.uSat2Dir !== undefined) answerPayload.uSat2Dir = this.uSat2Dir;
+            if (this.uSolid !== null && this.uSolid !== undefined) answerPayload.uSolid = this.uSolid;
+
             const result = await submitRound({
                 userId: this.currentUser,
                 manifest: this.currentManifest,
-                answer: {
-                    uShape: this.uShape,
-                    uSat: this.uSat,
-                    uColor: (this.uColor !== null) ? this.uColor : undefined,
-                    uDir: (this.uDir !== null) ? this.uDir : undefined,
-                },
+                answer: answerPayload,
                 speed: u.speed,
             });
 
             const serverData = result.data;
             this.isValidating = false;
+
+            // Sync server properties immediately to eliminate race conditions
+            if (serverData.newScore !== undefined) {
+                u.score = serverData.newScore;
+                if (!u.peakScore) u.peakScore = 0;
+                if (u.score > u.peakScore) u.peakScore = u.score;
+            }
+            if (serverData.newTier) u.tier = serverData.newTier;
+
             const correct = serverData.correct;
             const prevSpeed = u.speed;
 
@@ -392,8 +428,13 @@ export class GameEngine {
                 }
 
                 if (serverData.newTier && serverData.newTier !== prevTier) {
-                    u.level2 = (serverData.newTier === 'T2' || serverData.newTier === 'T3');
-                    u.level3 = (serverData.newTier === 'T3');
+                    const tr = serverData.newTier;
+                    u.level2 = ['T2', 'T3', 'T4', 'T5', 'T6'].includes(tr);
+                    u.level3 = ['T3', 'T4', 'T5', 'T6'].includes(tr);
+                    u.level4 = ['T4', 'T5', 'T6'].includes(tr);
+                    u.level5 = ['T5', 'T6'].includes(tr);
+                    u.level6 = (tr === 'T6');
+
                     this.ui.triggerSystemMessage(`PROMOTION: ${serverData.newTier} UNLOCKED`, "upgrade");
                 }
 
@@ -406,7 +447,7 @@ export class GameEngine {
                     u.level2 ? L2_COLORS[this.currentManifest.satColorIdx] : '#8b5cf6');
 
                 // Velocity surge feedback at high streaks
-                if (u.streak > 3 && reactionTimeMs < 2000) {
+                if (u.streak > 0 && u.streak % 5 === 0 && reactionTimeMs < 2000) {
                     this.ui.showMiniStatus(">>> VELOCITY SURGE <<<", u.sessions ? u.sessions.length : 0);
                     this.screenShake = 5;
                 }
@@ -430,7 +471,10 @@ export class GameEngine {
             u.difficulty = this.difficulty.getState();
 
             u.history.push(Math.round(u.speed));
+            if (u.history.length > 500) u.history.shift();
+
             u.resultsHistory.push({ correct, date: new Date().toISOString().split('T')[0] });
+            if (u.resultsHistory.length > 500) u.resultsHistory.shift();
 
             saveAppData(this.appData);
             this.ui.updateUI();
@@ -449,7 +493,11 @@ export class GameEngine {
                     // Save session to user history
                     if (!u.sessions) u.sessions = [];
                     u.sessions.push(summary);
-                    u.trainingBlock = Math.floor(u.sessions.length / 7);
+                    if (!u.totalSessions) u.totalSessions = u.sessions.length;
+                    u.totalSessions++;
+                    if (u.sessions.length > 100) u.sessions.shift();
+
+                    u.trainingBlock = Math.floor(u.totalSessions / 7);
                     saveAppData(this.appData);
                     this.ui.onSessionEnd?.(summary);
                 }

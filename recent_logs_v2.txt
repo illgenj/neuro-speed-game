@@ -1,0 +1,74 @@
+﻿2026-02-28T23:47:05.225538Z I submitround: 
+2026-02-28T23:47:05.229816Z D submitround: {"message":"Callable request verification passed","verifications":{"auth":"MISSING","app":"MISSING"}}
+2026-02-28T23:47:05.327632Z ? submitround: [JUDGE] User: JETSKI_TEST_4094 | Tier: T2
+
+2026-02-28T23:47:05.327714Z ? submitround: [JUDGE] ClientAns: {"uShape":"diamond","uSat":"triangle","uColor":0,"uDir":null}
+
+2026-02-28T23:47:05.327771Z ? submitround: [JUDGE] ClientManifest: {"targetShape":"diamond","satShape":"triangle","satColorIdx":0,"satDirIdx":0,"salt":"elg5uhd0"}
+
+2026-02-28T23:47:05.327908Z ? submitround: [JUDGE] ServerKey: {"targetShape":"diamond","satShape":"triangle","satColorIdx":0,"satDirIdx":0,"targetColorIdx":1,"sat2Shape":"diamond","sat2DirIdx":6,"targetSolid":false,"sessionSalt":"elg5uhd0","active":true,"createdAt":{"_seconds":1772322381,"_nanoseconds":262000000}}
+
+2026-02-28T23:47:35.124264Z I getgameround: 
+2026-02-28T23:47:35.163066Z I getgameround: 
+2026-02-28T23:47:35.167638Z D getgameround: {"verifications":{"app":"MISSING","auth":"MISSING"},"message":"Callable request verification passed"}
+2026-02-28T23:47:35.167928Z ? getgameround: USER ID: JETSKI_TEST_4094
+
+2026-02-28T23:48:04.393145Z I submitround: 
+2026-02-28T23:48:04.431481Z I submitround: 
+2026-02-28T23:48:04.435342Z D submitround: {"message":"Callable request verification passed","verifications":{"app":"MISSING","auth":"MISSING"}}
+2026-02-28T23:48:04.532031Z ? submitround: [JUDGE] User: JETSKI_TEST_4094 | Tier: T2
+
+2026-02-28T23:48:04.532117Z ? submitround: [JUDGE] ClientAns: {"uShape":"diamond","uSat":"diamond","uColor":2,"uDir":null,"uTargetColor":null,"uSat2Shape":null,"uSat2Dir":null,"uSolid":null}
+
+2026-02-28T23:48:04.532193Z ? submitround: [JUDGE] ClientManifest: {"targetShape":"diamond","satShape":"diamond","satColorIdx":2,"satDirIdx":6,"salt":"i4f57t50"}
+
+2026-02-28T23:48:04.532255Z ? submitround: [JUDGE] ServerKey: {"targetShape":"diamond","satShape":"diamond","satColorIdx":2,"satDirIdx":6,"targetColorIdx":1,"sat2Shape":"triangle","sat2DirIdx":2,"targetSolid":false,"sessionSalt":"i4f57t50","active":true,"createdAt":{"_seconds":1772322455,"_nanoseconds":202000000}}
+
+2026-02-28T23:50:12.910983Z I getgameround: 
+2026-02-28T23:50:12.976219Z I getgameround: 
+2026-02-28T23:50:12.981413Z D getgameround: {"message":"Callable request verification passed","verifications":{"app":"MISSING","auth":"MISSING"}}
+2026-02-28T23:50:12.981615Z ? getgameround: USER ID: JETSKI_TEST_4094
+
+2026-02-28T23:51:15.070470Z I submitround: 
+2026-02-28T23:51:15.116717Z I submitround: 
+2026-02-28T23:51:15.121061Z D submitround: {"verifications":{"auth":"MISSING","app":"MISSING"},"message":"Callable request verification passed"}
+2026-02-28T23:51:15.232566Z ? submitround: [JUDGE] User: JETSKI_TEST_4094 | Tier: T2
+
+2026-02-28T23:51:15.232644Z ? submitround: [JUDGE] ClientAns: {"uShape":"cross","uSat":"square","uColor":0,"uDir":null,"uTargetColor":null,"uSat2Shape":null,"uSat2Dir":null,"uSolid":null}
+
+2026-02-28T23:51:15.232708Z ? submitround: [JUDGE] ClientManifest: {"targetShape":"cross","satShape":"square","satColorIdx":0,"satDirIdx":5,"salt":"dgxrj4eb"}
+
+2026-02-28T23:51:15.232781Z ? submitround: [JUDGE] ServerKey: {"targetShape":"cross","satShape":"square","satColorIdx":0,"satDirIdx":5,"targetColorIdx":2,"sat2Shape":"diamond","sat2DirIdx":2,"targetSolid":false,"sessionSalt":"dgxrj4eb","active":true,"createdAt":{"_seconds":1772322613,"_nanoseconds":24000000}}
+
+2026-02-28T23:51:47.077270Z I getgameround: 
+2026-02-28T23:51:47.134808Z I getgameround: 
+2026-02-28T23:51:47.139488Z D getgameround: {"verifications":{"app":"MISSING","auth":"MISSING"},"message":"Callable request verification passed"}
+2026-02-28T23:51:47.139728Z ? getgameround: USER ID: JETSKI_TEST_4094
+
+2026-02-28T23:51:58.921302Z I submitround: 
+2026-02-28T23:51:58.957677Z I submitround: 
+2026-02-28T23:51:58.961420Z D submitround: {"message":"Callable request verification passed","verifications":{"app":"MISSING","auth":"MISSING"}}
+2026-02-28T23:51:59.043256Z ? submitround: [JUDGE] User: JETSKI_TEST_4094 | Tier: T2
+
+2026-02-28T23:51:59.043349Z ? submitround: [JUDGE] ClientAns: {"uShape":"square","uSat":"cross","uColor":0,"uDir":null,"uTargetColor":null,"uSat2Shape":null,"uSat2Dir":null,"uSolid":null}
+
+2026-02-28T23:51:59.043416Z ? submitround: [JUDGE] ClientManifest: {"targetShape":"square","satShape":"cross","satColorIdx":0,"satDirIdx":2,"salt":"6v9a2kuf"}
+
+2026-02-28T23:51:59.043490Z ? submitround: [JUDGE] ServerKey: {"targetShape":"square","satShape":"cross","satColorIdx":0,"satDirIdx":2,"targetColorIdx":1,"sat2Shape":"cross","sat2DirIdx":6,"targetSolid":true,"sessionSalt":"6v9a2kuf","active":true,"createdAt":{"_seconds":1772322707,"_nanoseconds":172000000}}
+
+2026-02-28T23:52:17.461957Z I getgameround: 
+2026-02-28T23:52:17.494770Z I getgameround: 
+2026-02-28T23:52:17.498880Z D getgameround: {"message":"Callable request verification passed","verifications":{"app":"MISSING","auth":"MISSING"}}
+2026-02-28T23:52:17.499030Z ? getgameround: USER ID: JOHN
+
+2026-02-28T23:52:20.936399Z I submitround: 
+2026-02-28T23:52:20.964187Z I submitround: 
+2026-02-28T23:52:20.969061Z D submitround: {"message":"Callable request verification passed","verifications":{"app":"MISSING","auth":"MISSING"}}
+2026-02-28T23:52:21.043130Z ? submitround: [JUDGE] User: JOHN | Tier: T2
+
+2026-02-28T23:52:21.043257Z ? submitround: [JUDGE] ClientAns: {"uShape":"triangle","uSat":"cross","uColor":0,"uDir":null}
+
+2026-02-28T23:52:21.043308Z ? submitround: [JUDGE] ClientManifest: {"targetShape":"triangle","satShape":"cross","satColorIdx":0,"satDirIdx":2,"salt":"gjo2l22e"}
+
+2026-02-28T23:52:21.043387Z ? submitround: [JUDGE] ServerKey: {"targetShape":"triangle","satShape":"cross","satColorIdx":0,"satDirIdx":2,"targetColorIdx":0,"sat2Shape":"square","sat2DirIdx":6,"targetSolid":true,"sessionSalt":"gjo2l22e","active":true,"createdAt":{"_seconds":1772322737,"_nanoseconds":510000000}}
+

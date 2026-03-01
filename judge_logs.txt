@@ -1,0 +1,103 @@
+﻿
+latest_logs.txt:12:2026-02-
+28T22:58:35.617016Z ? 
+submitround: [JUDGE] User: 
+JOHN | Tier: T3 (isT2:true)
+latest_logs.txt:14:2026-02-
+28T22:58:35.617128Z ? 
+submitround: [JUDGE] 
+ClientAns: {"uShape":"trian
+gle","uSat":"diamond","uCol
+or":2,"uDir":1}
+latest_logs.txt:16:2026-02-
+28T22:58:35.617221Z ? 
+submitround: [JUDGE] 
+ServerKey: {"targetShape":"
+circle","satShape":"square"
+,"satColorIdx":3,"satDirIdx
+":3,"sessionSalt":"kuoj3cx1
+","active":true,"createdAt"
+:{"_seconds":1772319510,"_n
+anoseconds":623000000}}
+latest_logs.txt:26:2026-02-
+28T22:58:41.123637Z ? 
+submitround: [JUDGE] User: 
+JOHN | Tier: T3 (isT2:true)
+latest_logs.txt:28:2026-02-
+28T22:58:41.123737Z ? 
+submitround: [JUDGE] 
+ClientAns: {"uShape":"cross
+","uSat":"square","uColor":
+3,"uDir":6}
+latest_logs.txt:30:2026-02-
+28T22:58:41.123814Z ? 
+submitround: [JUDGE] 
+ServerKey: {"targetShape":"
+circle","satShape":"square"
+,"satColorIdx":1,"satDirIdx
+":6,"sessionSalt":"qnbiadxf
+","active":true,"createdAt"
+:{"_seconds":1772319517,"_n
+anoseconds":276000000}}
+latest_logs.txt:38:2026-02-
+28T22:58:45.945845Z ? 
+submitround: [JUDGE] User: 
+JOHN | Tier: T3 (isT2:true)
+latest_logs.txt:40:2026-02-
+28T22:58:45.945961Z ? 
+submitround: [JUDGE] 
+ClientAns: {"uShape":"trian
+gle","uSat":"diamond","uCol
+or":1,"uDir":7}
+latest_logs.txt:42:2026-02-
+28T22:58:45.945986Z ? 
+submitround: [JUDGE] 
+ServerKey: {"targetShape":"
+circle","satShape":"square"
+,"satColorIdx":3,"satDirIdx
+":5,"sessionSalt":"la7lkxmv
+","active":true,"createdAt"
+:{"_seconds":1772319522,"_n
+anoseconds":232000000}}
+latest_logs.txt:52:2026-02-
+28T22:59:14.056997Z ? 
+submitround: [JUDGE] User: 
+JOHN | Tier: T3 (isT2:true)
+latest_logs.txt:54:2026-02-
+28T22:59:14.057092Z ? 
+submitround: [JUDGE] 
+ClientAns: {"uShape":"trian
+gle","uSat":"triangle","uCo
+lor":3,"uDir":7}
+latest_logs.txt:56:2026-02-
+28T22:59:14.057158Z ? 
+submitround: [JUDGE] 
+ServerKey: {"targetShape":"
+square","satShape":"diamond
+","satColorIdx":2,"satDirId
+x":2,"sessionSalt":"2qzkhp0
+7","active":true,"createdAt
+":{"_seconds":1772319550,"_
+nanoseconds":59000000}}
+latest_logs.txt:66:2026-02-
+28T22:59:19.924424Z ? 
+submitround: [JUDGE] User: 
+JOHN | Tier: T3 (isT2:true)
+latest_logs.txt:68:2026-02-
+28T22:59:19.924498Z ? 
+submitround: [JUDGE] 
+ClientAns: {"uShape":"circl
+e","uSat":"square","uColor"
+:2,"uDir":1}
+latest_logs.txt:70:2026-02-
+28T22:59:19.924556Z ? 
+submitround: [JUDGE] 
+ServerKey: {"targetShape":"
+cross","satShape":"circle",
+"satColorIdx":3,"satDirIdx"
+:3,"sessionSalt":"f6xp2i4e"
+,"active":true,"createdAt":
+{"_seconds":1772319555,"_na
+noseconds":277000000}}
+
+

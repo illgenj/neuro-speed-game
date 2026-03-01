@@ -16,9 +16,13 @@ const STORAGE_KEY = 'neuroElite_v3_secure';
 const SIG_KEY = 'neuroElite_sig';
 
 export function saveAppData(appData) {
-    const hash = generateHash(appData);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
-    localStorage.setItem(SIG_KEY, hash);
+    try {
+        const hash = generateHash(appData);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+        localStorage.setItem(SIG_KEY, hash);
+    } catch (e) {
+        console.warn("Storage Error: Unable to save to localStorage. Quota may be exceeded.", e);
+    }
 }
 
 export function loadAppData() {
