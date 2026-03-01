@@ -147,6 +147,15 @@ export class GameEngine {
         if (this.mode !== 'STANDARD' && (!this.session.isSessionActive() || this.session.getSessionStats().roundsPlayed === 0)) {
             // Start from scratch every time
             this.difficulty = new DifficultyManager();
+
+            // Override UI Tier flags locally for this session
+            u.tier = 'T1';
+            u.level2 = false;
+            u.level3 = false;
+            u.level4 = false;
+            u.level5 = false;
+            u.level6 = false;
+            u.speed = this.difficulty.getFlashDuration();
         }
 
         this.isAnomalyRound = false;

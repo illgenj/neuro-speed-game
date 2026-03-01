@@ -211,12 +211,18 @@ const uiCallbacks = {
                 runAchievementCheck(u, { sessionSummary: summary });
             } else if (currentMode === 'DAILY_CASUAL' || currentMode === 'DAILY_DEATH') {
                 // Return to mode selection
+                const playedMode = currentMode;
                 game.currentMode = 'STANDARD'; // reset
                 currentMode = 'STANDARD';
                 els.btnAbortRun.classList.add('hidden');
                 updateModeUI();
                 els.mainOverlay.classList.remove('hidden');
                 uiCallbacks.triggerSystemMessage("DAILY RUN SYNCHRONIZED", "info");
+
+                // Show the leaderboard for the mode just played
+                lbCurrentMode = playedMode;
+                showLeaderboard();
+
                 return; // skip standard session summary
             }
         }
@@ -332,20 +338,20 @@ function updateModeUI() {
         els.startBtn.classList.remove('locked-btn');
     } else if (currentMode === 'DAILY_CASUAL') {
         els.modeDesc.innerHTML = "1 ATTEMPT PER DAY<br>BASE DIFFICULTY, NORMAL RULES";
-        if (u && u.dailyCasualDate === today) {
+        if (u && u.dailyCasualDate === today && !game.session.isSessionActive()) {
             els.startBtn.innerText = "ATTEMPT USED";
             els.startBtn.classList.add('locked-btn');
         } else {
-            els.startBtn.innerText = "INITIATE DAILY CASUAL";
+            els.startBtn.innerText = game.session.isSessionActive() ? "CONTINUE RUN" : "INITIATE DAILY CASUAL";
             els.startBtn.classList.remove('locked-btn');
         }
     } else if (currentMode === 'DAILY_DEATH') {
         els.modeDesc.innerHTML = "1 ATTEMPT PER DAY<br>BASE DIFFICULTY, 1 STRIKE = OVER";
-        if (u && u.dailyDeathDate === today) {
+        if (u && u.dailyDeathDate === today && !game.session.isSessionActive()) {
             els.startBtn.innerText = "ATTEMPT USED";
             els.startBtn.classList.add('locked-btn');
         } else {
-            els.startBtn.innerText = "INITIATE DAILY DEATH";
+            els.startBtn.innerText = game.session.isSessionActive() ? "CONTINUE RUN" : "INITIATE DAILY DEATH";
             els.startBtn.classList.remove('locked-btn');
         }
     }
@@ -732,8 +738,8 @@ els.startBtn.onclick = () => {
     if (currentMode !== 'STANDARD') {
         const u = appData.users[appData.currentUser];
         const today = new Date().toISOString().split('T')[0];
-        if (currentMode === 'DAILY_CASUAL' && u.dailyCasualDate === today) return;
-        if (currentMode === 'DAILY_DEATH' && u.dailyDeathDate === today) return;
+        if (currentMode === 'DAILY_CASUAL' && u.dailyCasualDate === today && !game.session.isSessionActive()) return;
+        if (currentMode === 'DAILY_DEATH' && u.dailyDeathDate === today && !game.session.isSessionActive()) return;
     }
 
     game.audio.init();

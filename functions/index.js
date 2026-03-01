@@ -122,6 +122,11 @@ exports.submitRound = functions.https.onCall(async (request, context) => {
     const todayStr = new Date().toISOString().split('T')[0];
 
     if (isDaily) {
+        // Enforce T1 start for daily modes
+        if (dailyRounds === 0) {
+            newTier = "T1";
+        }
+
         const collName = mode === 'DAILY_CASUAL' ? 'leaderboard_daily_casual' : 'leaderboard_daily_death';
         dailyRef = db.collection(collName).doc(userId);
         const dailySnap = await dailyRef.get();
@@ -130,6 +135,7 @@ exports.submitRound = functions.https.onCall(async (request, context) => {
             if (dData.date === todayStr) {
                 dailyScore = dData.score || 0;
                 dailyRounds = dData.roundsPlayed || 0;
+                newTier = dData.tier || "T1"; // Resume at the saved daily tier
             }
         }
     }
