@@ -174,3 +174,15 @@ exports.setPin = functions.https.onCall(async (request, context) => {
     await userRef.set({ pin }, { merge: true });
     return { success: true };
 });
+
+exports.syncProfile = functions.https.onCall(async (request, context) => {
+    const data = request.data || request;
+    const { userId, profileData } = data;
+    if (!userId || !profileData) {
+        throw new functions.https.HttpsError('invalid-argument', 'Missing userId or profileData');
+    }
+    const userRef = db.collection('leaderboard').doc(userId);
+    // Merge the full profile data sent from the client
+    await userRef.set(profileData, { merge: true });
+    return { success: true };
+});

@@ -6,7 +6,7 @@ import './styles/game.css';
 import './styles/overlays.css';
 import './styles/animations.css';
 
-import { initFirebase } from './services/firebase.js';
+import { initFirebase, syncProfile } from './services/firebase.js';
 import { saveAppData, loadAppData } from './services/storage.js';
 import { subscribeToUser, unsubscribe, fetchLeaderboard } from './services/leaderboard.js';
 import { lookupCloudUser, createLocalUser, checkDailyStreak, setPinForUser } from './services/auth.js';
@@ -16,7 +16,7 @@ import { checkAchievements, getAllAchievements, getAchievementProgress } from '.
 import { AnalyticsRenderer } from './ui/AnalyticsRenderer.js';
 import { Toast } from './ui/Toast.js';
 import { Onboarding } from './ui/Onboarding.js';
-import { L2_COLORS, TRAINING_BLOCK_SIZE } from './config/constants.js';
+import { L2_COLORS, TRAINING_BLOCK_SIZE, APP_VERSION } from './config/constants.js';
 
 // ─── APP STATE ──────────────────────────────────────────────
 let appData = { users: {}, currentUser: null };
@@ -328,6 +328,17 @@ function initRealtimeSync(userId) {
             u.level5 = ['T5', 'T6'].includes(tr);
             u.level6 = (tr === 'T6');
 
+            // Merge extended profile data from cloud
+            if (cloudData.sessions && cloudData.sessions.length > (u.sessions?.length || 0)) u.sessions = cloudData.sessions;
+            if (cloudData.history && cloudData.history.length > (u.history?.length || 0)) u.history = cloudData.history;
+            if (cloudData.resultsHistory && cloudData.resultsHistory.length > (u.resultsHistory?.length || 0)) u.resultsHistory = cloudData.resultsHistory;
+            if (cloudData.achievements && cloudData.achievements.length > (u.achievements?.length || 0)) u.achievements = cloudData.achievements;
+            if (cloudData.totalTimeMs && cloudData.totalTimeMs > (u.totalTimeMs || 0)) u.totalTimeMs = cloudData.totalTimeMs;
+            if (cloudData.totalSessions && cloudData.totalSessions > (u.totalSessions || 0)) u.totalSessions = cloudData.totalSessions;
+            if (cloudData.dailyStreak && cloudData.dailyStreak > (u.dailyStreak || 0)) u.dailyStreak = cloudData.dailyStreak;
+            if (cloudData.lastPlayDate && (!u.lastPlayDate || new Date(cloudData.lastPlayDate) > new Date(u.lastPlayDate))) u.lastPlayDate = cloudData.lastPlayDate;
+            if (cloudData.difficulty) u.difficulty = cloudData.difficulty;
+
             if (cloudData.pin && u.pin !== cloudData.pin) u.pin = cloudData.pin;
             saveAppData(appData);
             updateUI();
@@ -335,6 +346,31 @@ function initRealtimeSync(userId) {
             setTimeout(() => els.syncIndicator.classList.remove('syncing'), 1000);
         }
     });
+}
+
+// ─── CLOUD BACKUP ───────────────────────────────────────────
+let backupTimeout = null;
+function backupProfileToCloud(userId) {
+    if (backupTimeout) clearTimeout(backupTimeout);
+    backupTimeout = setTimeout(async () => {
+        const u = appData.users[userId];
+        if (!u) return;
+        try {
+            await syncProfile({
+                userId, profileData: {
+                    history: u.history || [],
+                    resultsHistory: u.resultsHistory || [],
+                    sessions: u.sessions || [],
+                    achievements: u.achievements || [],
+                    totalTimeMs: u.totalTimeMs || 0,
+                    totalSessions: u.totalSessions || 0,
+                    dailyStreak: u.dailyStreak || 0,
+                    lastPlayDate: u.lastPlayDate || null,
+                    difficulty: u.difficulty || null
+                }
+            });
+        } catch (e) { console.error("Profile Backup Failed", e); }
+    }, 2000); // 2 seconds debounce
 }
 
 // ─── OVERLAY SCREENS ────────────────────────────────────────
@@ -752,6 +788,7 @@ function runAchievementCheck(user, context) {
             setTimeout(() => Toast.showAchievement(def), i * 800);
         });
         saveAppData(appData);
+        backupProfileToCloud(appData.currentUser);
     }
 }
 
@@ -841,10 +878,12 @@ function showSessionSummary(summary) {
 document.getElementById('btn-continue-training').onclick = () => {
     hideOverlays();
     els.mainOverlay.classList.remove('hidden');
+    backupProfileToCloud(appData.currentUser);
 };
 document.getElementById('btn-end-session').onclick = () => {
     hideOverlays();
     els.mainOverlay.classList.remove('hidden');
+    backupProfileToCloud(appData.currentUser);
 };
 
 // ─── BOOSTER REMINDER ───────────────────────────────────────
@@ -868,6 +907,29 @@ document.getElementById('btn-dismiss-booster').onclick = () => {
     hideOverlays();
     els.mainOverlay.classList.remove('hidden');
 };
+// ─── VERSION CHECK ──────────────────────────────────────────
+let checkingVersion = false;
+async function checkForUpdates(manual = false) {
+    if (checkingVersion) return;
+    checkingVersion = true;
+    try {
+        const res = await fetch(`/version.json?t=${Date.now()}`);
+        if (res.ok) {
+            const data = await res.json();
+            if (data.version && data.version !== APP_VERSION) {
+                uiCallbacks.triggerSystemMessage("UPDATE DETECTED. REFRESHING...", "upgrade");
+                setTimeout(() => window.location.reload(true), 1500);
+            } else if (manual) {
+                uiCallbacks.triggerSystemMessage("SYSTEM UP TO DATE", "info");
+            }
+        }
+    } catch (e) {
+        console.warn("Version check failed", e);
+    }
+    checkingVersion = false;
+}
+
+document.getElementById('version-display').onclick = () => checkForUpdates(true);
 
 // ─── BOOT ───────────────────────────────────────────────────
 function boot() {
@@ -900,8 +962,15 @@ function boot() {
 
     // Uptime tracker
     setInterval(() => {
-        if (appData.currentUser) appData.users[appData.currentUser].totalTimeMs += 2000;
+        if (appData.currentUser) {
+            appData.users[appData.currentUser].totalTimeMs += 2000;
+            if (appData.users[appData.currentUser].totalTimeMs % 60000 === 0) backupProfileToCloud(appData.currentUser);
+        }
     }, 2000);
+
+    // Initial version check and periodic check every 5 minutes
+    checkForUpdates();
+    setInterval(() => checkForUpdates(), 5 * 60 * 1000);
 }
 
 boot();

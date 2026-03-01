@@ -3,6 +3,8 @@ export const SHAPES = ['circle', 'square', 'triangle', 'diamond', 'cross'];
 
 export const L2_COLORS = ['#22d3ee', '#4ade80', '#f472b6', '#fbbf24'];
 
+export const APP_VERSION = "8.1.0";
+
 export const QUESTION_TIMEOUT_MS = 15000;
 
 export const DIR_MAP = [
