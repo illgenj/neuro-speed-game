@@ -1,10 +1,9 @@
-const CACHE_NAME = 'neuro-speed-v9.0.1';
+const CACHE_NAME = 'neuro-speed-v9.0.2';
 const ASSETS = [
     '/',
     '/index.html',
     '/manifest.json',
-    '/icon.svg',
-    '/version.json'
+    '/icon.svg'
 ];
 
 self.addEventListener('install', (event) => {

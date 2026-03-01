@@ -1077,7 +1077,17 @@ async function checkForUpdates(manual = false) {
         const res = await fetch(`/version.json?t=${Date.now()}`);
         if (res.ok) {
             const data = await res.json();
-            if (data.version && data.version !== APP_VERSION) {
+            if (data.version && data.version.trim() !== APP_VERSION.trim()) {
+                const now = Date.now();
+                const lastReload = parseInt(sessionStorage.getItem('last_update_reload') || '0');
+                if (now - lastReload < 15000) {
+                    console.error("Update loop detected. Throttling.");
+                    uiCallbacks.triggerSystemMessage("UPDATE STALLED. PLEASE HARD REFRESH.", "alert");
+                    checkingVersion = false;
+                    return;
+                }
+                sessionStorage.setItem('last_update_reload', now.toString());
+
                 uiCallbacks.triggerSystemMessage("UPDATE DETECTED. REFRESHING...", "upgrade");
                 setTimeout(async () => {
                     if ('serviceWorker' in navigator) {

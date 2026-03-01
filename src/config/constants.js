@@ -3,7 +3,7 @@ export const SHAPES = ['circle', 'square', 'triangle', 'diamond', 'cross'];
 
 export const L2_COLORS = ['#22d3ee', '#4ade80', '#f472b6', '#fbbf24'];
 
-export const APP_VERSION = "9.0.1";
+export const APP_VERSION = "9.0.2";
 
 export const QUESTION_TIMEOUT_MS = 15000;
 
