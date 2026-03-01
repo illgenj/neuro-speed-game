@@ -1,9 +1,10 @@
-const CACHE_NAME = 'neuro-speed-v8';
+const CACHE_NAME = 'neuro-speed-v8.1.0';
 const ASSETS = [
     '/',
     '/index.html',
     '/manifest.json',
-    '/icon.svg'
+    '/icon.svg',
+    '/version.json'
 ];
 
 self.addEventListener('install', (event) => {
@@ -39,7 +40,7 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
         caches.match(event.request)
             .then((cachedResponse) => {
-                if (cachedResponse) {
+                if (cachedResponse && !event.request.url.includes('version.json')) {
                     return cachedResponse;
                 }
                 return fetch(event.request).then(response => {
